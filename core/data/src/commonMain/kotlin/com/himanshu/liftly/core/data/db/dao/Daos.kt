@@ -61,6 +61,15 @@ interface RoutineExerciseDao : SyncDao<RoutineExerciseEntity> {
 
     @Query("SELECT * FROM routine_exercises WHERE id IN (:ids)")
     override suspend fun getByIdsIncludingDeleted(ids: List<String>): List<RoutineExerciseEntity>
+
+    @Query(
+        """
+        SELECT * FROM routine_exercises
+        WHERE routineId = :routineId AND exerciseId = :exerciseId AND deletedAt IS NULL
+        ORDER BY orderIndex LIMIT 1
+        """,
+    )
+    suspend fun getTarget(routineId: String, exerciseId: String): RoutineExerciseEntity?
 }
 
 @Dao
@@ -101,6 +110,18 @@ interface WorkoutExerciseDao : SyncDao<WorkoutExerciseEntity> {
 
     @Query("SELECT * FROM workout_exercises WHERE id = :id AND deletedAt IS NULL")
     suspend fun getById(id: String): WorkoutExerciseEntity?
+
+    @Query(
+        """
+        SELECT we.* FROM workout_exercises we
+        JOIN workouts w ON w.id = we.workoutId
+        WHERE we.exerciseId = :exerciseId AND we.workoutId != :excludeWorkoutId AND we.status = 'LOGGED'
+          AND we.deletedAt IS NULL AND w.deletedAt IS NULL
+        ORDER BY we.loggedAt DESC
+        LIMIT 1
+        """,
+    )
+    suspend fun getLastLogged(exerciseId: String, excludeWorkoutId: String): WorkoutExerciseEntity?
 
     @Query("SELECT COALESCE(MAX(orderIndex), -1) FROM workout_exercises WHERE workoutId = :workoutId AND deletedAt IS NULL")
     suspend fun maxOrderIndex(workoutId: String): Int

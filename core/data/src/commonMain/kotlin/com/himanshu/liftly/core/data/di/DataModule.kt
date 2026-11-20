@@ -11,6 +11,9 @@ import com.himanshu.liftly.core.domain.repository.ExerciseRepository
 import com.himanshu.liftly.core.domain.repository.ExerciseSeeder
 import com.himanshu.liftly.core.domain.repository.WorkoutRepository
 import com.himanshu.liftly.core.domain.sync.SyncController
+import com.himanshu.liftly.core.domain.usecase.GetLogSheetPrefillUseCase
+import com.himanshu.liftly.core.domain.usecase.LogExerciseSetsUseCase
+import com.himanshu.liftly.core.domain.usecase.ParseRepInputUseCase
 import com.himanshu.liftly.core.domain.usecase.StartWorkoutUseCase
 import com.himanshu.liftly.core.domain.util.AppScope
 import com.himanshu.liftly.core.domain.util.IdGenerator
@@ -37,6 +40,9 @@ val dataModule = module {
     single<ExerciseRepository> { RoomExerciseRepository(get(), get(), get(), get()) }
     single<WorkoutRepository> { RoomWorkoutRepository(get(), get(), get(), get(), get()) }
     factory { StartWorkoutUseCase(get()) }
+    factory { LogExerciseSetsUseCase(get()) }
+    factory { GetLogSheetPrefillUseCase() }
+    factory { ParseRepInputUseCase() }
     single<ExerciseSeeder> { RoomExerciseSeeder(get(), get(), get()) }
     single { SyncTables(get()) }
 

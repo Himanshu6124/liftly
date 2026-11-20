@@ -28,6 +28,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.himanshu.liftly.core.designsystem.component.ExerciseThumbnail
 import com.himanshu.liftly.core.designsystem.component.StatusIcon
@@ -36,9 +37,11 @@ import com.himanshu.liftly.core.designsystem.theme.LiftlyTheme
 import com.himanshu.liftly.core.domain.model.ExerciseStatus
 import com.himanshu.liftly.feature.workout.resources.Res
 import com.himanshu.liftly.feature.workout.resources.card_form
+import com.himanshu.liftly.feature.workout.resources.card_last
 import com.himanshu.liftly.feature.workout.resources.card_move_down
 import com.himanshu.liftly.feature.workout.resources.card_move_up
 import com.himanshu.liftly.feature.workout.resources.card_options
+import com.himanshu.liftly.feature.workout.resources.card_quick_log
 import com.himanshu.liftly.feature.workout.resources.card_remove
 import com.himanshu.liftly.feature.workout.resources.card_skip
 import com.himanshu.liftly.feature.workout.resources.card_status_logged
@@ -52,6 +55,7 @@ import org.jetbrains.compose.resources.stringResource
 internal fun ExerciseCard(
     card: ExerciseCardUi,
     isDragging: Boolean,
+    highlighted: Boolean,
     onClick: () -> Unit,
     onFormGuide: () -> Unit,
     onIntent: (ActiveWorkoutIntent) -> Unit,
@@ -78,14 +82,22 @@ internal fun ExerciseCard(
         )
     }
 
+    val logLabel = stringResource(Res.string.card_quick_log)
     ElevatedCard(
         onClick = onClick,
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = if (isDragging) 8.dp else 1.dp),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = if (highlighted) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
+        ),
         modifier = modifier
             .fillMaxWidth()
             // Screen-reader users get the swipe/menu actions directly on the card.
             .semantics {
                 customActions = listOf(
+                    CustomAccessibilityAction(logLabel) {
+                        onIntent(ActiveWorkoutIntent.QuickLog(card.workoutExerciseId))
+                        true
+                    },
                     CustomAccessibilityAction(skipLabel) {
                         skipAction()
                         true
@@ -106,15 +118,25 @@ internal fun ExerciseCard(
             ExerciseThumbnail(card.imagePaths, contentDescription = null, size = 52.dp)
             Column(Modifier.weight(1f)) {
                 Text(card.name, style = MaterialTheme.typography.titleMedium, maxLines = 2)
+                val logged = card.status == ExerciseStatus.LOGGED
                 Text(
-                    if (card.status == ExerciseStatus.PENDING) {
-                        stringResource(Res.string.card_subtitle, card.primaryMuscle.label(), card.equipment.label())
-                    } else {
-                        statusLabel
+                    when {
+                        logged && card.summary != null -> card.summary
+
+                        card.status == ExerciseStatus.PENDING && card.lastHint != null -> stringResource(
+                            Res.string.card_last,
+                            card.lastHint,
+                        )
+
+                        card.status == ExerciseStatus.PENDING ->
+                            stringResource(Res.string.card_subtitle, card.primaryMuscle.label(), card.equipment.label())
+
+                        else -> statusLabel
                     },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = if (logged) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.bodySmall,
+                    color = if (logged) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
             IconButton(onClick = onFormGuide) {

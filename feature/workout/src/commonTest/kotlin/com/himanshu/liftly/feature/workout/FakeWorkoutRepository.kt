@@ -2,15 +2,20 @@ package com.himanshu.liftly.feature.workout
 
 import com.himanshu.liftly.core.domain.model.ActiveWorkout
 import com.himanshu.liftly.core.domain.model.ActiveWorkoutExercise
+import com.himanshu.liftly.core.domain.model.DraftSet
 import com.himanshu.liftly.core.domain.model.Equipment
 import com.himanshu.liftly.core.domain.model.Exercise
 import com.himanshu.liftly.core.domain.model.ExerciseStatus
 import com.himanshu.liftly.core.domain.model.InputMode
+import com.himanshu.liftly.core.domain.model.LastSession
+import com.himanshu.liftly.core.domain.model.LogSheetData
+import com.himanshu.liftly.core.domain.model.LogSnapshot
 import com.himanshu.liftly.core.domain.model.Muscle
 import com.himanshu.liftly.core.domain.model.RemovedWorkoutExercise
 import com.himanshu.liftly.core.domain.model.TrackingType
 import com.himanshu.liftly.core.domain.model.Workout
 import com.himanshu.liftly.core.domain.model.WorkoutExercise
+import com.himanshu.liftly.core.domain.model.WorkoutSet
 import com.himanshu.liftly.core.domain.repository.WorkoutRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +24,12 @@ import kotlinx.coroutines.flow.update
 import kotlin.time.Instant
 
 /** Minimal in-memory workout store driving the ViewModel through the same flow Room would. */
-class FakeWorkoutRepository(exerciseNames: List<String>) : WorkoutRepository {
+class FakeWorkoutRepository(
+    exerciseNames: List<String>,
+    /** exercise name → sets of its last session elsewhere (drives prefill + hints). */
+    private val lastSessions: Map<String, List<WorkoutSet>> = emptyMap(),
+    private val trackingType: TrackingType = TrackingType.WEIGHT_REPS,
+) : WorkoutRepository {
     private val workout = Workout("w1", "", null, Instant.fromEpochMilliseconds(0), null, null)
     val active = MutableStateFlow<ActiveWorkout?>(
         ActiveWorkout(workout, exerciseNames.mapIndexed { i, name -> item("we$i", name, i) }),
@@ -30,7 +40,7 @@ class FakeWorkoutRepository(exerciseNames: List<String>) : WorkoutRepository {
     private fun item(id: String, name: String, order: Int) = ActiveWorkoutExercise(
         workoutExercise = WorkoutExercise(id, "w1", "ex-$name", order, null, ExerciseStatus.PENDING, null, InputMode.UNIFORM, null),
         exercise = Exercise(
-            "ex-$name", null, name, emptyList(), Muscle.CHEST, emptyList(), Equipment.BARBELL, TrackingType.WEIGHT_REPS,
+            "ex-$name", null, name, emptyList(), Muscle.CHEST, emptyList(), Equipment.BARBELL, trackingType,
             null, null, emptyList(), null, emptyList(), emptyList(), emptyList(), null, false, false, false,
         ),
         sets = emptyList(),
@@ -76,4 +86,43 @@ class FakeWorkoutRepository(exerciseNames: List<String>) : WorkoutRepository {
         active.value = null
     }
     override fun observeRecentExerciseIds(limit: Int): Flow<List<String>> = flowOf(emptyList())
+
+    private fun find(id: String) = active.value?.exercises?.first { it.workoutExercise.id == id }
+
+    override suspend fun getLogSheetData(workoutExerciseId: String): LogSheetData? {
+        val e = find(workoutExerciseId) ?: return null
+        return LogSheetData(e.workoutExercise, e.exercise, e.sets, getLastSession(e.exercise.id, "w1"), null)
+    }
+
+    override suspend fun getLastSession(exerciseId: String, excludeWorkoutId: String): LastSession? {
+        val sets = lastSessions[exerciseId.removePrefix("ex-")] ?: return null
+        return LastSession("old", Instant.fromEpochMilliseconds(0), InputMode.UNIFORM, sets)
+    }
+
+    val logged = mutableListOf<Pair<String, List<DraftSet>>>()
+
+    override suspend fun logSets(workoutExerciseId: String, sets: List<DraftSet>, inputMode: InputMode): LogSnapshot {
+        val before = requireNotNull(find(workoutExerciseId))
+        logged += workoutExerciseId to sets
+        edit { list ->
+            list.map { e ->
+                if (e.workoutExercise.id != workoutExerciseId) return@map e
+                e.copy(
+                    workoutExercise = e.workoutExercise.copy(status = ExerciseStatus.LOGGED, inputMode = inputMode),
+                    sets = sets.mapIndexed { i, d ->
+                        WorkoutSet("s$i", e.workoutExercise.id, i, d.weightKg, d.reps, null, null, null, d.setType)
+                    },
+                )
+            }
+        }
+        val we = before.workoutExercise
+        return LogSnapshot(we.id, we.status, we.loggedAt, we.inputMode, before.sets)
+    }
+
+    override suspend fun restoreLog(snapshot: LogSnapshot) = edit { list ->
+        list.map { e ->
+            if (e.workoutExercise.id != snapshot.workoutExerciseId) return@map e
+            e.copy(workoutExercise = e.workoutExercise.copy(status = snapshot.status), sets = snapshot.sets)
+        }
+    }
 }

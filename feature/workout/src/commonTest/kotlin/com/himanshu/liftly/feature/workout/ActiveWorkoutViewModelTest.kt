@@ -2,6 +2,8 @@ package com.himanshu.liftly.feature.workout
 
 import app.cash.turbine.test
 import com.himanshu.liftly.core.domain.model.ExerciseStatus
+import com.himanshu.liftly.core.domain.usecase.GetLogSheetPrefillUseCase
+import com.himanshu.liftly.core.domain.usecase.LogExerciseSetsUseCase
 import com.himanshu.liftly.core.domain.util.AppScope
 import com.himanshu.liftly.feature.workout.active.ActiveWorkoutEffect
 import com.himanshu.liftly.feature.workout.active.ActiveWorkoutIntent
@@ -33,7 +35,16 @@ class ActiveWorkoutViewModelTest {
     @AfterTest
     fun tearDown() = Dispatchers.resetMain()
 
-    private fun vm(repo: FakeWorkoutRepository) = ActiveWorkoutViewModel(repo, AppScope(CoroutineScope(dispatcher)))
+    private val haptics = CountingHaptics()
+
+    private fun vm(repo: FakeWorkoutRepository, settings: FakeSettings = FakeSettings()) = ActiveWorkoutViewModel(
+        repo,
+        settings,
+        LogExerciseSetsUseCase(repo),
+        GetLogSheetPrefillUseCase(),
+        haptics,
+        AppScope(CoroutineScope(dispatcher)),
+    )
 
     @Test
     fun loadsCardsFromTheActiveWorkout() = runTest(dispatcher) {
@@ -123,6 +134,70 @@ class ActiveWorkoutViewModelTest {
         vm.onIntent(ActiveWorkoutIntent.DiscardConfirmed)
         assertTrue(repo.discarded)
         assertTrue(vm.state.value.noWorkout)
+    }
+
+    @Test
+    fun cardsShowLastSessionHintAndLoggedSummary() = runTest(dispatcher) {
+        val repo = FakeWorkoutRepository(listOf("Bench"), lastSessions = mapOf("Bench" to sets(77.5 to 8, 77.5 to 7)))
+        val vm = vm(repo)
+        assertEquals("77.5 kg × 8, 7", vm.state.value.cards.single().lastHint)
+
+        vm.onIntent(ActiveWorkoutIntent.QuickLog("we0"))
+        assertEquals("2 × 77.5 kg · 8, 7", vm.state.value.cards.single().summary)
+    }
+
+    @Test
+    fun quickLogLogsThePrefillWithUndoAndHaptic() = runTest(dispatcher) {
+        val repo = FakeWorkoutRepository(listOf("Bench", "Row"), lastSessions = mapOf("Bench" to sets(80.0 to 8, 80.0 to 8)))
+        val vm = vm(repo)
+        vm.effects.test {
+            vm.onIntent(ActiveWorkoutIntent.QuickLog("we0"))
+            assertEquals(ActiveWorkoutEffect.Undoable(ActiveWorkoutEffect.Undoable.Kind.LOGGED, "Bench"), awaitItem())
+            assertEquals(ActiveWorkoutEffect.ScrollTo("we1"), awaitItem())
+            assertEquals(ExerciseStatus.LOGGED, repo.status("we0"))
+            assertEquals(listOf(80.0 to 8, 80.0 to 8), repo.logged.single().second.map { it.weightKg to it.reps })
+            assertEquals(1, haptics.light)
+            assertEquals("we1", vm.state.value.highlightedId, "next pending card is highlighted")
+
+            vm.onIntent(ActiveWorkoutIntent.Undo)
+            assertEquals(ExerciseStatus.PENDING, repo.status("we0"))
+        }
+    }
+
+    @Test
+    fun quickLogWithoutHistoryOpensTheSheetInstead() = runTest(dispatcher) {
+        val repo = FakeWorkoutRepository(listOf("Bench"))
+        val vm = vm(repo)
+        vm.onIntent(ActiveWorkoutIntent.QuickLog("we0"))
+        assertEquals("we0", vm.state.value.logSheetFor)
+        assertTrue(repo.logged.isEmpty())
+    }
+
+    @Test
+    fun savingFromTheSheetOpensTheNextOneWhenEnabled() = runTest(dispatcher) {
+        val repo = FakeWorkoutRepository(listOf("A", "B", "C"))
+        val vm = vm(repo, FakeSettings(com.himanshu.liftly.core.domain.model.UserSettings(openNextExerciseAutomatically = true)))
+        vm.onIntent(ActiveWorkoutIntent.OpenLogSheet("we1"))
+        val undo = repo.logSets(
+            "we1",
+            listOf(com.himanshu.liftly.core.domain.model.DraftSet(50.0, 10)),
+            com.himanshu.liftly.core.domain.model.InputMode.UNIFORM,
+        )
+        vm.onIntent(ActiveWorkoutIntent.Logged("we1", undo))
+        assertEquals("we2", vm.state.value.logSheetFor)
+    }
+
+    @Test
+    fun advanceWrapsAroundToEarlierPendingCards() = runTest(dispatcher) {
+        val repo = FakeWorkoutRepository(listOf("A", "B"))
+        val vm = vm(repo, FakeSettings(com.himanshu.liftly.core.domain.model.UserSettings(openNextExerciseAutomatically = true)))
+        val undo = repo.logSets(
+            "we1",
+            listOf(com.himanshu.liftly.core.domain.model.DraftSet(50.0, 10)),
+            com.himanshu.liftly.core.domain.model.InputMode.UNIFORM,
+        )
+        vm.onIntent(ActiveWorkoutIntent.Logged("we1", undo))
+        assertEquals("we0", vm.state.value.logSheetFor)
     }
 
     @Test

@@ -2,9 +2,13 @@ package com.himanshu.liftly.feature.workout.active
 
 import androidx.compose.runtime.Immutable
 import com.himanshu.liftly.core.domain.model.ActiveWorkout
+import com.himanshu.liftly.core.domain.model.DraftSet
 import com.himanshu.liftly.core.domain.model.Equipment
 import com.himanshu.liftly.core.domain.model.ExerciseStatus
 import com.himanshu.liftly.core.domain.model.Muscle
+import com.himanshu.liftly.core.domain.model.WeightUnit
+import com.himanshu.liftly.core.domain.util.SetFormatter
+import com.himanshu.liftly.core.domain.util.toDraftSets
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -19,6 +23,10 @@ data class ExerciseCardUi(
     val primaryMuscle: Muscle,
     val equipment: Equipment,
     val status: ExerciseStatus,
+    /** Logged: "4 × 80 kg · 8, 8, 7, 6". */
+    val summary: String? = null,
+    /** Pending: "77.5 kg × 8, 8, 8, 7" from the last session. */
+    val lastHint: String? = null,
 )
 
 @Immutable
@@ -30,6 +38,10 @@ data class ActiveWorkoutUiState(
     val startedAt: Instant? = null,
     val cards: ImmutableList<ExerciseCardUi> = persistentListOf(),
     val showFinishSheet: Boolean = false,
+    /** Workout exercise whose Batch Log Sheet is open. */
+    val logSheetFor: String? = null,
+    /** Briefly highlighted card (the next pending one after a log). */
+    val highlightedId: String? = null,
     val showDiscardDialog: Boolean = false,
 ) {
     val pendingCount: Int get() = cards.count { it.status == ExerciseStatus.PENDING }
@@ -48,6 +60,12 @@ sealed interface ActiveWorkoutIntent {
     data class Unskip(val workoutExerciseId: String) : ActiveWorkoutIntent
     data class Remove(val workoutExerciseId: String) : ActiveWorkoutIntent
     data object Undo : ActiveWorkoutIntent
+    data class OpenLogSheet(val workoutExerciseId: String) : ActiveWorkoutIntent
+    data object CloseLogSheet : ActiveWorkoutIntent
+    data class Logged(val workoutExerciseId: String, val undo: com.himanshu.liftly.core.domain.model.LogSnapshot) : ActiveWorkoutIntent
+
+    /** Swipe right: log exactly the pre-filled values, zero extra taps. */
+    data class QuickLog(val workoutExerciseId: String) : ActiveWorkoutIntent
     data object FinishRequested : ActiveWorkoutIntent
     data object FinishConfirmed : ActiveWorkoutIntent
     data object FinishCancelled : ActiveWorkoutIntent
@@ -59,13 +77,20 @@ sealed interface ActiveWorkoutIntent {
 sealed interface ActiveWorkoutEffect {
     /** Undo-able change; the screen shows a snackbar with an Undo action. */
     data class Undoable(val kind: Kind, val exerciseName: String) : ActiveWorkoutEffect {
-        enum class Kind { SKIPPED, REMOVED }
+        enum class Kind { SKIPPED, REMOVED, LOGGED }
     }
 
     data class Closed(val finished: Boolean) : ActiveWorkoutEffect
+
+    /** Scroll the list so this card is visible. */
+    data class ScrollTo(val workoutExerciseId: String) : ActiveWorkoutEffect
 }
 
-internal fun ActiveWorkout.toUiState(previous: ActiveWorkoutUiState) = previous.copy(
+internal fun ActiveWorkout.toUiState(
+    previous: ActiveWorkoutUiState,
+    unit: WeightUnit,
+    lastSets: Map<String, List<DraftSet>>,
+) = previous.copy(
     isLoading = false,
     workoutId = workout.id,
     name = workout.name,
@@ -79,6 +104,8 @@ internal fun ActiveWorkout.toUiState(previous: ActiveWorkoutUiState) = previous.
             primaryMuscle = e.exercise.primaryMuscle,
             equipment = e.exercise.equipment,
             status = e.workoutExercise.status,
+            summary = if (e.workoutExercise.status == ExerciseStatus.LOGGED) SetFormatter.summary(e.sets.toDraftSets(), unit) else null,
+            lastHint = lastSets[e.exercise.id]?.let { SetFormatter.hint(it, unit) },
         )
     }.toImmutableList(),
 )

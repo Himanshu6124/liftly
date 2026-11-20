@@ -56,7 +56,9 @@ import com.himanshu.liftly.core.designsystem.component.defaultWorkoutName
 import com.himanshu.liftly.core.designsystem.theme.LiftlyTheme
 import com.himanshu.liftly.feature.exercises.picker.ExercisePickerSheet
 import com.himanshu.liftly.feature.exercises.preview.FormPreviewSheet
+import com.himanshu.liftly.feature.workout.logsheet.LogSheet
 import com.himanshu.liftly.feature.workout.resources.Res
+import com.himanshu.liftly.feature.workout.resources.snackbar_logged
 import com.himanshu.liftly.feature.workout.resources.snackbar_removed
 import com.himanshu.liftly.feature.workout.resources.snackbar_skipped
 import com.himanshu.liftly.feature.workout.resources.snackbar_undo
@@ -75,6 +77,8 @@ import com.himanshu.liftly.feature.workout.resources.workout_keep_going
 import com.himanshu.liftly.feature.workout.resources.workout_more
 import com.himanshu.liftly.feature.workout.resources.workout_rename
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -89,17 +93,21 @@ fun ActiveWorkoutScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
+    val scrollRequests = remember { MutableSharedFlow<String>(extraBufferCapacity = 1) }
 
     LaunchedEffect(viewModel) {
         viewModel.effects.collect { effect ->
             when (effect) {
                 is ActiveWorkoutEffect.Closed -> onClose(effect.finished)
 
+                is ActiveWorkoutEffect.ScrollTo -> scrollRequests.tryEmit(effect.workoutExerciseId)
+
                 is ActiveWorkoutEffect.Undoable -> {
                     val message = getString(
                         when (effect.kind) {
                             ActiveWorkoutEffect.Undoable.Kind.SKIPPED -> Res.string.snackbar_skipped
                             ActiveWorkoutEffect.Undoable.Kind.REMOVED -> Res.string.snackbar_removed
+                            ActiveWorkoutEffect.Undoable.Kind.LOGGED -> Res.string.snackbar_logged
                         },
                         effect.exerciseName,
                     )
@@ -113,7 +121,13 @@ fun ActiveWorkoutScreen(
     // Opened with nothing in progress (e.g. finished on another screen): just leave.
     LaunchedEffect(state.noWorkout) { if (state.noWorkout) onClose(false) }
 
-    ActiveWorkoutContent(state = state, snackbar = snackbar, onIntent = viewModel::onIntent, onOpenGuide = onOpenGuide)
+    ActiveWorkoutContent(
+        state = state,
+        snackbar = snackbar,
+        scrollRequests = scrollRequests,
+        onIntent = viewModel::onIntent,
+        onOpenGuide = onOpenGuide,
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -121,6 +135,7 @@ fun ActiveWorkoutScreen(
 fun ActiveWorkoutContent(
     state: ActiveWorkoutUiState,
     snackbar: SnackbarHostState,
+    scrollRequests: Flow<String>,
     onIntent: (ActiveWorkoutIntent) -> Unit,
     onOpenGuide: (String) -> Unit,
 ) {
@@ -134,6 +149,12 @@ fun ActiveWorkoutContent(
     LaunchedEffect(state.cards) { if (!dragging) cards = state.cards }
 
     val listState = rememberLazyListState()
+    LaunchedEffect(scrollRequests) {
+        scrollRequests.collect { id ->
+            val index = cards.indexOfFirst { it.workoutExerciseId == id }
+            if (index >= 0) listState.animateScrollToItem(index)
+        }
+    }
     val reorderState = rememberReorderableLazyListState(listState) { from, to ->
         cards = cards.toMutableList().apply { add(to.index, removeAt(from.index)) }.toImmutableList()
     }
@@ -169,11 +190,11 @@ fun ActiveWorkoutContent(
             ) {
                 items(cards, key = { it.workoutExerciseId }) { card ->
                     ReorderableItem(reorderState, key = card.workoutExerciseId) { isDragging ->
-                        ExerciseCard(
+                        SwipeableExerciseCard(
                             card = card,
                             isDragging = isDragging,
-                            // Milestone 4 turns this into "open the Batch Log Sheet".
-                            onClick = { previewId = card.exerciseId },
+                            highlighted = state.highlightedId == card.workoutExerciseId,
+                            onClick = { onIntent(ActiveWorkoutIntent.OpenLogSheet(card.workoutExerciseId)) },
                             onFormGuide = { previewId = card.exerciseId },
                             onIntent = onIntent,
                             modifier = Modifier.longPressDraggableHandle(
@@ -209,6 +230,14 @@ fun ActiveWorkoutContent(
             previewId = null
             onOpenGuide(id)
         })
+    }
+    state.logSheetFor?.let { id ->
+        LogSheet(
+            workoutExerciseId = id,
+            onSaved = { _, _, undo -> onIntent(ActiveWorkoutIntent.Logged(id, undo)) },
+            onDismiss = { onIntent(ActiveWorkoutIntent.CloseLogSheet) },
+            onFormGuide = { exerciseId -> previewId = exerciseId },
+        )
     }
     if (state.showFinishSheet) FinishSheet(state.pendingCount, onIntent)
     if (state.showDiscardDialog) DiscardDialog(onIntent)

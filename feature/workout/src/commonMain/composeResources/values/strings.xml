@@ -33,4 +33,30 @@
     <string name="snackbar_removed">Removed %1$s</string>
     <string name="snackbar_undo">Undo</string>
     <string name="elapsed_description">Elapsed time %1$s</string>
+
+    <string name="log_form">Form</string>
+    <string name="log_last">Last: %1$s</string>
+    <string name="log_last_when">Last: %1$s (%2$s)</string>
+    <string name="log_first_time">First time: enter what you did</string>
+    <string name="log_weight">Weight</string>
+    <string name="log_weight_down">Decrease weight</string>
+    <string name="log_weight_up">Increase weight</string>
+    <string name="log_sets">Sets</string>
+    <string name="log_sets_down">One set fewer</string>
+    <string name="log_sets_up">One set more</string>
+    <string name="log_reps">Reps per set</string>
+    <string name="log_reps_hint">8 8 7 6  or  8x4</string>
+    <string name="log_save">Save</string>
+    <string name="log_error_weight_invalid">Enter a number</string>
+    <string name="log_error_weight_range">Max 1000 kg</string>
+    <string name="log_error_reps_invalid">Use numbers like 8 8 7 6 or 8x4</string>
+    <string name="log_error_reps_range">Reps must be 1–100, up to 20 sets</string>
+    <string name="log_warmups_kept">+ %1$d warm-up sets kept</string>
+    <string name="days_today">today</string>
+    <string name="days_yesterday">yesterday</string>
+    <string name="days_ago">%1$d days ago</string>
+
+    <string name="snackbar_logged">Logged %1$s</string>
+    <string name="card_last">Last: %1$s</string>
+    <string name="card_quick_log">Log same as last time</string>
 </resources>

@@ -113,3 +113,32 @@ backend later with minimal change.
   pre-filled from the query and active filters; the new exercise is selected automatically.
 - **Until Milestone 4**, tapping a card opens the form preview; M4 changes tap to the Batch Log
   Sheet. The workout summary screen arrives in M7; finishing returns Home for now.
+
+## Milestone 4: Batch Log Sheet
+
+- **Pre-fill** (`GetLogSheetPrefillUseCase`, pure): this workout's saved sets → last session of
+  the exercise (other workouts, LOGGED only) → routine target → `defaultSetCount` empty sets.
+  The input mode is remembered per exercise via the last session's `WorkoutExercise.inputMode`.
+- **UNIFORM mode shows the heaviest working weight** of the pre-fill when the last session had
+  varying weights; warm-up sets from the pre-fill are kept untouched and shown as "+ n warm-up
+  sets kept". Full per-set editing (PER_SET mode) arrives in Milestone 5.
+- **Reps field keyboard:** the phone keypad (`KeyboardType.Phone`) is the only numeric keyboard
+  available on both Android and iOS that has a "multiply" key (`*`). The parser accepts `x × *`
+  for "reps × sets" and space, comma, `+`, `#`, `.` as set separators, so `8*4` and `8+8+7` work
+  on every phone keypad, and `8 8 7 6` / `8x4` work on full keyboards.
+- **Text fields in sheets use `TextFieldState`** (the field owns its text). With the classic
+  `value/onValueChange` pattern, fast typing inside a `ModalBottomSheet` on iOS dropped all but
+  the last keystroke, because the sheet is a separate window that only recomposes after input
+  settles. Pre-fill, nudges and set-count changes write into the `TextFieldState`.
+- **Weight nudge** rounds to the increment (2.5 kg / 5 lb from settings): 81 − 2.5 → 77.5.
+- **Save = one transaction** (`logSets`): soft-deletes old sets, inserts new ones, sets
+  LOGGED + `loggedAt` + input mode, and returns a snapshot so the change can be undone exactly.
+- **Swipe right (quick-log)** logs exactly the pre-fill. If there's nothing to pre-fill from
+  (first time ever), it opens the sheet instead of logging empty sets. Swipe left skips. Both
+  keep the card in place (status changes) and show an Undo snackbar. Screen-reader users get
+  "Log same as last time" / "Skip" / "Remove" as accessibility actions on the card.
+- **Auto-advance:** after a save or quick-log, the next pending card (wrapping around to earlier
+  ones) is scrolled into view and highlighted for 1.5 s; with "Open next exercise automatically"
+  enabled, its sheet opens instead. A light haptic confirms each log.
+- **Validation:** reps 1–100, weight 0–1000 kg, at most 20 sets; Save stays disabled while
+  invalid. Empty sets are dropped on save.

@@ -40,6 +40,17 @@ class HomeViewModelTest {
         override suspend fun restoreExercise(removed: com.himanshu.liftly.core.domain.model.RemovedWorkoutExercise) = Unit
         override suspend fun finish(workoutId: String) = Unit
         override suspend fun discard(workoutId: String) = Unit
+        override suspend fun getLogSheetData(workoutExerciseId: String): com.himanshu.liftly.core.domain.model.LogSheetData? = null
+        override suspend fun getLastSession(
+            exerciseId: String,
+            excludeWorkoutId: String,
+        ): com.himanshu.liftly.core.domain.model.LastSession? = null
+        override suspend fun logSets(
+            workoutExerciseId: String,
+            sets: List<com.himanshu.liftly.core.domain.model.DraftSet>,
+            inputMode: com.himanshu.liftly.core.domain.model.InputMode,
+        ): com.himanshu.liftly.core.domain.model.LogSnapshot = error("not used")
+        override suspend fun restoreLog(snapshot: com.himanshu.liftly.core.domain.model.LogSnapshot) = Unit
         override fun observeRecentExerciseIds(limit: Int) = kotlinx.coroutines.flow.flowOf(emptyList<String>())
     }
 

@@ -5,15 +5,21 @@ import com.himanshu.liftly.core.data.db.entity.SyncMeta
 import com.himanshu.liftly.core.data.db.entity.SyncableEntity
 import com.himanshu.liftly.core.data.db.entity.WorkoutEntity
 import com.himanshu.liftly.core.data.db.entity.WorkoutExerciseEntity
+import com.himanshu.liftly.core.data.db.entity.WorkoutSetEntity
 import com.himanshu.liftly.core.data.db.entity.touch
 import com.himanshu.liftly.core.data.db.writeTransaction
 import com.himanshu.liftly.core.data.sync.SyncSql
 import com.himanshu.liftly.core.domain.model.ActiveWorkout
 import com.himanshu.liftly.core.domain.model.ActiveWorkoutExercise
+import com.himanshu.liftly.core.domain.model.DraftSet
 import com.himanshu.liftly.core.domain.model.EntityId
 import com.himanshu.liftly.core.domain.model.ExerciseStatus
 import com.himanshu.liftly.core.domain.model.InputMode
+import com.himanshu.liftly.core.domain.model.LastSession
+import com.himanshu.liftly.core.domain.model.LogSheetData
+import com.himanshu.liftly.core.domain.model.LogSnapshot
 import com.himanshu.liftly.core.domain.model.RemovedWorkoutExercise
+import com.himanshu.liftly.core.domain.model.RoutineTarget
 import com.himanshu.liftly.core.domain.model.Workout
 import com.himanshu.liftly.core.domain.repository.WorkoutRepository
 import com.himanshu.liftly.core.domain.sync.SyncController
@@ -164,6 +170,80 @@ class RoomWorkoutRepository(
         sql.delete("workout_sets", sets.idsForWorkoutExercises(weIds), now)
         sql.delete("workout_exercises", weIds, now)
         sql.delete("workouts", listOf(workoutId), now)
+    }
+
+    override suspend fun getLogSheetData(workoutExerciseId: EntityId): LogSheetData? {
+        val we = workoutExercises.getById(workoutExerciseId) ?: return null
+        val exercise = db.exerciseDao().getByIdsIncludingDeleted(listOf(we.exerciseId)).firstOrNull() ?: return null
+        val workout = workouts.getById(we.workoutId)
+        val target = workout?.routineId?.let { db.routineExerciseDao().getTarget(it, we.exerciseId) }
+        return LogSheetData(
+            workoutExercise = we.toDomain(),
+            exercise = exercise.toDomain(),
+            currentSets = sets.getForWorkoutExercise(we.id).map { it.toDomain() },
+            lastSession = getLastSession(we.exerciseId, we.workoutId),
+            routineTarget = target?.let { RoutineTarget(it.targetSets, it.targetReps, it.targetWeightKg) },
+        )
+    }
+
+    override suspend fun getLastSession(exerciseId: EntityId, excludeWorkoutId: EntityId): LastSession? {
+        val we = workoutExercises.getLastLogged(exerciseId, excludeWorkoutId) ?: return null
+        val workout = workouts.getById(we.workoutId) ?: return null
+        return LastSession(
+            workoutId = workout.id,
+            performedAt = workout.startedAt.toInstant(),
+            inputMode = we.inputMode,
+            sets = sets.getForWorkoutExercise(we.id).map { it.toDomain() },
+        )
+    }
+
+    override suspend fun logSets(workoutExerciseId: EntityId, sets: List<DraftSet>, inputMode: InputMode): LogSnapshot = write {
+        val now = now()
+        val we = requireNotNull(workoutExercises.getById(workoutExerciseId)) { "Workout exercise $workoutExerciseId not found" }
+        val previousSets = this.sets.getForWorkoutExercise(we.id)
+        val snapshot = LogSnapshot(we.id, we.status, we.loggedAt?.toInstant(), we.inputMode, previousSets.map { it.toDomain() })
+
+        this.sets.let { dao ->
+            sql.delete("workout_sets", previousSets.map { it.id }, now)
+            dao.upsertAll(
+                sets.mapIndexed { i, s ->
+                    WorkoutSetEntity(
+                        id = ids.newId(),
+                        workoutExerciseId = we.id,
+                        orderIndex = i,
+                        weightKg = s.weightKg,
+                        reps = s.reps,
+                        durationSec = s.durationSec,
+                        distanceM = s.distanceM,
+                        rpe = s.rpe,
+                        setType = s.setType,
+                        sync = SyncMeta.dirty(now),
+                    )
+                },
+            )
+        }
+        workoutExercises.upsertAll(
+            listOf(we.copy(status = ExerciseStatus.LOGGED, loggedAt = now, inputMode = inputMode, sync = we.sync.touch(now))),
+        )
+        snapshot
+    }
+
+    override suspend fun restoreLog(snapshot: LogSnapshot) = write {
+        val now = now()
+        val we = workoutExercises.getById(snapshot.workoutExerciseId) ?: return@write
+        sql.delete("workout_sets", sets.getForWorkoutExercise(we.id).map { it.id }, now)
+        val tombstones = sets.getByIdsIncludingDeleted(snapshot.sets.map { it.id }).associateBy { it.id }
+        sets.upsertAll(snapshot.sets.map { it.toEntity(revive(tombstones[it.id], now)) })
+        workoutExercises.upsertAll(
+            listOf(
+                we.copy(
+                    status = snapshot.status,
+                    loggedAt = snapshot.loggedAt?.toEpochMilliseconds(),
+                    inputMode = snapshot.inputMode,
+                    sync = we.sync.touch(now),
+                ),
+            ),
+        )
     }
 
     override fun observeRecentExerciseIds(limit: Int): Flow<List<EntityId>> =
