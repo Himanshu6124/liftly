@@ -2,6 +2,7 @@ package com.himanshu.liftly.feature.home
 
 import androidx.compose.runtime.Immutable
 import com.himanshu.liftly.core.domain.model.WeightUnit
+import com.himanshu.liftly.core.domain.util.TrainingCalendar
 import com.himanshu.liftly.feature.routines.list.RoutineRow
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -29,6 +30,10 @@ data class HomeUiState(
     val routines: ImmutableList<RoutineRow> = persistentListOf(),
     val lastWorkout: LastWorkoutCard? = null,
     val unit: WeightUnit = WeightUnit.KG,
+    /** Heatmap, weekly goal and streak; null until there's at least one finished workout. */
+    val calendar: TrainingCalendar? = null,
+    /** True until the first data arrives, so empty-state hints don't flash on launch. */
+    val isLoading: Boolean = true,
 )
 
 enum class SyncLabel { LOCAL_ONLY, SYNCING, SYNCED, FAILED }

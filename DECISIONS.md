@@ -238,3 +238,16 @@ backend later with minimal change.
 - Values stay in kg in state and are converted when formatted, like everywhere else.
 - The History tab lists every session (date, workout name, sets) under the chart. Sessions of
   the workout in progress are included once that exercise is logged.
+
+## Milestone 10 (Phase 2): consistency on Home
+
+- **Weekly streak, not daily.** Lifters rest between sessions, so a day streak would break on
+  every rest day. The streak counts consecutive Monday-weeks that reached the weekly goal,
+  ending last week, plus this week as soon as its goal is met (so it never drops to 0
+  mid-week just because the week isn't over).
+- **Weekly goal** (workouts per week, 1–7, default 3) lives in Settings and drives the ring.
+- **Heatmap** shows the last 16 weeks (Monday-first columns, ending today), shaded by working
+  sets that day: rest / under 10 / under 20 / 20+. Drawn on one Canvas (112 cells) instead of
+  112 composables. Screen readers get "Trained on N of the last M days".
+- The card only appears once there's a finished workout. Home now waits for its first data
+  before showing empty-state hints, so "Create a routine" no longer flashes on launch.

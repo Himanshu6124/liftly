@@ -18,4 +18,14 @@
     <string name="home_new_routine">New routine</string>
     <string name="home_last_workout">Last workout</string>
     <string name="home_last_workout_detail">%1$s · %2$d/%3$d exercises · %4$s</string>
+    <string name="home_this_week">This week</string>
+    <string name="home_goal_progress">%1$d/%2$d</string>
+    <string name="home_goal_description">%1$d of %2$d workouts this week</string>
+    <string name="home_goal_met">Weekly goal reached</string>
+    <string name="home_goal_left">%1$d more to reach your goal</string>
+    <string name="home_streak">%1$d-week streak</string>
+    <string name="home_streak_none">Hit your goal this week to start a streak</string>
+    <string name="home_heatmap_description">Trained on %1$d of the last %2$d days</string>
+    <string name="home_heatmap_legend_less">Less</string>
+    <string name="home_heatmap_legend_more">More</string>
 </resources>

@@ -12,6 +12,8 @@ import com.himanshu.liftly.core.domain.sync.SyncState
 import com.himanshu.liftly.core.domain.usecase.NextRoutine
 import com.himanshu.liftly.core.domain.usecase.StartRoutineUseCase
 import com.himanshu.liftly.core.domain.usecase.StartWorkoutUseCase
+import com.himanshu.liftly.core.domain.util.TimeProvider
+import com.himanshu.liftly.core.domain.util.TrainingCalendar
 import com.himanshu.liftly.feature.routines.list.toRow
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.channels.Channel
@@ -30,10 +32,11 @@ class HomeViewModel(
     settings: SettingsRepository,
     private val startWorkout: StartWorkoutUseCase,
     private val startRoutine: StartRoutineUseCase,
+    private val time: TimeProvider,
 ) : ViewModel() {
     private var latestRoutines: List<RoutineWithExercises> = emptyList()
 
-    val state: StateFlow<HomeUiState> = combine(
+    private val base = combine(
         syncController.state,
         workouts.observeActiveWorkout(),
         routines.observeRoutines(),
@@ -57,7 +60,12 @@ class HomeViewModel(
                 LastWorkoutCard(l.workout.name, l.workout.startedAt, l.workout.endedAt, l.exerciseCount, l.loggedCount, l.volumeKg)
             },
             unit = s.weightUnit,
+            isLoading = false,
         )
+    }
+
+    val state: StateFlow<HomeUiState> = combine(base, workouts.observeHistory(), settings.settings) { ui, history, s ->
+        ui.copy(calendar = history.takeIf { it.isNotEmpty() }?.let { TrainingCalendar.from(it, s.weeklyGoal, time.now()) })
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 
     private val _effects = Channel<HomeEffect>(Channel.BUFFERED)

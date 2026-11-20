@@ -35,6 +35,7 @@ class DataStoreSettingsRepository(private val store: DataStore<Preferences>) : S
             themeMode = p[Keys.THEME]?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() } ?: defaults.themeMode,
             dynamicColor = p[Keys.DYNAMIC_COLOR] ?: defaults.dynamicColor,
             openNextExerciseAutomatically = p[Keys.AUTO_OPEN_NEXT] ?: defaults.openNextExerciseAutomatically,
+            weeklyGoal = p[Keys.WEEKLY_GOAL] ?: defaults.weeklyGoal,
         )
     }
 
@@ -48,6 +49,7 @@ class DataStoreSettingsRepository(private val store: DataStore<Preferences>) : S
             p[Keys.THEME] = next.themeMode.name
             p[Keys.DYNAMIC_COLOR] = next.dynamicColor
             p[Keys.AUTO_OPEN_NEXT] = next.openNextExerciseAutomatically
+            p[Keys.WEEKLY_GOAL] = next.weeklyGoal
         }
     }
 
@@ -65,6 +67,7 @@ class DataStoreSettingsRepository(private val store: DataStore<Preferences>) : S
         val THEME = stringPreferencesKey("theme_mode")
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
         val AUTO_OPEN_NEXT = booleanPreferencesKey("open_next_automatically")
+        val WEEKLY_GOAL = intPreferencesKey("weekly_goal")
         val SEED_VERSION = intPreferencesKey("seed_version")
     }
 }

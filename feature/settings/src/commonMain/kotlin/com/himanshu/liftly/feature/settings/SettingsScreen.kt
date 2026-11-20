@@ -44,6 +44,8 @@ import com.himanshu.liftly.feature.settings.resources.settings_auto_open_hint
 import com.himanshu.liftly.feature.settings.resources.settings_default_sets
 import com.himanshu.liftly.feature.settings.resources.settings_default_sets_hint
 import com.himanshu.liftly.feature.settings.resources.settings_dynamic_color
+import com.himanshu.liftly.feature.settings.resources.settings_goal_down
+import com.himanshu.liftly.feature.settings.resources.settings_goal_up
 import com.himanshu.liftly.feature.settings.resources.settings_increment
 import com.himanshu.liftly.feature.settings.resources.settings_kg
 import com.himanshu.liftly.feature.settings.resources.settings_lb
@@ -55,6 +57,8 @@ import com.himanshu.liftly.feature.settings.resources.settings_theme_light
 import com.himanshu.liftly.feature.settings.resources.settings_theme_system
 import com.himanshu.liftly.feature.settings.resources.settings_units
 import com.himanshu.liftly.feature.settings.resources.settings_version
+import com.himanshu.liftly.feature.settings.resources.settings_weekly_goal
+import com.himanshu.liftly.feature.settings.resources.settings_weekly_goal_hint
 import com.himanshu.liftly.feature.settings.resources.settings_workout
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -78,6 +82,7 @@ class SettingsViewModel(private val repository: SettingsRepository) : ViewModel(
         val KG_STEPS = listOf(1.0, 1.25, 2.5, 5.0)
         val LB_STEPS = listOf(2.5, 5.0, 10.0)
         const val MAX_DEFAULT_SETS = 10
+        const val MAX_WEEKLY_GOAL = 7
         const val APP_VERSION = "1.0.0"
     }
 }
@@ -151,6 +156,25 @@ fun SettingsContent(s: UserSettings, update: ((UserSettings) -> UserSettings) ->
                 incrementDescription = stringResource(Res.string.settings_sets_up),
                 canDecrement = s.defaultSetCount > 1,
                 canIncrement = s.defaultSetCount < SettingsViewModel.MAX_DEFAULT_SETS,
+            )
+        }
+        Row(Modifier.padding(horizontal = spacing.md), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(Res.string.settings_weekly_goal), style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    stringResource(Res.string.settings_weekly_goal_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            NumberStepper(
+                value = s.weeklyGoal.toString(),
+                onDecrement = { update { it.copy(weeklyGoal = (it.weeklyGoal - 1).coerceAtLeast(1)) } },
+                onIncrement = { update { it.copy(weeklyGoal = (it.weeklyGoal + 1).coerceAtMost(SettingsViewModel.MAX_WEEKLY_GOAL)) } },
+                decrementDescription = stringResource(Res.string.settings_goal_down),
+                incrementDescription = stringResource(Res.string.settings_goal_up),
+                canDecrement = s.weeklyGoal > 1,
+                canIncrement = s.weeklyGoal < SettingsViewModel.MAX_WEEKLY_GOAL,
             )
         }
         SwitchRow(

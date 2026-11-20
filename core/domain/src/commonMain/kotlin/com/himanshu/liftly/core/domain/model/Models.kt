@@ -102,4 +102,6 @@ data class UserSettings(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val dynamicColor: Boolean = true,
     val openNextExerciseAutomatically: Boolean = false,
+    /** Workouts per week the user aims for (Home goal ring and weekly streak). */
+    val weeklyGoal: Int = 3,
 )

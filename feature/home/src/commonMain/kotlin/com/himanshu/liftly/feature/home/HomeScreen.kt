@@ -102,6 +102,7 @@ fun HomeContent(
                 state.nextRoutine != null -> NextRoutineCard(state.nextRoutine) { onIntent(HomeIntent.StartRoutine(state.nextRoutine.id)) }
             }
         }
+        if (state.isLoading) return@LazyColumn
         if (state.inProgress == null) {
             item(key = "empty") {
                 OutlinedButton(onClick = {
@@ -111,6 +112,7 @@ fun HomeContent(
                 }
             }
         }
+        state.calendar?.let { cal -> item(key = "consistency") { ConsistencyCard(cal) } }
         state.lastWorkout?.let { last -> item(key = "last") { LastWorkout(last, state) } }
 
         item(key = "routines-header") { SectionHeader(stringResource(Res.string.home_your_routines), Modifier.padding(top = spacing.sm)) }

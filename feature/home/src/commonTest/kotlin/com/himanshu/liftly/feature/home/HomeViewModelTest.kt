@@ -115,6 +115,7 @@ class HomeViewModelTest {
             settings,
             StartWorkoutUseCase(workouts),
             com.himanshu.liftly.core.domain.usecase.StartRoutineUseCase(StartWorkoutUseCase(workouts)),
+            com.himanshu.liftly.core.domain.util.TimeProvider { kotlin.time.Instant.fromEpochMilliseconds(0) },
         )
         vm.state.test {
             assertEquals(SyncLabel.LOCAL_ONLY, awaitItem().syncLabel)
@@ -132,6 +133,7 @@ class HomeViewModelTest {
             settings,
             StartWorkoutUseCase(workouts),
             com.himanshu.liftly.core.domain.usecase.StartRoutineUseCase(StartWorkoutUseCase(workouts)),
+            com.himanshu.liftly.core.domain.util.TimeProvider { kotlin.time.Instant.fromEpochMilliseconds(0) },
         )
         vm.effects.test {
             vm.onIntent(HomeIntent.StartEmptyWorkout)
