@@ -100,10 +100,23 @@ class FakeWorkoutRepository(
     }
 
     val logged = mutableListOf<Pair<String, List<DraftSet>>>()
+    var lastNotes: String? = null
 
-    override suspend fun logSets(workoutExerciseId: String, sets: List<DraftSet>, inputMode: InputMode): LogSnapshot {
+    override suspend fun getSessionHistory(exerciseId: String, excludeWorkoutExerciseId: String): List<List<WorkoutSet>> =
+        lastSessions[exerciseId.removePrefix("ex-")]?.let { listOf(it) }.orEmpty()
+
+    override fun observeRecords(exerciseId: String) = flowOf(emptyList<com.himanshu.liftly.core.domain.model.PersonalRecord>())
+
+    override suspend fun logSets(
+        workoutExerciseId: String,
+        sets: List<DraftSet>,
+        inputMode: InputMode,
+        notes: String?,
+        personalRecords: List<com.himanshu.liftly.core.domain.usecase.PrHit>,
+    ): LogSnapshot {
         val before = requireNotNull(find(workoutExerciseId))
         logged += workoutExerciseId to sets
+        lastNotes = notes
         edit { list ->
             list.map { e ->
                 if (e.workoutExercise.id != workoutExerciseId) return@map e

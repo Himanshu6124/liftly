@@ -27,6 +27,8 @@ data class ExerciseCardUi(
     val summary: String? = null,
     /** Pending: "77.5 kg × 8, 8, 8, 7" from the last session. */
     val lastHint: String? = null,
+    /** Set a personal record in this workout. */
+    val hasPr: Boolean = false,
 )
 
 @Immutable
@@ -62,7 +64,11 @@ sealed interface ActiveWorkoutIntent {
     data object Undo : ActiveWorkoutIntent
     data class OpenLogSheet(val workoutExerciseId: String) : ActiveWorkoutIntent
     data object CloseLogSheet : ActiveWorkoutIntent
-    data class Logged(val workoutExerciseId: String, val undo: com.himanshu.liftly.core.domain.model.LogSnapshot) : ActiveWorkoutIntent
+    data class Logged(
+        val workoutExerciseId: String,
+        val undo: com.himanshu.liftly.core.domain.model.LogSnapshot,
+        val newRecord: Boolean = false,
+    ) : ActiveWorkoutIntent
 
     /** Swipe right: log exactly the pre-filled values, zero extra taps. */
     data class QuickLog(val workoutExerciseId: String) : ActiveWorkoutIntent
@@ -106,6 +112,7 @@ internal fun ActiveWorkout.toUiState(
             status = e.workoutExercise.status,
             summary = if (e.workoutExercise.status == ExerciseStatus.LOGGED) SetFormatter.summary(e.sets.toDraftSets(), unit) else null,
             lastHint = lastSets[e.exercise.id]?.let { SetFormatter.hint(it, unit) },
+            hasPr = e.personalRecords.isNotEmpty(),
         )
     }.toImmutableList(),
 )

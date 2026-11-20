@@ -1,9 +1,11 @@
 package com.himanshu.liftly.core.data.repository
 
+import com.himanshu.liftly.core.data.db.entity.PersonalRecordEntity
 import com.himanshu.liftly.core.data.db.entity.SyncMeta
 import com.himanshu.liftly.core.data.db.entity.WorkoutEntity
 import com.himanshu.liftly.core.data.db.entity.WorkoutExerciseEntity
 import com.himanshu.liftly.core.data.db.entity.WorkoutSetEntity
+import com.himanshu.liftly.core.domain.model.PersonalRecord
 import com.himanshu.liftly.core.domain.model.Workout
 import com.himanshu.liftly.core.domain.model.WorkoutExercise
 import com.himanshu.liftly.core.domain.model.WorkoutSet
@@ -42,6 +44,15 @@ internal fun WorkoutSetEntity.toDomain() = WorkoutSet(
     distanceM = distanceM,
     rpe = rpe,
     setType = setType,
+)
+
+internal fun PersonalRecordEntity.toDomain() = PersonalRecord(
+    id = id,
+    exerciseId = exerciseId,
+    type = type,
+    value = value,
+    workoutSetId = workoutSetId,
+    achievedAt = achievedAt.toInstant(),
 )
 
 internal fun WorkoutExercise.toEntity(sync: SyncMeta) = WorkoutExerciseEntity(

@@ -32,11 +32,19 @@ class SetFormatterTest {
     fun hintAndDecimals() {
         assertEquals("77.5 kg × 8, 8, 8, 7", SetFormatter.hint(sets(77.5 to 8, 77.5 to 8, 77.5 to 8, 77.5 to 7), WeightUnit.KG))
         assertNull(SetFormatter.hint(sets(null to null, null to null), WeightUnit.KG))
+        assertNull(SetFormatter.hint(emptyList(), WeightUnit.KG), "no last session → no hint")
     }
 
     @Test
     fun poundsAreConvertedForDisplay() {
         assertEquals("225 lb", SetFormatter.weight(102.0582, WeightUnit.LB))
         assertEquals("100 kg", SetFormatter.weight(100.0, WeightUnit.KG))
+    }
+
+    @Test
+    fun timeAndDistanceSummaries() {
+        assertEquals("3 × 1:00", SetFormatter.summary(List(3) { DraftSet(durationSec = 60) }, WeightUnit.KG))
+        assertEquals("1:00, 0:45", SetFormatter.summary(listOf(DraftSet(durationSec = 60), DraftSet(durationSec = 45)), WeightUnit.KG))
+        assertEquals("5000 m · 25:00", SetFormatter.summary(listOf(DraftSet(distanceM = 5000.0, durationSec = 1500)), WeightUnit.LB))
     }
 }

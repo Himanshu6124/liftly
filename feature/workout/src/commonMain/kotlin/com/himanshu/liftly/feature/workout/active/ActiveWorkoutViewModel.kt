@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.himanshu.liftly.core.domain.model.DraftSet
 import com.himanshu.liftly.core.domain.model.ExerciseStatus
-import com.himanshu.liftly.core.domain.model.LogSnapshot
 import com.himanshu.liftly.core.domain.model.UserSettings
 import com.himanshu.liftly.core.domain.repository.SettingsRepository
 import com.himanshu.liftly.core.domain.repository.WorkoutRepository
@@ -134,18 +133,18 @@ class ActiveWorkoutViewModel(
     private fun quickLog(workoutExerciseId: String) {
         val card = _state.value.cards.find { it.workoutExerciseId == workoutExerciseId } ?: return
         viewModelScope.launch {
-            val snapshot: LogSnapshot? = appScope.async {
+            val saved: LogExerciseSetsUseCase.Result.Saved? = appScope.async {
                 val data = workouts.getLogSheetData(workoutExerciseId) ?: return@async null
                 val sets = prefill(data, userSettings.defaultSetCount).sets
                 if (sets.none { it.reps != null || it.durationSec != null || it.distanceM != null }) return@async null
-                (logSets(workoutExerciseId, sets, data.workoutExercise.inputMode) as? LogExerciseSetsUseCase.Result.Saved)?.undo
+                logSets(workoutExerciseId, sets, data.workoutExercise.inputMode) as? LogExerciseSetsUseCase.Result.Saved
             }.await()
-            if (snapshot == null) {
+            if (saved == null) {
                 _state.update { it.copy(logSheetFor = workoutExerciseId) }
                 return@launch
             }
-            haptics.light()
-            undo = { workouts.restoreLog(snapshot) }
+            if (saved.records.isNotEmpty()) haptics.success() else haptics.light()
+            undo = { workouts.restoreLog(saved.undo) }
             _effects.send(ActiveWorkoutEffect.Undoable(ActiveWorkoutEffect.Undoable.Kind.LOGGED, card.name))
             advanceFrom(workoutExerciseId)
         }

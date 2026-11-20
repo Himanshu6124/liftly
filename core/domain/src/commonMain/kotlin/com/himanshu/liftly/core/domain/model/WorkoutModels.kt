@@ -7,6 +7,8 @@ data class ActiveWorkoutExercise(
     val workoutExercise: WorkoutExercise,
     val exercise: Exercise,
     val sets: List<WorkoutSet>,
+    /** Records set by this exercise in this workout (drives the 🏆 badge). */
+    val personalRecords: List<PersonalRecord> = emptyList(),
 )
 
 data class ActiveWorkout(

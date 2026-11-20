@@ -6,8 +6,10 @@ import androidx.room.Transaction
 import androidx.room.Upsert
 import com.himanshu.liftly.core.data.db.entity.ExerciseEntity
 import com.himanshu.liftly.core.data.db.entity.PersonalRecordEntity
+import com.himanshu.liftly.core.data.db.entity.PersonalRecordWithWorkoutExercise
 import com.himanshu.liftly.core.data.db.entity.RoutineEntity
 import com.himanshu.liftly.core.data.db.entity.RoutineExerciseEntity
+import com.himanshu.liftly.core.data.db.entity.SetWithDate
 import com.himanshu.liftly.core.data.db.entity.SyncCursorEntity
 import com.himanshu.liftly.core.data.db.entity.WorkoutEntity
 import com.himanshu.liftly.core.data.db.entity.WorkoutExerciseEntity
@@ -123,6 +125,16 @@ interface WorkoutExerciseDao : SyncDao<WorkoutExerciseEntity> {
     )
     suspend fun getLastLogged(exerciseId: String, excludeWorkoutId: String): WorkoutExerciseEntity?
 
+    @Query(
+        """
+        SELECT we.* FROM workout_exercises we
+        JOIN workouts w ON w.id = we.workoutId
+        WHERE we.exerciseId = :exerciseId AND we.id != :excludeId AND we.status = 'LOGGED'
+          AND we.deletedAt IS NULL AND w.deletedAt IS NULL
+        """,
+    )
+    suspend fun getLoggedForExercise(exerciseId: String, excludeId: String): List<WorkoutExerciseEntity>
+
     @Query("SELECT COALESCE(MAX(orderIndex), -1) FROM workout_exercises WHERE workoutId = :workoutId AND deletedAt IS NULL")
     suspend fun maxOrderIndex(workoutId: String): Int
 
@@ -154,6 +166,22 @@ interface WorkoutSetDao : SyncDao<WorkoutSetEntity> {
     @Query("SELECT * FROM workout_sets WHERE workoutExerciseId = :workoutExerciseId AND deletedAt IS NULL ORDER BY orderIndex")
     suspend fun getForWorkoutExercise(workoutExerciseId: String): List<WorkoutSetEntity>
 
+    @Query("SELECT * FROM workout_sets WHERE workoutExerciseId IN (:ids) AND deletedAt IS NULL ORDER BY orderIndex")
+    suspend fun getForWorkoutExercises(ids: List<String>): List<WorkoutSetEntity>
+
+    /** Every logged set of an exercise with its workout's start time (for records and charts). */
+    @Query(
+        """
+        SELECT s.*, w.startedAt AS performedAt FROM workout_sets s
+        JOIN workout_exercises we ON we.id = s.workoutExerciseId
+        JOIN workouts w ON w.id = we.workoutId
+        WHERE we.exerciseId = :exerciseId AND we.status = 'LOGGED'
+          AND s.deletedAt IS NULL AND we.deletedAt IS NULL AND w.deletedAt IS NULL
+        ORDER BY w.startedAt
+        """,
+    )
+    fun observeLoggedForExercise(exerciseId: String): Flow<List<SetWithDate>>
+
     @Query(
         """
         SELECT s.* FROM workout_sets s
@@ -172,6 +200,29 @@ interface PersonalRecordDao : SyncDao<PersonalRecordEntity> {
 
     @Query("SELECT * FROM personal_records WHERE id IN (:ids)")
     override suspend fun getByIdsIncludingDeleted(ids: List<String>): List<PersonalRecordEntity>
+
+    @Query("SELECT * FROM personal_records WHERE workoutSetId IN (:setIds) AND deletedAt IS NULL")
+    suspend fun getForSets(setIds: List<String>): List<PersonalRecordEntity>
+
+    @Query(
+        """
+        SELECT pr.*, s.workoutExerciseId AS workoutExerciseId FROM personal_records pr
+        JOIN workout_sets s ON s.id = pr.workoutSetId
+        JOIN workout_exercises we ON we.id = s.workoutExerciseId
+        WHERE we.workoutId = :workoutId AND pr.deletedAt IS NULL AND s.deletedAt IS NULL AND we.deletedAt IS NULL
+        """,
+    )
+    fun observeForWorkout(workoutId: String): Flow<List<PersonalRecordWithWorkoutExercise>>
+
+    /** Records whose set still exists, for one exercise. */
+    @Query(
+        """
+        SELECT pr.* FROM personal_records pr
+        JOIN workout_sets s ON s.id = pr.workoutSetId
+        WHERE pr.exerciseId = :exerciseId AND pr.deletedAt IS NULL AND s.deletedAt IS NULL
+        """,
+    )
+    fun observeForExercise(exerciseId: String): Flow<List<PersonalRecordEntity>>
 }
 
 @Dao

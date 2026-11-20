@@ -8,8 +8,11 @@ import com.himanshu.liftly.core.domain.model.InputMode
 import com.himanshu.liftly.core.domain.model.LastSession
 import com.himanshu.liftly.core.domain.model.LogSheetData
 import com.himanshu.liftly.core.domain.model.LogSnapshot
+import com.himanshu.liftly.core.domain.model.PersonalRecord
 import com.himanshu.liftly.core.domain.model.RemovedWorkoutExercise
 import com.himanshu.liftly.core.domain.model.Workout
+import com.himanshu.liftly.core.domain.model.WorkoutSet
+import com.himanshu.liftly.core.domain.usecase.PrHit
 import kotlinx.coroutines.flow.Flow
 
 interface WorkoutRepository {
@@ -50,7 +53,19 @@ interface WorkoutRepository {
      * In one transaction: replaces the sets, marks the exercise LOGGED (+ loggedAt), remembers the input mode.
      * Returns the previous state so the change can be undone.
      */
-    suspend fun logSets(workoutExerciseId: EntityId, sets: List<DraftSet>, inputMode: InputMode): LogSnapshot
+    suspend fun logSets(
+        workoutExerciseId: EntityId,
+        sets: List<DraftSet>,
+        inputMode: InputMode,
+        notes: String? = null,
+        personalRecords: List<PrHit> = emptyList(),
+    ): LogSnapshot
+
+    /** Every logged session of [exerciseId] except [excludeWorkoutExerciseId], one list of sets per session. */
+    suspend fun getSessionHistory(exerciseId: EntityId, excludeWorkoutExerciseId: EntityId): List<List<WorkoutSet>>
+
+    /** Current best per record type for one exercise. */
+    fun observeRecords(exerciseId: EntityId): Flow<List<PersonalRecord>>
 
     /** Puts a workout exercise back exactly as captured by [logSets]. */
     suspend fun restoreLog(snapshot: LogSnapshot)

@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -49,6 +50,9 @@ import com.himanshu.liftly.core.designsystem.component.label
 import com.himanshu.liftly.core.designsystem.component.muscleIntensity
 import com.himanshu.liftly.core.designsystem.theme.LiftlyColors
 import com.himanshu.liftly.core.designsystem.theme.LiftlyTheme
+import com.himanshu.liftly.core.domain.model.PrType
+import com.himanshu.liftly.core.domain.model.WeightUnit
+import com.himanshu.liftly.core.domain.util.SetFormatter
 import com.himanshu.liftly.feature.exercises.resources.Res
 import com.himanshu.liftly.feature.exercises.resources.detail_back
 import com.himanshu.liftly.feature.exercises.resources.detail_cues
@@ -71,6 +75,13 @@ import com.himanshu.liftly.feature.exercises.resources.detail_tab_records
 import com.himanshu.liftly.feature.exercises.resources.detail_watch_video
 import com.himanshu.liftly.feature.exercises.resources.exercises_favorite_add
 import com.himanshu.liftly.feature.exercises.resources.exercises_favorite_remove
+import com.himanshu.liftly.feature.exercises.resources.record_est_1rm
+import com.himanshu.liftly.feature.exercises.resources.record_max_reps
+import com.himanshu.liftly.feature.exercises.resources.record_max_volume
+import com.himanshu.liftly.feature.exercises.resources.record_max_weight
+import com.himanshu.liftly.feature.exercises.resources.record_reps_value
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -151,16 +162,57 @@ fun ExerciseDetailContent(
                             stringResource(Res.string.detail_history_empty_message),
                         )
 
-                        DetailTab.RECORDS -> EmptyState(
-                            Icons.Filled.Star,
-                            stringResource(Res.string.detail_records_empty_title),
-                            stringResource(Res.string.detail_records_empty_message),
-                        )
+                        DetailTab.RECORDS -> if (state.records.isEmpty()) {
+                            EmptyState(
+                                Icons.Filled.Star,
+                                stringResource(Res.string.detail_records_empty_title),
+                                stringResource(Res.string.detail_records_empty_message),
+                            )
+                        } else {
+                            RecordsTab(state.records, state.unit)
+                        }
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun RecordsTab(records: List<RecordUi>, unit: WeightUnit) {
+    val spacing = LiftlyTheme.spacing
+    LazyColumn(contentPadding = PaddingValues(spacing.md), verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
+        items(records.size, key = { records[it].type.name }) { i ->
+            val r = records[i]
+            ElevatedCard(Modifier.fillMaxWidth()) {
+                Row(Modifier.padding(spacing.md), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(r.type.title()), style = MaterialTheme.typography.titleSmall)
+                        Text(
+                            r.achievedAt.toLocalDateTime(TimeZone.currentSystemDefault()).date.toString(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Text(
+                        when (r.type) {
+                            PrType.MAX_REPS -> stringResource(Res.string.record_reps_value, r.value.toLong().toString())
+                            else -> SetFormatter.weight(r.value, unit)
+                        },
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun PrType.title() = when (this) {
+    PrType.EST_1RM -> Res.string.record_est_1rm
+    PrType.MAX_WEIGHT -> Res.string.record_max_weight
+    PrType.MAX_REPS -> Res.string.record_max_reps
+    PrType.MAX_VOLUME -> Res.string.record_max_volume
 }
 
 private fun DetailTab.title() = when (this) {

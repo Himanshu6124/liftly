@@ -5,8 +5,11 @@ import com.himanshu.liftly.core.domain.model.Difficulty
 import com.himanshu.liftly.core.domain.model.Equipment
 import com.himanshu.liftly.core.domain.model.Exercise
 import com.himanshu.liftly.core.domain.model.Muscle
+import com.himanshu.liftly.core.domain.model.PrType
+import com.himanshu.liftly.core.domain.model.WeightUnit
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
+import kotlin.time.Instant
 
 @Immutable
 data class ExerciseDetailUi(
@@ -27,11 +30,16 @@ data class ExerciseDetailUi(
 enum class DetailTab { FORM, HISTORY, RECORDS }
 
 @Immutable
+data class RecordUi(val type: PrType, val value: Double, val achievedAt: Instant)
+
+@Immutable
 data class ExerciseDetailUiState(
     val exercise: ExerciseDetailUi? = null,
     /** Local draft so typing is never interrupted by DB round-trips. */
     val noteDraft: String = "",
     val tab: DetailTab = DetailTab.FORM,
+    val records: ImmutableList<RecordUi> = kotlinx.collections.immutable.persistentListOf(),
+    val unit: WeightUnit = WeightUnit.KG,
     val isLoading: Boolean = true,
 ) {
     val notFound: Boolean get() = !isLoading && exercise == null

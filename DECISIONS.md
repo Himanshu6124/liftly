@@ -142,3 +142,27 @@ backend later with minimal change.
   enabled, its sheet opens instead. A light haptic confirms each log.
 - **Validation:** reps 1–100, weight 0–1000 kg, at most 20 sets; Save stays disabled while
   invalid. Empty sets are dropped on save.
+
+## Milestone 5: complete log sheet and personal records
+
+- **PR rules** (`DetectPersonalRecordsUseCase`, pure): est. 1RM (Epley, reps ≤ 12), heaviest weight,
+  most reps in a set, best session volume. Working sets only (warm-ups excluded on both sides);
+  a tie is not a PR; the very first session of an exercise sets no PRs (nothing to beat).
+  Detection runs against every *other* session, so editing a session down removes its PRs.
+- **PR rows are written in the same transaction as the sets** and deleted with them (edit,
+  remove exercise, discard workout, undo restores them). They drive the 🏆 badge on cards and
+  a "success" haptic instead of the light one.
+- **The Records tab is computed from logged sets**, not from PR rows, so it shows correct bests
+  even after the first session and after edits/deletions. PR rows remain the "when was it
+  broken" log for history/charts later.
+- **Per-set mode** ("Vary weight per set") converts both ways: rows ← one weight + reps list,
+  and back to the heaviest weight + reps list. New rows copy the previous row. Working set types
+  cycle Normal → Drop → Failure by tapping the set number.
+- **Warm-ups are separate rows** above working sets in both modes (Add warm-up set suggests
+  40/60/80 % of the working weight × 10/5/3, rounded to the increment). They're saved as
+  `WARMUP` and excluded from summaries, volume and PRs.
+- **RPE:** one value for all sets or one per set ("8 8.5 9") in uniform mode; an RPE column per
+  row in per-set mode. Shown under "More" with warm-ups and the exercise note.
+- **TIME exercises** take one duration per set ("1:00 0:45", "60x3", "1.30" for keypads without
+  ':'). **DISTANCE exercises** take metres + optional time as one entry. Metres avoid a km/mi
+  setting for now; summaries read "5000 m · 25:00".

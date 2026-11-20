@@ -18,6 +18,7 @@ data class LastSession(
     val performedAt: Instant,
     val inputMode: InputMode,
     val sets: List<WorkoutSet>,
+    val notes: String? = null,
 )
 
 data class RoutineTarget(val sets: Int, val reps: Int?, val weightKg: Double?)
@@ -46,4 +47,6 @@ data class LogSnapshot(
     val loggedAt: Instant?,
     val inputMode: InputMode,
     val sets: List<WorkoutSet>,
+    val notes: String? = null,
+    val personalRecords: List<PersonalRecord> = emptyList(),
 )

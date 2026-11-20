@@ -234,7 +234,7 @@ fun ActiveWorkoutContent(
     state.logSheetFor?.let { id ->
         LogSheet(
             workoutExerciseId = id,
-            onSaved = { _, _, undo -> onIntent(ActiveWorkoutIntent.Logged(id, undo)) },
+            onSaved = { _, records, undo -> onIntent(ActiveWorkoutIntent.Logged(id, undo, records.isNotEmpty())) },
             onDismiss = { onIntent(ActiveWorkoutIntent.CloseLogSheet) },
             onFormGuide = { exerciseId -> previewId = exerciseId },
         )

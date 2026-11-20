@@ -53,4 +53,9 @@
 
     <string name="preview_see_full_guide">See full guide</string>
     <string name="preview_no_guide">No form guide for custom exercises yet. Add your own note in the full guide.</string>
+    <string name="record_est_1rm">Estimated 1RM</string>
+    <string name="record_max_weight">Heaviest weight</string>
+    <string name="record_max_reps">Most reps in a set</string>
+    <string name="record_max_volume">Best session volume</string>
+    <string name="record_reps_value">%1$s reps</string>
 </resources>

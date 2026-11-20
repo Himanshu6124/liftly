@@ -32,7 +32,14 @@ class ExerciseDetailViewModelTest {
     @AfterTest
     fun tearDown() = Dispatchers.resetMain()
 
-    private fun vm() = ExerciseDetailViewModel("bench_press", repo, AppScope(CoroutineScope(dispatcher)), urls)
+    private fun vm() = ExerciseDetailViewModel(
+        "bench_press",
+        repo,
+        AppScope(CoroutineScope(dispatcher)),
+        urls,
+        FakeRecentWorkoutRepository(),
+        FakeSettings(),
+    )
 
     @Test
     fun loadsExerciseAndStoredNote() = runTest(dispatcher) {
@@ -75,7 +82,8 @@ class ExerciseDetailViewModelTest {
 
     @Test
     fun unknownExerciseIsNotFound() = runTest(dispatcher) {
-        val vm = ExerciseDetailViewModel("nope", repo, AppScope(CoroutineScope(dispatcher)), urls)
+        val vm =
+            ExerciseDetailViewModel("nope", repo, AppScope(CoroutineScope(dispatcher)), urls, FakeRecentWorkoutRepository(), FakeSettings())
         advanceUntilIdle()
         assertTrue(vm.state.value.notFound)
     }

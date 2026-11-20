@@ -31,6 +31,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.himanshu.liftly.core.designsystem.component.ExerciseThumbnail
+import com.himanshu.liftly.core.designsystem.component.PrBadge
 import com.himanshu.liftly.core.designsystem.component.StatusIcon
 import com.himanshu.liftly.core.designsystem.component.label
 import com.himanshu.liftly.core.designsystem.theme.LiftlyTheme
@@ -41,6 +42,7 @@ import com.himanshu.liftly.feature.workout.resources.card_last
 import com.himanshu.liftly.feature.workout.resources.card_move_down
 import com.himanshu.liftly.feature.workout.resources.card_move_up
 import com.himanshu.liftly.feature.workout.resources.card_options
+import com.himanshu.liftly.feature.workout.resources.card_pr
 import com.himanshu.liftly.feature.workout.resources.card_quick_log
 import com.himanshu.liftly.feature.workout.resources.card_remove
 import com.himanshu.liftly.feature.workout.resources.card_skip
@@ -117,7 +119,15 @@ internal fun ExerciseCard(
             StatusIcon(card.status, statusLabel, Modifier.padding(start = spacing.xs))
             ExerciseThumbnail(card.imagePaths, contentDescription = null, size = 52.dp)
             Column(Modifier.weight(1f)) {
-                Text(card.name, style = MaterialTheme.typography.titleMedium, maxLines = 2)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
+                    Text(
+                        card.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 2,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    if (card.hasPr) PrBadge(stringResource(Res.string.card_pr))
+                }
                 val logged = card.status == ExerciseStatus.LOGGED
                 Text(
                     when {

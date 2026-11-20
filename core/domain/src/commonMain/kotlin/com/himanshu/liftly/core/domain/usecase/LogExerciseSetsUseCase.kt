@@ -5,22 +5,40 @@ import com.himanshu.liftly.core.domain.model.EntityId
 import com.himanshu.liftly.core.domain.model.InputMode
 import com.himanshu.liftly.core.domain.model.LogSnapshot
 import com.himanshu.liftly.core.domain.repository.WorkoutRepository
+import com.himanshu.liftly.core.domain.util.toDraftSets
 
 /**
  * Saves all sets of one exercise at once (the Batch Log Sheet's Save, or a swipe quick-log).
  * Empty sets are dropped; anything out of range is rejected before touching the database.
- * The repository writes everything in one transaction. PR detection hooks in here (Milestone 5).
+ * Personal records are detected against every *other* session of the exercise and written in the
+ * same transaction as the sets, so an edit that lowers the numbers also removes its PRs.
  */
-class LogExerciseSetsUseCase(private val workouts: WorkoutRepository) {
+class LogExerciseSetsUseCase(
+    private val workouts: WorkoutRepository,
+    private val detectRecords: DetectPersonalRecordsUseCase = DetectPersonalRecordsUseCase(),
+) {
     sealed interface Result {
-        data class Saved(val undo: LogSnapshot) : Result
+        data class Saved(val undo: LogSnapshot, val records: List<PrHit>) : Result
         data class Invalid(val error: SetValidation.Error) : Result
     }
 
-    suspend operator fun invoke(workoutExerciseId: EntityId, sets: List<DraftSet>, inputMode: InputMode): Result {
+    suspend operator fun invoke(
+        workoutExerciseId: EntityId,
+        sets: List<DraftSet>,
+        inputMode: InputMode,
+        notes: String? = null,
+    ): Result {
         val toSave = sets.filterNot(SetValidation::isEmpty)
         SetValidation.validate(toSave)?.let { return Result.Invalid(it) }
-        return Result.Saved(workouts.logSets(workoutExerciseId, toSave, inputMode))
+        val data = workouts.getLogSheetData(workoutExerciseId)
+        val records = if (data == null) {
+            emptyList()
+        } else {
+            val history = workouts.getSessionHistory(data.exercise.id, workoutExerciseId).map { it.toDraftSets() }
+            detectRecords(SessionHistory(history), toSave)
+        }
+        val undo = workouts.logSets(workoutExerciseId, toSave, inputMode, notes, records)
+        return Result.Saved(undo, records)
     }
 }
 

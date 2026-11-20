@@ -77,8 +77,25 @@ class FakeRecentWorkoutRepository(recent: List<String> = emptyList()) : com.hima
         workoutExerciseId: String,
         sets: List<com.himanshu.liftly.core.domain.model.DraftSet>,
         inputMode: com.himanshu.liftly.core.domain.model.InputMode,
+        notes: String?,
+        personalRecords: List<com.himanshu.liftly.core.domain.usecase.PrHit>,
     ): com.himanshu.liftly.core.domain.model.LogSnapshot = error("not used")
+    override suspend fun getSessionHistory(exerciseId: String, excludeWorkoutExerciseId: String) =
+        emptyList<List<com.himanshu.liftly.core.domain.model.WorkoutSet>>()
+    override fun observeRecords(exerciseId: String) =
+        kotlinx.coroutines.flow.flowOf(emptyList<com.himanshu.liftly.core.domain.model.PersonalRecord>())
     override suspend fun restoreLog(snapshot: com.himanshu.liftly.core.domain.model.LogSnapshot) = Unit
     override suspend fun finish(workoutId: String) = Unit
     override suspend fun discard(workoutId: String) = Unit
+}
+
+class FakeSettings : com.himanshu.liftly.core.domain.repository.SettingsRepository {
+    override val settings = MutableStateFlow(com.himanshu.liftly.core.domain.model.UserSettings())
+    override suspend fun update(
+        transform: (com.himanshu.liftly.core.domain.model.UserSettings) -> com.himanshu.liftly.core.domain.model.UserSettings,
+    ) {
+        settings.value = transform(settings.value)
+    }
+    override suspend fun seedVersion() = 1
+    override suspend fun setSeedVersion(version: Int) = Unit
 }

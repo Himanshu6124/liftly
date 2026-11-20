@@ -3,12 +3,16 @@ package com.himanshu.liftly.feature.exercises.detail
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.himanshu.liftly.core.domain.repository.ExerciseRepository
+import com.himanshu.liftly.core.domain.repository.SettingsRepository
+import com.himanshu.liftly.core.domain.repository.WorkoutRepository
 import com.himanshu.liftly.core.domain.util.AppScope
 import com.himanshu.liftly.core.platform.UrlLauncher
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.launchIn
@@ -23,6 +27,8 @@ class ExerciseDetailViewModel(
     private val repository: ExerciseRepository,
     private val appScope: AppScope,
     private val urlLauncher: UrlLauncher,
+    workouts: WorkoutRepository,
+    settings: SettingsRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ExerciseDetailUiState())
@@ -47,6 +53,12 @@ class ExerciseDetailViewModel(
                     lastSavedNote = exercise.userNote.orEmpty()
                 }
             }
+            .launchIn(viewModelScope)
+
+        combine(workouts.observeRecords(exerciseId), settings.settings) { records, s ->
+            records.map { RecordUi(it.type, it.value, it.achievedAt) }.toImmutableList() to s.weightUnit
+        }
+            .onEach { (records, unit) -> _state.update { it.copy(records = records, unit = unit) } }
             .launchIn(viewModelScope)
 
         // Save the note shortly after typing stops.

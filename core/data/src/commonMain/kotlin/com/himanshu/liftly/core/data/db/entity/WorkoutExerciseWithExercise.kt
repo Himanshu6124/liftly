@@ -3,6 +3,16 @@ package com.himanshu.liftly.core.data.db.entity
 import androidx.room.Embedded
 import androidx.room.Relation
 
+data class SetWithDate(
+    @Embedded val set: WorkoutSetEntity,
+    val performedAt: Long,
+)
+
+data class PersonalRecordWithWorkoutExercise(
+    @Embedded val record: PersonalRecordEntity,
+    val workoutExerciseId: String,
+)
+
 data class WorkoutExerciseWithExercise(
     @Embedded val workoutExercise: WorkoutExerciseEntity,
     @Relation(parentColumn = "exerciseId", entityColumn = "id")

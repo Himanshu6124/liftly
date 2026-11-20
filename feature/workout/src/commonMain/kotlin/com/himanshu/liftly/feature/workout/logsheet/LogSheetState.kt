@@ -3,7 +3,9 @@ package com.himanshu.liftly.feature.workout.logsheet
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.himanshu.liftly.core.domain.model.DraftSet
@@ -16,7 +18,9 @@ import com.himanshu.liftly.core.domain.repository.SettingsRepository
 import com.himanshu.liftly.core.domain.repository.WorkoutRepository
 import com.himanshu.liftly.core.domain.usecase.GetLogSheetPrefillUseCase
 import com.himanshu.liftly.core.domain.usecase.LogExerciseSetsUseCase
+import com.himanshu.liftly.core.domain.usecase.ParseDurationInputUseCase
 import com.himanshu.liftly.core.domain.usecase.ParseRepInputUseCase
+import com.himanshu.liftly.core.domain.usecase.PrHit
 import com.himanshu.liftly.core.domain.usecase.SetValidation
 import com.himanshu.liftly.core.domain.util.SetFormatter
 import com.himanshu.liftly.core.domain.util.Units
@@ -25,10 +29,12 @@ import com.himanshu.liftly.core.platform.Haptics
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlin.math.round
 import kotlin.time.Instant
 
-enum class LogSheetError { WEIGHT_INVALID, WEIGHT_RANGE, REPS_INVALID, REPS_RANGE, REPS_MISSING }
+enum class LogSheetError { WEIGHT_INVALID, WEIGHT_RANGE, REPS_INVALID, REPS_RANGE, TIME_INVALID, DISTANCE_INVALID, RPE_INVALID }
 
+/** Read-only snapshot of everything the sheet shows besides the editable text. */
 @Immutable
 data class LogSheetUiState(
     val isLoading: Boolean = true,
@@ -42,23 +48,34 @@ data class LogSheetUiState(
     val lastHint: String? = null,
     val lastPerformedAt: Instant? = null,
     val inputMode: InputMode = InputMode.UNIFORM,
-    val weightText: String = "",
     val setCount: Int = 3,
+    val weightText: String = "",
     val repsText: String = "",
-    /** Warm-ups and other set types from the prefill are kept as-is in UNIFORM mode (edited in Milestone 5). */
-    val extraSets: List<DraftSet> = emptyList(),
     val weightError: LogSheetError? = null,
     val repsError: LogSheetError? = null,
+    val otherError: LogSheetError? = null,
+    val hasSets: Boolean = false,
     val isSaving: Boolean = false,
 ) {
     val showsWeight: Boolean get() = trackingType == TrackingType.WEIGHT_REPS
-    val canSave: Boolean get() = !isLoading && !isSaving && weightError == null && repsError == null && repsText.isNotBlank()
+    val canSave: Boolean get() = !isLoading && !isSaving && hasSets && weightError == null && repsError == null && otherError == null
+}
+
+/** One editable set row (per-set mode and warm-ups). Text lives in [TextFieldState]s. */
+@Stable
+class SetRowState(val key: Long, type: SetType, weight: String = "", reps: String = "", rpe: String = "") {
+    var type by mutableStateOf(type)
+    val weight = TextFieldState(weight)
+    val reps = TextFieldState(reps)
+    val rpe = TextFieldState(rpe)
 }
 
 /**
- * Draft holder for the Batch Log Sheet. Everything stays in memory until [save];
- * closing the sheet discards the draft.
+ * Draft holder for the Batch Log Sheet. Everything stays in memory until [save]; closing the
+ * sheet discards the draft. Text fields own their text ([TextFieldState]) so every keystroke is
+ * applied immediately, even inside a bottom sheet (a separate window on iOS).
  */
+@Suppress("TooManyFunctions")
 class LogSheetState(
     private val workoutExerciseId: String,
     private val workouts: WorkoutRepository,
@@ -69,26 +86,52 @@ class LogSheetState(
     private val haptics: Haptics,
     private val scope: CoroutineScope,
 ) {
-    /**
-     * The text fields own their text ([TextFieldState]) so every keystroke is applied immediately,
-     * even inside a bottom sheet (a separate window on iOS). Everything else derives from them.
-     */
+    private val parseDurations = ParseDurationInputUseCase()
+
+    // UNIFORM working sets
     val weightField = TextFieldState()
     val repsField = TextFieldState()
 
-    /** Non-text state; the public [state] combines it with the current field text. */
+    /** RPE for all working sets: one value, or one per set ("8 8.5 9"). */
+    val rpeField = TextFieldState()
+
+    // TIME: one duration per set ("1:00 0:45"); DISTANCE: metres + optional time.
+    val durationField = TextFieldState()
+    val distanceField = TextFieldState()
+    val distanceTimeField = TextFieldState()
+    val noteField = TextFieldState()
+
+    /** PER_SET working rows. */
+    val rows = mutableStateListOf<SetRowState>()
+
+    /** Warm-up rows (both modes); saved as [SetType.WARMUP], excluded from PRs and volume. */
+    val warmups = mutableStateListOf<SetRowState>()
+
+    var showMore by mutableStateOf(false)
     private var base: LogSheetUiState by mutableStateOf(LogSheetUiState())
+    private var nextKey = 0L
 
     val state: LogSheetUiState
         get() {
             val reps = repsField.text.toString()
-            // Typing "8 8 7 6" (or "8x4") sets the set count to 4.
-            val parsedCount = (parseReps(reps) as? ParseRepInputUseCase.Result.Valid)?.reps?.size
-            return base.copy(
-                weightText = weightField.text.toString(),
-                repsText = reps,
-                setCount = parsedCount ?: base.setCount,
-            ).validated()
+            val count = when (base.trackingType) {
+                TrackingType.TIME -> (
+                    parseDurations(
+                        durationField.text.toString(),
+                    ) as? ParseDurationInputUseCase.Result.Valid
+                    )?.seconds?.size
+
+                TrackingType.DISTANCE -> 1
+
+                else -> if (base.inputMode == InputMode.PER_SET) rows.size else parsedReps(reps)?.size
+            }
+            val s = base.copy(weightText = weightField.text.toString(), repsText = reps, setCount = count ?: base.setCount)
+            return s.copy(
+                weightError = weightError(s),
+                repsError = repsError(s),
+                otherError = otherError(s),
+                hasSets = buildSets(s).any { it.setType != SetType.WARMUP },
+            )
         }
 
     init {
@@ -100,13 +143,15 @@ class LogSheetState(
         val userSettings = settings.settings.first()
         val unit = userSettings.weightUnit
         val p = prefill(data, userSettings.defaultSetCount)
-        val working = p.sets.filter { it.setType != SetType.WARMUP }.ifEmpty { p.sets }
-        val extra = p.sets - working.toSet()
+        val warm = p.sets.filter { it.setType == SetType.WARMUP }
+        val working = p.sets.filter { it.setType != SetType.WARMUP }.ifEmpty { listOf(DraftSet()) }
+
+        warm.forEach { warmups += row(it, unit) }
+        fillWorkingFields(data.exercise.trackingType, working, p.inputMode, unit)
+        data.workoutExercise.notes?.let(noteField::setTextAndPlaceCursorAtEnd)
+        showMore = warm.isNotEmpty() || rpeField.text.isNotEmpty() || noteField.text.isNotEmpty()
+
         val lastSets = data.lastSession?.sets?.toDraftSets().orEmpty()
-        // UNIFORM shows one weight: the heaviest working weight of the prefill (top set).
-        val weightKg = working.mapNotNull { it.weightKg }.maxOrNull()
-        weightField.setTextAndPlaceCursorAtEnd(weightKg?.let { SetFormatter.number(it, unit) }.orEmpty())
-        repsField.setTextAndPlaceCursorAtEnd(ParseRepInputUseCase.format(working.map { it.reps }))
         base = LogSheetUiState(
             isLoading = false,
             exerciseId = data.exercise.id,
@@ -116,50 +161,139 @@ class LogSheetState(
             increment = if (unit == WeightUnit.KG) userSettings.weightIncrementKg else userSettings.weightIncrementLb,
             lastHint = SetFormatter.hint(lastSets, unit),
             lastPerformedAt = data.lastSession?.performedAt,
-            inputMode = p.inputMode,
+            // Per-set mode only makes sense with a weight to vary.
+            inputMode = if (data.exercise.trackingType == TrackingType.WEIGHT_REPS) p.inputMode else InputMode.UNIFORM,
             setCount = working.size,
-            extraSets = extra,
         )
     }
 
-    /** Programmatic text change (tests, paste-like updates). The UI edits [weightField] directly. */
+    private fun fillWorkingFields(tracking: TrackingType, working: List<DraftSet>, mode: InputMode, unit: WeightUnit) {
+        when (tracking) {
+            TrackingType.TIME -> durationField.setTextAndPlaceCursorAtEnd(
+                ParseDurationInputUseCase.formatAll(
+                    working.map {
+                        it.durationSec
+                    },
+                ),
+            )
+
+            TrackingType.DISTANCE -> working.first().let { s ->
+                distanceField.setTextAndPlaceCursorAtEnd(s.distanceM?.let { formatNumber(it) }.orEmpty())
+                distanceTimeField.setTextAndPlaceCursorAtEnd(s.durationSec?.let(ParseDurationInputUseCase::format).orEmpty())
+            }
+
+            else -> {
+                // UNIFORM shows one weight: the heaviest working weight (top set).
+                val weightKg = working.mapNotNull { it.weightKg }.maxOrNull()
+                weightField.setTextAndPlaceCursorAtEnd(weightKg?.let { SetFormatter.number(it, unit) }.orEmpty())
+                repsField.setTextAndPlaceCursorAtEnd(ParseRepInputUseCase.format(working.map { it.reps }))
+                if (mode == InputMode.PER_SET) working.forEach { rows += row(it, unit) }
+            }
+        }
+        val rpes = working.mapNotNull { it.rpe }
+        if (rpes.isNotEmpty()) {
+            rpeField.setTextAndPlaceCursorAtEnd(
+                rpes.distinct().singleOrNull()?.let(::formatNumber) ?: rpes.joinToString(" ") {
+                    formatNumber(it)
+                },
+            )
+        }
+    }
+
+    // ---- UNIFORM editing -------------------------------------------------------------------
+
+    /** Programmatic text change (tests); the UI edits the fields directly. */
     fun onWeightChanged(text: String) = weightField.setTextAndPlaceCursorAtEnd(text)
 
     fun onRepsChanged(text: String) = repsField.setTextAndPlaceCursorAtEnd(text)
 
-    fun nudgeWeight(direction: Int) {
-        val s = state
-        val current = parseWeight(s.weightText) ?: 0.0
-        val next = Units.roundToIncrement(current + direction * s.increment, s.increment).coerceAtLeast(0.0)
-        weightField.setTextAndPlaceCursorAtEnd(formatDisplay(next))
+    fun nudgeWeight(direction: Int) = nudge(weightField, direction)
+
+    fun nudge(field: TextFieldState, direction: Int) {
+        val inc = base.increment
+        val current = parseNumber(field.text.toString()) ?: 0.0
+        field.setTextAndPlaceCursorAtEnd(formatNumber(Units.roundToIncrement(current + direction * inc, inc).coerceAtLeast(0.0)))
     }
 
     fun changeSetCount(delta: Int) {
+        if (base.trackingType == TrackingType.TIME) return changeDurationCount(delta)
         val s = state
         val count = (s.setCount + delta).coerceIn(1, ParseRepInputUseCase.MAX_SETS)
         if (count == s.setCount) return
-        val reps = (parseReps(s.repsText) as? ParseRepInputUseCase.Result.Valid)?.reps.orEmpty()
-        // Pad with the last value, or trim.
-        val adjusted = when {
-            reps.isEmpty() -> emptyList()
-            count > reps.size -> reps + List(count - reps.size) { reps.last() }
-            else -> reps.take(count)
-        }
         base = base.copy(setCount = count)
-        repsField.setTextAndPlaceCursorAtEnd(ParseRepInputUseCase.format(adjusted))
+        repsField.setTextAndPlaceCursorAtEnd(ParseRepInputUseCase.format(resize(parsedReps(s.repsText).orEmpty(), count)))
     }
 
-    /** Persists the draft. [onSaved] gets the summary line and an undo snapshot. */
-    fun save(onSaved: (summary: String?, undo: LogSnapshot) -> Unit) {
+    private fun changeDurationCount(delta: Int) {
+        val current = (parseDurations(durationField.text.toString()) as? ParseDurationInputUseCase.Result.Valid)?.seconds.orEmpty()
+        val count = (maxOf(current.size, base.setCount) + delta).coerceIn(1, ParseRepInputUseCase.MAX_SETS)
+        base = base.copy(setCount = count)
+        durationField.setTextAndPlaceCursorAtEnd(ParseDurationInputUseCase.formatAll(resize(current, count)))
+    }
+
+    // ---- PER_SET editing -------------------------------------------------------------------
+
+    /** "Vary weight per set": converts between one weight + reps list and individual rows. */
+    fun setPerSet(enabled: Boolean) {
+        val s = state
+        if (enabled == (s.inputMode == InputMode.PER_SET)) return
+        if (enabled) {
+            rows.clear()
+            uniformWorking(s).ifEmpty { listOf(DraftSet(weightKg = weightKg(s.weightText, s.unit))) }.forEach { rows += row(it, s.unit) }
+        } else {
+            val working = perSetWorking(s)
+            working.mapNotNull { it.weightKg }.maxOrNull()?.let { weightField.setTextAndPlaceCursorAtEnd(SetFormatter.number(it, s.unit)) }
+            repsField.setTextAndPlaceCursorAtEnd(ParseRepInputUseCase.format(working.map { it.reps }))
+        }
+        base = base.copy(inputMode = if (enabled) InputMode.PER_SET else InputMode.UNIFORM)
+    }
+
+    /** New row copies the last one (people usually add "one more like that"). */
+    fun addRow() {
+        val last = rows.lastOrNull()
+        rows += SetRowState(nextKey++, SetType.NORMAL, last?.weight?.text?.toString().orEmpty(), last?.reps?.text?.toString().orEmpty())
+    }
+
+    fun removeRow(row: SetRowState) {
+        rows.remove(row)
+    }
+
+    /** Working rows cycle Normal → Drop → Failure. */
+    fun cycleType(row: SetRowState) {
+        row.type = when (row.type) {
+            SetType.NORMAL -> SetType.DROP
+            SetType.DROP -> SetType.FAILURE
+            else -> SetType.NORMAL
+        }
+    }
+
+    /** Warm-up suggestion: 50 % of the working weight, 10 reps, then the next one heavier. */
+    fun addWarmup() {
+        val s = state
+        val working = weightKg(s.weightText, s.unit) ?: perSetWorking(s).mapNotNull { it.weightKg }.maxOrNull()
+        val fraction = WARMUP_STEPS.getOrElse(warmups.size) { WARMUP_STEPS.last() }
+        val kg = working?.let { Units.displayToKg(Units.roundToIncrement(Units.kgToDisplay(it, s.unit) * fraction, s.increment), s.unit) }
+        warmups += row(DraftSet(weightKg = kg, reps = WARMUP_REPS.getOrElse(warmups.size) { 3 }, setType = SetType.WARMUP), s.unit)
+        showMore = true
+    }
+
+    fun removeWarmup(row: SetRowState) {
+        warmups.remove(row)
+    }
+
+    // ---- Save ------------------------------------------------------------------------------
+
+    /** Persists the draft. [onSaved] gets the summary line, any new records and an undo snapshot. */
+    fun save(onSaved: (summary: String?, records: List<PrHit>, undo: LogSnapshot) -> Unit) {
         val s = state
         if (!s.canSave) return
-        val sets = s.extraSets + draftSets(s)
+        val sets = buildSets(s)
         base = base.copy(isSaving = true)
         scope.launch {
-            when (val result = logSets(workoutExerciseId, sets, s.inputMode)) {
+            when (val result = logSets(workoutExerciseId, sets, s.inputMode, noteField.text.toString())) {
                 is LogExerciseSetsUseCase.Result.Saved -> {
-                    haptics.light()
-                    onSaved(SetFormatter.summary(sets, s.unit), result.undo)
+                    if (result.records.isNotEmpty()) haptics.success() else haptics.light()
+                    onSaved(SetFormatter.summary(sets, s.unit), result.records, result.undo)
                 }
 
                 is LogExerciseSetsUseCase.Result.Invalid -> base = base.copy(isSaving = false)
@@ -167,35 +301,132 @@ class LogSheetState(
         }
     }
 
-    internal fun draftSets(s: LogSheetUiState = state): List<DraftSet> {
-        val reps = (parseReps(s.repsText) as? ParseRepInputUseCase.Result.Valid)?.reps.orEmpty()
-        val weightKg = if (s.showsWeight) parseWeight(s.weightText)?.let { Units.displayToKg(it, s.unit) } else null
-        return reps.map { DraftSet(weightKg = weightKg, reps = it) }
+    internal fun buildSets(s: LogSheetUiState = state): List<DraftSet> {
+        val warm = warmups.mapNotNull { rowToDraft(it, s.unit, SetType.WARMUP) }
+        val working = when (s.trackingType) {
+            TrackingType.TIME -> (parseDurations(durationField.text.toString()) as? ParseDurationInputUseCase.Result.Valid)
+                ?.seconds?.map { DraftSet(durationSec = it) }.orEmpty()
+
+            TrackingType.DISTANCE -> {
+                val metres = parseNumber(distanceField.text.toString())
+                val time = ParseDurationInputUseCase.parseClock(distanceTimeField.text.toString().trim())
+                if (metres == null && time == null) emptyList() else listOf(DraftSet(distanceM = metres, durationSec = time))
+            }
+
+            else -> if (s.inputMode == InputMode.PER_SET) perSetWorking(s) else uniformWorking(s)
+        }
+        return warm + applyRpe(working)
     }
 
-    private fun LogSheetUiState.validated(): LogSheetUiState {
-        val weight = parseWeight(weightText)
-        val weightError = when {
-            !showsWeight || weightText.isBlank() -> null
-            weight == null -> LogSheetError.WEIGHT_INVALID
-            Units.displayToKg(weight, unit) > SetValidation.MAX_WEIGHT_KG -> LogSheetError.WEIGHT_RANGE
-            else -> null
-        }
-        val repsError = when (val r = parseReps(repsText)) {
-            is ParseRepInputUseCase.Result.Valid, ParseRepInputUseCase.Result.Empty -> null
+    private fun uniformWorking(s: LogSheetUiState): List<DraftSet> {
+        val kg = if (s.showsWeight) weightKg(s.weightText, s.unit) else null
+        return parsedReps(s.repsText).orEmpty().map { DraftSet(weightKg = kg, reps = it) }
+    }
 
-            is ParseRepInputUseCase.Result.Invalid -> when (r.reason) {
-                ParseRepInputUseCase.Reason.NOT_A_NUMBER -> LogSheetError.REPS_INVALID
-                else -> LogSheetError.REPS_RANGE
+    private fun perSetWorking(s: LogSheetUiState) = rows.mapNotNull { rowToDraft(it, s.unit, it.type) }
+
+    private fun applyRpe(sets: List<DraftSet>): List<DraftSet> {
+        val values = rpeValues() ?: return sets
+        if (values.isEmpty()) return sets
+        return sets.mapIndexed { i, set -> set.copy(rpe = if (values.size == 1) values.first() else values.getOrNull(i)) }
+    }
+
+    private fun rpeValues(): List<Double>? {
+        val text = rpeField.text.toString().trim()
+        if (text.isEmpty()) return emptyList()
+        val values = text.split(Regex("[\\s,;+#/]+")).filter {
+            it.isNotEmpty()
+        }.map { it.replace(',', '.').toDoubleOrNull() ?: return null }
+        return values.takeIf { v -> v.all { it in RPE_RANGE } }
+    }
+
+    private fun rowToDraft(row: SetRowState, unit: WeightUnit, type: SetType): DraftSet? {
+        val reps = row.reps.text.toString().trim().toIntOrNull()
+        val kg = weightKg(row.weight.text.toString(), unit)
+        val rpe = row.rpe.text.toString().replace(',', '.').trim().toDoubleOrNull()
+        if (reps == null && kg == null) return null
+        return DraftSet(weightKg = kg, reps = reps, rpe = rpe, setType = type)
+    }
+
+    private fun row(set: DraftSet, unit: WeightUnit) = SetRowState(
+        key = nextKey++,
+        type = set.setType,
+        weight = set.weightKg?.let { SetFormatter.number(it, unit) }.orEmpty(),
+        reps = set.reps?.toString().orEmpty(),
+        rpe = set.rpe?.let(::formatNumber).orEmpty(),
+    )
+
+    // ---- Validation ------------------------------------------------------------------------
+
+    private fun weightError(s: LogSheetUiState): LogSheetError? {
+        val texts = when {
+            !s.showsWeight -> emptyList()
+            s.inputMode == InputMode.PER_SET -> rows.map { it.weight.text.toString() }
+            else -> listOf(s.weightText)
+        } + warmups.map { it.weight.text.toString() }
+        return texts.filter { it.isNotBlank() }.firstNotNullOfOrNull { t ->
+            val kg = weightKg(t, s.unit)
+            when {
+                kg == null -> LogSheetError.WEIGHT_INVALID
+                kg > SetValidation.MAX_WEIGHT_KG -> LogSheetError.WEIGHT_RANGE
+                else -> null
             }
         }
-        return copy(weightError = weightError, repsError = repsError)
     }
 
-    private fun parseWeight(text: String): Double? = text.replace(',', '.').trim().takeIf { it.isNotEmpty() }?.toDoubleOrNull()
+    private fun repsError(s: LogSheetUiState): LogSheetError? {
+        if (s.trackingType == TrackingType.TIME || s.trackingType == TrackingType.DISTANCE) return null
+        val rowReps = (if (s.inputMode == InputMode.PER_SET) rows else emptyList<SetRowState>()) + warmups
+        rowReps.map { it.reps.text.toString().trim() }.filter { it.isNotEmpty() }.forEach { t ->
+            val n = t.toIntOrNull() ?: return LogSheetError.REPS_INVALID
+            if (n !in SetValidation.REPS) return LogSheetError.REPS_RANGE
+        }
+        if (s.inputMode == InputMode.PER_SET) return null
+        return when (val r = parseReps(s.repsText)) {
+            is ParseRepInputUseCase.Result.Invalid ->
+                if (r.reason == ParseRepInputUseCase.Reason.NOT_A_NUMBER) LogSheetError.REPS_INVALID else LogSheetError.REPS_RANGE
 
-    private fun formatDisplay(value: Double): String {
-        val rounded = kotlin.math.round(value * 100) / 100
+            else -> null
+        }
+    }
+
+    private fun otherError(s: LogSheetUiState): LogSheetError? = when {
+        rpeValues() == null -> LogSheetError.RPE_INVALID
+
+        s.trackingType == TrackingType.TIME &&
+            parseDurations(durationField.text.toString()) is ParseDurationInputUseCase.Result.Invalid -> LogSheetError.TIME_INVALID
+
+        s.trackingType == TrackingType.DISTANCE && distanceField.text.isNotBlank() &&
+            parseNumber(distanceField.text.toString()) == null -> LogSheetError.DISTANCE_INVALID
+
+        s.trackingType == TrackingType.DISTANCE && distanceTimeField.text.isNotBlank() &&
+            ParseDurationInputUseCase.parseClock(distanceTimeField.text.toString().trim()) == null -> LogSheetError.TIME_INVALID
+
+        else -> null
+    }
+
+    // ---- Helpers ---------------------------------------------------------------------------
+
+    private fun parsedReps(text: String) = (parseReps(text) as? ParseRepInputUseCase.Result.Valid)?.reps
+
+    private fun weightKg(text: String, unit: WeightUnit) = parseNumber(text)?.let { Units.displayToKg(it, unit) }
+
+    private fun parseNumber(text: String): Double? = text.replace(',', '.').trim().takeIf { it.isNotEmpty() }?.toDoubleOrNull()
+
+    private fun <T> resize(values: List<T>, count: Int): List<T> = when {
+        values.isEmpty() -> emptyList()
+        count > values.size -> values + List(count - values.size) { values.last() }
+        else -> values.take(count)
+    }
+
+    private fun formatNumber(value: Double): String {
+        val rounded = round(value * 100) / 100
         return if (rounded % 1.0 == 0.0) rounded.toLong().toString() else rounded.toString()
+    }
+
+    private companion object {
+        val WARMUP_STEPS = listOf(0.4, 0.6, 0.8)
+        val WARMUP_REPS = listOf(10, 5, 3)
+        val RPE_RANGE = 1.0..10.0
     }
 }

@@ -56,7 +56,38 @@
     <string name="days_yesterday">yesterday</string>
     <string name="days_ago">%1$d days ago</string>
 
+    <string name="log_vary_weight">Vary weight per set</string>
+    <string name="log_add_set">Add set</string>
+    <string name="log_remove_set">Remove set %1$d</string>
+    <string name="log_set_number">%1$d</string>
+    <string name="log_set_type">Set type: %1$s. Tap to change.</string>
+    <string name="log_type_normal">Normal</string>
+    <string name="log_type_drop">Drop</string>
+    <string name="log_type_failure">Failure</string>
+    <string name="log_type_warmup">Warm-up</string>
+    <string name="log_type_short_normal">●</string>
+    <string name="log_type_short_drop">D</string>
+    <string name="log_type_short_failure">F</string>
+    <string name="log_type_short_warmup">W</string>
+    <string name="log_more">More: warm-ups, RPE, note</string>
+    <string name="log_less">Hide extras</string>
+    <string name="log_warmups">Warm-up sets</string>
+    <string name="log_add_warmup">Add warm-up set</string>
+    <string name="log_rpe">RPE (e.g. 8 or 7 8 9)</string>
+    <string name="log_rpe_short">RPE</string>
+    <string name="log_note">Note for this exercise</string>
+    <string name="log_time_per_set">Time per set (e.g. 1:00 0:45 or 60x3)</string>
+    <string name="log_distance">Distance</string>
+    <string name="log_distance_unit">m</string>
+    <string name="log_time">Time (mm:ss)</string>
+    <string name="log_error_time">Use times like 1:00 or 60</string>
+    <string name="log_error_distance">Enter a distance in metres</string>
+    <string name="log_error_rpe">RPE is 1–10</string>
+    <string name="log_reps_short">Reps</string>
+
     <string name="snackbar_logged">Logged %1$s</string>
     <string name="card_last">Last: %1$s</string>
+    <string name="card_pr">New personal record</string>
+    <string name="snackbar_pr">🏆 New PR on %1$s</string>
     <string name="card_quick_log">Log same as last time</string>
 </resources>

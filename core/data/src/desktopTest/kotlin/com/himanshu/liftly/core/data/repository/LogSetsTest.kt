@@ -12,6 +12,7 @@ import com.himanshu.liftly.core.domain.model.ExerciseStatus
 import com.himanshu.liftly.core.domain.model.InputMode
 import com.himanshu.liftly.core.domain.model.Muscle
 import com.himanshu.liftly.core.domain.model.NewCustomExercise
+import com.himanshu.liftly.core.domain.model.PrType
 import com.himanshu.liftly.core.domain.model.PrefillSource
 import com.himanshu.liftly.core.domain.model.RoutineTarget
 import com.himanshu.liftly.core.domain.model.TrackingType
@@ -27,6 +28,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlin.time.Instant
 
 class LogSetsTest {
@@ -145,5 +147,63 @@ class LogSetsTest {
         val data = assertNotNull(repo.getLogSheetData(firstWorkoutExercise().workoutExercise.id))
         assertEquals(RoutineTarget(4, 10, 60.0), data.routineTarget)
         assertNull(data.lastSession)
+    }
+
+    private suspend fun finishedSession(exercise: String, sets: List<DraftSet>) {
+        val w = repo.createWorkout("", null, listOf(exercise))
+        logSets(firstWorkoutExercise().workoutExercise.id, sets, InputMode.UNIFORM)
+        repo.finish(w)
+    }
+
+    @Test
+    fun prsAreStoredWithTheSetsAndShownOnTheCard() = runTest {
+        val bench = bench()
+        finishedSession(bench, listOf(DraftSet(100.0, 5)))
+        repo.createWorkout("", null, listOf(bench))
+        val weId = firstWorkoutExercise().workoutExercise.id
+
+        val saved = logSets(weId, listOf(DraftSet(105.0, 5)), InputMode.UNIFORM) as LogExerciseSetsUseCase.Result.Saved
+
+        assertEquals(setOf(PrType.MAX_WEIGHT, PrType.EST_1RM, PrType.MAX_VOLUME), saved.records.map { it.type }.toSet())
+        val card = firstWorkoutExercise()
+        assertEquals(3, card.personalRecords.size)
+        assertEquals(card.sets.single().id, card.personalRecords.first().workoutSetId)
+        assertEquals(105.0, repo.observeRecords(bench).first().single { it.type == PrType.MAX_WEIGHT }.value)
+    }
+
+    @Test
+    fun editingDownRemovesThePrAndUndoBringsItBack() = runTest {
+        val bench = bench()
+        finishedSession(bench, listOf(DraftSet(100.0, 5)))
+        repo.createWorkout("", null, listOf(bench))
+        val weId = firstWorkoutExercise().workoutExercise.id
+        logSets(weId, listOf(DraftSet(105.0, 5)), InputMode.UNIFORM)
+
+        val edit = logSets(weId, listOf(DraftSet(95.0, 5)), InputMode.UNIFORM) as LogExerciseSetsUseCase.Result.Saved
+        assertTrue(edit.records.isEmpty())
+        assertTrue(firstWorkoutExercise().personalRecords.isEmpty())
+        assertEquals(100.0, repo.observeRecords(bench).first().single { it.type == PrType.MAX_WEIGHT }.value, "old best is back")
+
+        repo.restoreLog(edit.undo)
+        assertEquals(3, firstWorkoutExercise().personalRecords.size)
+    }
+
+    @Test
+    fun notesAreSavedWithTheLog() = runTest {
+        repo.createWorkout("", null, listOf(bench()))
+        val weId = firstWorkoutExercise().workoutExercise.id
+        logSets(weId, listOf(DraftSet(80.0, 8)), InputMode.UNIFORM, notes = "  felt easy ")
+        assertEquals("felt easy", firstWorkoutExercise().workoutExercise.notes)
+    }
+
+    @Test
+    fun removingAnExerciseRemovesItsPrs() = runTest {
+        val bench = bench()
+        finishedSession(bench, listOf(DraftSet(100.0, 5)))
+        repo.createWorkout("", null, listOf(bench))
+        val weId = firstWorkoutExercise().workoutExercise.id
+        logSets(weId, listOf(DraftSet(110.0, 5)), InputMode.UNIFORM)
+        repo.removeExercise(weId)
+        assertEquals(100.0, repo.observeRecords(bench).first().single { it.type == PrType.MAX_WEIGHT }.value)
     }
 }

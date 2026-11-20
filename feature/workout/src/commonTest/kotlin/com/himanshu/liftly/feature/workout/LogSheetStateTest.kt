@@ -1,5 +1,7 @@
 package com.himanshu.liftly.feature.workout
 
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
+import com.himanshu.liftly.core.domain.model.SetType
 import com.himanshu.liftly.core.domain.model.TrackingType
 import com.himanshu.liftly.core.domain.model.UserSettings
 import com.himanshu.liftly.core.domain.model.WeightUnit
@@ -111,7 +113,7 @@ class LogSheetStateTest {
         h.onWeightChanged("225")
         h.onRepsChanged("5x3")
         var summary: String? = null
-        h.save { s, _ -> summary = s }
+        h.save { s, _, _ -> summary = s }
 
         val saved = repo.logged.single().second
         assertEquals(3, saved.size)
@@ -126,7 +128,90 @@ class LogSheetStateTest {
         val h = holder(repo)
         assertFalse(h.state.showsWeight)
         h.onRepsChanged("10 8 6")
-        h.save { _, _ -> }
+        h.save { _, _, _ -> }
         assertEquals(listOf(null, null, null), repo.logged.single().second.map { it.weightKg })
+    }
+
+    @Test
+    fun perSetModeRoundTripsAndSavesSetTypes() = runTest(UnconfinedTestDispatcher()) {
+        val repo = benchWithHistory
+        val h = holder(repo)
+        h.setPerSet(true)
+        assertEquals(4, h.rows.size)
+        assertEquals("77.5", h.rows.first().weight.text.toString())
+        h.rows.last().weight.setTextAndPlaceCursorAtEnd("60")
+        h.cycleType(h.rows.last()) // Normal → Drop
+        h.addRow()
+        assertEquals(5, h.state.setCount)
+
+        h.save { _, _, _ -> }
+        val saved = repo.logged.single().second
+        assertEquals(listOf(77.5, 77.5, 77.5, 60.0, 60.0), saved.map { it.weightKg })
+        assertEquals(SetType.DROP, saved[3].setType)
+
+        h.setPerSet(false)
+        assertEquals("77.5", h.state.weightText, "back to one weight: the heaviest")
+    }
+
+    @Test
+    fun warmupsAreSavedFirstAndMarked() = runTest(UnconfinedTestDispatcher()) {
+        val repo = benchWithHistory
+        val h = holder(repo)
+        h.addWarmup()
+        h.addWarmup()
+        assertEquals("30", h.warmups.first().weight.text.toString(), "40% of 77.5 rounded to 2.5")
+        h.save { _, _, _ -> }
+        val saved = repo.logged.single().second
+        assertEquals(listOf(SetType.WARMUP, SetType.WARMUP), saved.take(2).map { it.setType })
+        assertEquals(6, saved.size)
+    }
+
+    @Test
+    fun rpeAndNoteAreSaved() = runTest(UnconfinedTestDispatcher()) {
+        val repo = benchWithHistory
+        val h = holder(repo)
+        h.rpeField.setTextAndPlaceCursorAtEnd("8")
+        h.noteField.setTextAndPlaceCursorAtEnd("belt on")
+        h.save { _, _, _ -> }
+        assertEquals(listOf(8.0, 8.0, 8.0, 8.0), repo.logged.single().second.map { it.rpe })
+        assertEquals("belt on", repo.lastNotes)
+
+        h.rpeField.setTextAndPlaceCursorAtEnd("11")
+        assertEquals(LogSheetError.RPE_INVALID, h.state.otherError)
+        assertFalse(h.state.canSave)
+    }
+
+    @Test
+    fun timeExercisesLogDurations() = runTest(UnconfinedTestDispatcher()) {
+        val repo = FakeWorkoutRepository(listOf("Plank"), trackingType = TrackingType.TIME)
+        val h = holder(repo)
+        h.durationField.setTextAndPlaceCursorAtEnd("1:00x3")
+        assertEquals(3, h.state.setCount)
+        h.changeSetCount(+1)
+        assertEquals("1:00 1:00 1:00 1:00", h.durationField.text.toString())
+        h.save { _, _, _ -> }
+        assertEquals(listOf(60, 60, 60, 60), repo.logged.single().second.map { it.durationSec })
+    }
+
+    @Test
+    fun distanceExercisesLogMetresAndTime() = runTest(UnconfinedTestDispatcher()) {
+        val repo = FakeWorkoutRepository(listOf("Run"), trackingType = TrackingType.DISTANCE)
+        val h = holder(repo)
+        h.distanceField.setTextAndPlaceCursorAtEnd("5000")
+        h.distanceTimeField.setTextAndPlaceCursorAtEnd("25:00")
+        var summary: String? = null
+        h.save { s, _, _ -> summary = s }
+        assertEquals(5000.0 to 1500, repo.logged.single().second.single().let { it.distanceM to it.durationSec })
+        assertEquals("5000 m · 25:00", summary)
+    }
+
+    @Test
+    fun beatingLastSessionReportsRecordsAndSuccessHaptic() = runTest(UnconfinedTestDispatcher()) {
+        val repo = benchWithHistory
+        val h = holder(repo)
+        h.onWeightChanged("82.5")
+        var records = emptyList<com.himanshu.liftly.core.domain.usecase.PrHit>()
+        h.save { _, r, _ -> records = r }
+        assertTrue(records.any { it.type == com.himanshu.liftly.core.domain.model.PrType.MAX_WEIGHT })
     }
 }

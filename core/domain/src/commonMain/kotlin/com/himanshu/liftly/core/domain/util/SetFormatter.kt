@@ -14,6 +14,7 @@ object SetFormatter {
     fun summary(sets: List<DraftSet>, unit: WeightUnit): String? {
         val working = sets.filter { it.setType != SetType.WARMUP }
         if (working.isEmpty()) return null
+        cardioSummary(working)?.let { return it }
         val reps = working.joinToString(", ") { it.reps?.toString() ?: "–" }
         val weights = working.map { it.weightKg }
         return when {
@@ -23,9 +24,32 @@ object SetFormatter {
         }
     }
 
+    /** Time sets: `3 × 1:00` or `1:00, 0:45`; distance: `5000 m · 25:00`. null for weight/reps sets. */
+    private fun cardioSummary(working: List<DraftSet>): String? {
+        if (working.isEmpty()) return null
+        if (working.any { it.distanceM != null }) {
+            val s = working.first()
+            val metres = s.distanceM?.let { "${number(it, WeightUnit.KG)} m" }
+            return listOfNotNull(metres, s.durationSec?.let(::clock)).joinToString(" · ")
+        }
+        if (working.all { it.reps == null && it.durationSec != null }) {
+            val times = working.mapNotNull { it.durationSec }
+            return if (times.distinct().size == 1) "${times.size} × ${clock(times.first())}" else times.joinToString(", ") { clock(it) }
+        }
+        return null
+    }
+
+    fun clock(seconds: Int): String {
+        val h = seconds / 3600
+        val m = (seconds % 3600) / 60
+        val s = (seconds % 60).toString().padStart(2, '0')
+        return if (h > 0) "$h:${m.toString().padStart(2, '0')}:$s" else "$m:$s"
+    }
+
     /** Pending-card hint: `77.5 kg × 8, 8, 8, 7`. */
     fun hint(sets: List<DraftSet>, unit: WeightUnit): String? {
         val working = sets.filter { it.setType != SetType.WARMUP }
+        cardioSummary(working)?.let { return it }
         if (working.isEmpty() || working.all { it.reps == null }) return null
         val reps = working.joinToString(", ") { it.reps?.toString() ?: "–" }
         val weights = working.map { it.weightKg }
