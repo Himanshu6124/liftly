@@ -4,7 +4,7 @@ Offline-first strength training tracker for **Android, iOS and Desktop**, built 
 Compose Multiplatform. You log **per exercise, not per set**: do all your sets, then open the
 exercise and save them together in a sheet that is already filled in from last time.
 
-> Status: **Milestone 2 (exercise library + form guide) done.** See [Roadmap](#roadmap).
+> Status: **Milestone 3 (active workout + exercise picker) done.** See [Roadmap](#roadmap).
 
 ## Requirements
 
@@ -108,7 +108,7 @@ installs pick up the change. Favorites, notes and custom exercises are never ove
 
 1. ✅ Setup: KMP targets, build-logic, Koin, navigation shell, theme, Room + DataStore, sync-ready schema, CI
 2. ✅ Exercise library + form guide (129 exercises, fuzzy search, filters, favorites, form tab, muscle diagram, notes)
-3. Active workout (start/resume/finish, exercise picker, checklist cards)
+3. ✅ Active workout (start/resume/finish/discard, picker with suggestions + custom exercises, reorder, auto-resume)
 4. Batch Log Sheet (pre-fill, quick reps parser, swipe quick-log, undo)
 5. Log sheet complete (per-set mode, warm-ups, RPE, tracking types, PRs)
 6. Routines (CRUD, next-routine rotation, 1-tap start)

@@ -31,4 +31,26 @@
     <string name="detail_records_empty_message">Your best weight, reps and estimated 1RM appear after your first logged session.</string>
     <string name="detail_not_found">This exercise no longer exists.</string>
     <string name="detail_demo_description">Start and end position of %1$s</string>
+
+    <string name="picker_title">Add exercises</string>
+    <string name="picker_add">Add (%1$d)</string>
+    <string name="picker_section_suggested">Suggested</string>
+    <string name="picker_section_recent">Recent</string>
+    <string name="picker_form_info">Form guide for %1$s</string>
+    <string name="picker_selected">Selected</string>
+    <string name="picker_create">Create “%1$s”</string>
+    <string name="picker_create_title">New exercise</string>
+    <string name="picker_create_name">Name</string>
+    <string name="picker_create_muscle">Main muscle</string>
+    <string name="picker_create_equipment">Equipment</string>
+    <string name="picker_create_tracking">Track</string>
+    <string name="picker_create_confirm">Create and select</string>
+    <string name="picker_cancel">Cancel</string>
+    <string name="tracking_weight_reps">Weight × reps</string>
+    <string name="tracking_reps_only">Reps only</string>
+    <string name="tracking_time">Time</string>
+    <string name="tracking_distance">Distance</string>
+
+    <string name="preview_see_full_guide">See full guide</string>
+    <string name="preview_no_guide">No form guide for custom exercises yet. Add your own note in the full guide.</string>
 </resources>

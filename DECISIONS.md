@@ -87,3 +87,29 @@ backend later with minimal change.
   using an app-wide coroutine scope so the write isn't cancelled with the screen.
 - **History / Records tabs** show empty states until workouts exist (Milestones 3–5). Creating
   custom exercises arrives with the exercise picker in Milestone 3 ("Create '<query>'").
+
+## Milestone 3: active workout and exercise picker
+
+- **Start = resume.** `StartWorkoutUseCase` enforces one in-progress workout by returning the
+  existing one instead of failing, so "Start" never dead-ends and Home's big button becomes
+  "Resume workout" while one is running.
+- **Unnamed workouts** are stored with an empty name and labelled at display time from the start
+  hour ("Morning/Afternoon/Evening/Night workout"), so the label follows the UI language.
+- **Finishing a workout with zero exercises discards it** instead of saving an empty entry to
+  history. Finishing with exercises still pending marks them SKIPPED (after one confirm sheet).
+- **Auto-resume:** on launch, if a workout is in progress the app opens straight into it (once per
+  launch, not again after rotation). Everything is read from Room, so it survives process death;
+  the elapsed timer is computed from the stored `startedAt`.
+- **Reordering** uses `sh.calvin.reorderable` (3.1.0, KMP, Apache-2.0): long-press + drag on a
+  card. Hand-rolling drag-and-drop in a `LazyColumn` (auto-scroll, item offsets) is a lot of
+  fiddly code for no benefit. The card menu also has Move up/down for accessibility.
+- **Undo instead of confirm:** Skip and Remove show an Undo snackbar. Remove keeps a snapshot
+  (exercise + sets) and restores it; if the server already knew the row, its tombstone is revived
+  (keeps `serverVersion`) so the restore syncs as an update, not a duplicate.
+- **Exercise picker and form preview live in `feature/exercises`** and are reused by the workout
+  (and later routines), so `feature/workout` depends on `feature/exercises`. Simpler than a
+  separate shared-UI module for two sheets.
+- **"Create '<query>'"** is offered whenever there's a search query (not only on zero results),
+  pre-filled from the query and active filters; the new exercise is selected automatically.
+- **Until Milestone 4**, tapping a card opens the form preview; M4 changes tap to the Batch Log
+  Sheet. The workout summary screen arrives in M7; finishing returns Home for now.

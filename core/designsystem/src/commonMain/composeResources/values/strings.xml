@@ -41,5 +41,10 @@
     <string name="group_legs">Legs</string>
     <string name="group_core">Core</string>
 
+    <string name="workout_name_morning">Morning workout</string>
+    <string name="workout_name_afternoon">Afternoon workout</string>
+    <string name="workout_name_evening">Evening workout</string>
+    <string name="workout_name_night">Night workout</string>
+
     <string name="muscle_diagram_description">Muscles worked: %1$s</string>
 </resources>

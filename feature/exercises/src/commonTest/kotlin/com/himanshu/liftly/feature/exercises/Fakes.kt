@@ -3,6 +3,7 @@ package com.himanshu.liftly.feature.exercises
 import com.himanshu.liftly.core.domain.model.Equipment
 import com.himanshu.liftly.core.domain.model.Exercise
 import com.himanshu.liftly.core.domain.model.Muscle
+import com.himanshu.liftly.core.domain.model.NewCustomExercise
 import com.himanshu.liftly.core.domain.model.TrackingType
 import com.himanshu.liftly.core.domain.repository.ExerciseRepository
 import com.himanshu.liftly.core.platform.UrlLauncher
@@ -20,6 +21,12 @@ class FakeExerciseRepository(initial: List<Exercise>) : ExerciseRepository {
     override suspend fun setFavorite(id: String, favorite: Boolean) = exercises.update { all ->
         all.map { if (it.id == id) it.copy(isFavorite = favorite) else it }
     }
+    override suspend fun createCustom(exercise: NewCustomExercise): String {
+        val id = "custom-${exercises.value.size}"
+        exercises.update { it + exercise(exercise.name, id = id, primary = exercise.primaryMuscle, equipment = exercise.equipment) }
+        return id
+    }
+
     override suspend fun setUserNote(id: String, note: String?) {
         noteWrites += note
         exercises.update { all -> all.map { if (it.id == id) it.copy(userNote = note) else it } }
@@ -48,3 +55,19 @@ fun exercise(
     formCues = listOf("Cue"), commonMistakes = listOf("Mistake"), userNote = note, isFavorite = favorite,
     isCustom = false, isArchived = false,
 )
+
+class FakeRecentWorkoutRepository(recent: List<String> = emptyList()) : com.himanshu.liftly.core.domain.repository.WorkoutRepository {
+    val recentIds = MutableStateFlow(recent)
+    override fun observeRecentExerciseIds(limit: Int): Flow<List<String>> = recentIds
+    override fun observeActiveWorkout() = kotlinx.coroutines.flow.flowOf(null)
+    override suspend fun getInProgressWorkout() = null
+    override suspend fun createWorkout(name: String, routineId: String?, exerciseIds: List<String>) = "w"
+    override suspend fun addExercises(workoutId: String, exerciseIds: List<String>) = Unit
+    override suspend fun rename(workoutId: String, name: String) = Unit
+    override suspend fun reorder(workoutId: String, orderedWorkoutExerciseIds: List<String>) = Unit
+    override suspend fun setStatus(workoutExerciseId: String, status: com.himanshu.liftly.core.domain.model.ExerciseStatus) = Unit
+    override suspend fun removeExercise(workoutExerciseId: String) = null
+    override suspend fun restoreExercise(removed: com.himanshu.liftly.core.domain.model.RemovedWorkoutExercise) = Unit
+    override suspend fun finish(workoutId: String) = Unit
+    override suspend fun discard(workoutId: String) = Unit
+}

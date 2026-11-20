@@ -11,7 +11,11 @@ import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffo
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination
@@ -44,14 +48,22 @@ fun App(viewModel: AppViewModel = koinViewModel()) {
 
     LiftlyTheme(themeMode = loaded.themeMode, dynamicColor = loaded.dynamicColor) {
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-            LiftlyNavShell()
+            LiftlyNavShell(hasWorkoutInProgress = viewModel::hasWorkoutInProgress)
         }
     }
 }
 
 @Composable
-private fun LiftlyNavShell() {
+private fun LiftlyNavShell(hasWorkoutInProgress: suspend () -> Boolean) {
     val navController = rememberNavController()
+    // Auto-resume once per app launch (saveable: not again after rotation).
+    var resumeChecked by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        if (!resumeChecked) {
+            resumeChecked = true
+            if (hasWorkoutInProgress()) navController.navigate(WorkoutRoute) { launchSingleTop = true }
+        }
+    }
     val backStack by navController.currentBackStackEntryAsState()
     val current = backStack?.destination
     val showNavigation = current == null || TopLevelDestination.entries.any { current.isOn(it) }
@@ -76,13 +88,17 @@ private fun LiftlyNavShell() {
     ) {
         Box(Modifier.fillMaxSize()) {
             NavHost(navController = navController, startDestination = HomeRoute) {
-                homeScreen(onOpenActiveWorkout = { navController.navigate(WorkoutRoute) })
+                homeScreen(onOpenActiveWorkout = { navController.navigate(WorkoutRoute) { launchSingleTop = true } })
                 routinesScreen()
                 exercisesScreen(onOpenExercise = { navController.navigate(ExerciseDetailRoute(it)) })
                 exerciseDetailScreen(onBack = { navController.popBackStack() })
                 historyScreen()
                 settingsScreen()
-                workoutScreen()
+                workoutScreen(
+                    // Summary screen arrives in Milestone 7; for now finishing returns Home.
+                    onClose = { navController.popBackStack(HomeRoute, inclusive = false) },
+                    onOpenGuide = { navController.navigate(ExerciseDetailRoute(it)) },
+                )
             }
         }
     }

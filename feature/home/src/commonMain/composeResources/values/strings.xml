@@ -8,4 +8,7 @@
     <string name="home_sync_syncing">Syncing…</string>
     <string name="home_sync_synced">Synced</string>
     <string name="home_sync_failed">Sync paused, will retry</string>
+    <string name="home_resume">Resume workout</string>
+    <string name="home_in_progress">In progress</string>
+    <string name="home_in_progress_detail">%1$d of %2$d exercises logged</string>
 </resources>

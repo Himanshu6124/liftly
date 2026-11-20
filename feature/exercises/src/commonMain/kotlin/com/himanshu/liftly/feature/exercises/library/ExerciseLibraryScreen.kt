@@ -135,7 +135,7 @@ fun ExerciseLibraryContent(
                     ExerciseRowItem(
                         row = row,
                         onClick = { onOpenExercise(row.id) },
-                        onFavorite = { onIntent(ExerciseLibraryIntent.FavoriteToggled(row.id, !row.isFavorite)) },
+                        trailing = { FavoriteButton(row) { onIntent(ExerciseLibraryIntent.FavoriteToggled(row.id, !row.isFavorite)) } },
                     )
                 }
             }
@@ -167,28 +167,4 @@ private fun FilterRow(state: ExerciseLibraryUiState, onIntent: (ExerciseLibraryI
         }
     }
     HorizontalDivider(Modifier.padding(top = spacing.xs))
-}
-
-@Composable
-private fun ExerciseRowItem(row: ExerciseRow, onClick: () -> Unit, onFavorite: () -> Unit) {
-    ListItem(
-        modifier = Modifier.clickable(onClick = onClick),
-        leadingContent = { ExerciseThumbnail(row.imagePaths, contentDescription = null) },
-        headlineContent = { Text(row.name, maxLines = 1) },
-        supportingContent = {
-            Text(stringResource(Res.string.exercises_row_subtitle, row.primaryMuscle.label(), row.equipment.label()), maxLines = 1)
-        },
-        trailingContent = {
-            IconButton(onClick = onFavorite) {
-                Icon(
-                    imageVector = if (row.isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                    contentDescription = stringResource(
-                        if (row.isFavorite) Res.string.exercises_favorite_remove else Res.string.exercises_favorite_add,
-                        row.name,
-                    ),
-                    tint = if (row.isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        },
-    )
 }

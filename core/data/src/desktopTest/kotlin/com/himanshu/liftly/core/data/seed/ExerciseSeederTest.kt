@@ -21,7 +21,7 @@ class ExerciseSeederTest {
     private val db = inMemoryDb()
     private val settings = FakeSettingsRepository()
     private val sync = RecordingSyncController()
-    private val repo = RoomExerciseRepository(db, { Instant.fromEpochMilliseconds(1_000) }, sync)
+    private val repo = RoomExerciseRepository(db, { Instant.fromEpochMilliseconds(1_000) }, sync, { "custom-1" })
     private var json = seedJson(version = 1, "Bench Press" to "bench_press", "Squat" to "squat")
     private val seeder = RoomExerciseSeeder(db, settings, { json })
 

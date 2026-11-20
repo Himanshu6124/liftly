@@ -8,6 +8,7 @@ import com.himanshu.liftly.core.platform.platformServicesModule
 import com.himanshu.liftly.core.resources.resources.Res
 import com.himanshu.liftly.feature.exercises.di.exercisesModule
 import com.himanshu.liftly.feature.home.di.homeModule
+import com.himanshu.liftly.feature.workout.di.workoutModule
 import org.koin.core.KoinApplication
 import org.koin.core.context.startKoin
 import org.koin.core.module.dsl.viewModelOf
@@ -27,6 +28,7 @@ val liftlyModules = listOf(
     appModule,
     homeModule,
     exercisesModule,
+    workoutModule,
 )
 
 /** Called once by every platform entry point before the first composition. */

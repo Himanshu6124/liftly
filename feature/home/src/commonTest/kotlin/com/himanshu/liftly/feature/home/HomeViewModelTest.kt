@@ -3,6 +3,7 @@ package com.himanshu.liftly.feature.home
 import app.cash.turbine.test
 import com.himanshu.liftly.core.domain.sync.SyncController
 import com.himanshu.liftly.core.domain.sync.SyncState
+import com.himanshu.liftly.core.domain.usecase.StartWorkoutUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,6 +24,25 @@ class HomeViewModelTest {
         override fun requestSync() = Unit
     }
 
+    private val workouts = object : com.himanshu.liftly.core.domain.repository.WorkoutRepository {
+        var created = 0
+        override fun observeActiveWorkout() = kotlinx.coroutines.flow.flowOf(null)
+        override suspend fun getInProgressWorkout() = null
+        override suspend fun createWorkout(name: String, routineId: String?, exerciseIds: List<String>): String {
+            created++
+            return "w"
+        }
+        override suspend fun addExercises(workoutId: String, exerciseIds: List<String>) = Unit
+        override suspend fun rename(workoutId: String, name: String) = Unit
+        override suspend fun reorder(workoutId: String, orderedWorkoutExerciseIds: List<String>) = Unit
+        override suspend fun setStatus(workoutExerciseId: String, status: com.himanshu.liftly.core.domain.model.ExerciseStatus) = Unit
+        override suspend fun removeExercise(workoutExerciseId: String) = null
+        override suspend fun restoreExercise(removed: com.himanshu.liftly.core.domain.model.RemovedWorkoutExercise) = Unit
+        override suspend fun finish(workoutId: String) = Unit
+        override suspend fun discard(workoutId: String) = Unit
+        override fun observeRecentExerciseIds(limit: Int) = kotlinx.coroutines.flow.flowOf(emptyList<String>())
+    }
+
     @BeforeTest
     fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
 
@@ -31,7 +51,7 @@ class HomeViewModelTest {
 
     @Test
     fun mapsSyncStateToLabel() = runTest {
-        val vm = HomeViewModel(sync)
+        val vm = HomeViewModel(sync, workouts, StartWorkoutUseCase(workouts))
         vm.state.test {
             assertEquals(SyncLabel.LOCAL_ONLY, awaitItem().syncLabel)
             sync.flow.value = SyncState.Syncing
@@ -41,10 +61,11 @@ class HomeViewModelTest {
 
     @Test
     fun startEmptyWorkoutEmitsNavigationEffect() = runTest {
-        val vm = HomeViewModel(sync)
+        val vm = HomeViewModel(sync, workouts, StartWorkoutUseCase(workouts))
         vm.effects.test {
             vm.onIntent(HomeIntent.StartEmptyWorkout)
             assertEquals(HomeEffect.OpenActiveWorkout, awaitItem())
+            assertEquals(1, workouts.created)
         }
     }
 }

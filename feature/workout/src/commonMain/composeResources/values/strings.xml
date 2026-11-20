@@ -1,6 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="workout_title">Workout</string>
-    <string name="workout_empty_title">Active workout</string>
-    <string name="workout_empty_message">Your exercise checklist will appear here.</string>
+    <string name="workout_rename">Rename workout</string>
+    <string name="workout_finish">Finish</string>
+    <string name="workout_more">More options</string>
+    <string name="workout_discard">Discard workout</string>
+    <string name="workout_discard_title">Discard this workout?</string>
+    <string name="workout_discard_message">Everything logged in it will be deleted. This can’t be undone.</string>
+    <string name="workout_discard_confirm">Discard</string>
+    <string name="workout_cancel">Cancel</string>
+    <string name="workout_add_exercise">Add exercise</string>
+    <string name="workout_empty_title">Add your first exercise</string>
+    <string name="workout_empty_message">Pick everything you plan to do. You’ll log each one after its sets.</string>
+
+    <string name="workout_finish_title">%1$d exercises not logged</string>
+    <string name="workout_finish_anyway">Finish anyway (they’ll be marked skipped)</string>
+    <string name="workout_keep_going">Keep going</string>
+
+    <string name="card_status_pending">Not logged yet</string>
+    <string name="card_status_logged">Logged</string>
+    <string name="card_status_skipped">Skipped</string>
+    <string name="card_form">Form guide for %1$s</string>
+    <string name="card_options">Options for %1$s</string>
+    <string name="card_skip">Skip</string>
+    <string name="card_unskip">Don’t skip</string>
+    <string name="card_remove">Remove</string>
+    <string name="card_move_up">Move up</string>
+    <string name="card_move_down">Move down</string>
+    <string name="card_subtitle">%1$s · %2$s</string>
+
+    <string name="snackbar_skipped">Skipped %1$s</string>
+    <string name="snackbar_removed">Removed %1$s</string>
+    <string name="snackbar_undo">Undo</string>
+    <string name="elapsed_description">Elapsed time %1$s</string>
 </resources>
