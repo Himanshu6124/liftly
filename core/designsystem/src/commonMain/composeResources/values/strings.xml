@@ -1,4 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Liftly</string>
+
+    <string name="muscle_chest">Chest</string>
+    <string name="muscle_front_delts">Front delts</string>
+    <string name="muscle_side_delts">Side delts</string>
+    <string name="muscle_rear_delts">Rear delts</string>
+    <string name="muscle_biceps">Biceps</string>
+    <string name="muscle_triceps">Triceps</string>
+    <string name="muscle_forearms">Forearms</string>
+    <string name="muscle_abs">Abs</string>
+    <string name="muscle_obliques">Obliques</string>
+    <string name="muscle_lats">Lats</string>
+    <string name="muscle_traps">Traps</string>
+    <string name="muscle_upper_back">Upper back</string>
+    <string name="muscle_lower_back">Lower back</string>
+    <string name="muscle_glutes">Glutes</string>
+    <string name="muscle_quads">Quads</string>
+    <string name="muscle_hamstrings">Hamstrings</string>
+    <string name="muscle_adductors">Adductors</string>
+    <string name="muscle_abductors">Abductors</string>
+    <string name="muscle_calves">Calves</string>
+    <string name="muscle_neck">Neck</string>
+
+    <string name="equipment_barbell">Barbell</string>
+    <string name="equipment_dumbbell">Dumbbell</string>
+    <string name="equipment_machine">Machine</string>
+    <string name="equipment_cable">Cable</string>
+    <string name="equipment_bodyweight">Bodyweight</string>
+    <string name="equipment_kettlebell">Kettlebell</string>
+    <string name="equipment_band">Band</string>
+    <string name="equipment_ez_bar">EZ bar</string>
+    <string name="equipment_smith_machine">Smith machine</string>
+    <string name="equipment_other">Other</string>
+
+    <string name="group_chest">Chest</string>
+    <string name="group_back">Back</string>
+    <string name="group_shoulders">Shoulders</string>
+    <string name="group_arms">Arms</string>
+    <string name="group_legs">Legs</string>
+    <string name="group_core">Core</string>
+
+    <string name="muscle_diagram_description">Muscles worked: %1$s</string>
 </resources>

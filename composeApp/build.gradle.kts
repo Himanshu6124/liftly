@@ -20,6 +20,7 @@ kotlin {
             implementation(projects.core.data)
             implementation(projects.core.datastore)
             implementation(projects.core.platform)
+            implementation(projects.core.resources)
             implementation(projects.feature.home)
             implementation(projects.feature.workout)
             implementation(projects.feature.exercises)

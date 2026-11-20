@@ -29,6 +29,12 @@ interface ExerciseDao : SyncDao<ExerciseEntity> {
 
     @Query("SELECT COUNT(*) FROM exercises WHERE deletedAt IS NULL")
     suspend fun count(): Int
+
+    @Query("SELECT * FROM exercises WHERE id = :id AND deletedAt IS NULL")
+    suspend fun getById(id: String): ExerciseEntity?
+
+    @Query("SELECT * FROM exercises WHERE seedKey IN (:seedKeys)")
+    suspend fun getBySeedKeys(seedKeys: List<String>): List<ExerciseEntity>
 }
 
 @Dao

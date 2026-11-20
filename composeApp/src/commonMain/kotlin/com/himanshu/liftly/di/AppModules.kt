@@ -2,8 +2,11 @@ package com.himanshu.liftly.di
 
 import com.himanshu.liftly.AppViewModel
 import com.himanshu.liftly.core.data.di.dataModule
+import com.himanshu.liftly.core.data.seed.SeedSource
 import com.himanshu.liftly.core.datastore.dataStoreModule
 import com.himanshu.liftly.core.platform.platformServicesModule
+import com.himanshu.liftly.core.resources.resources.Res
+import com.himanshu.liftly.feature.exercises.di.exercisesModule
 import com.himanshu.liftly.feature.home.di.homeModule
 import org.koin.core.KoinApplication
 import org.koin.core.context.startKoin
@@ -13,6 +16,8 @@ import org.koin.dsl.module
 
 private val appModule = module {
     viewModelOf(::AppViewModel)
+    // Bundled library JSON lives in core:resources (Compose resources).
+    single<SeedSource> { SeedSource { Res.readBytes("files/exercises.json").decodeToString() } }
 }
 
 val liftlyModules = listOf(
@@ -21,6 +26,7 @@ val liftlyModules = listOf(
     platformServicesModule,
     appModule,
     homeModule,
+    exercisesModule,
 )
 
 /** Called once by every platform entry point before the first composition. */

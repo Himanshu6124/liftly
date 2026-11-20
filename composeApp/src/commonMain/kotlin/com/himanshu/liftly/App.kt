@@ -23,6 +23,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.himanshu.liftly.core.designsystem.theme.LiftlyTheme
+import com.himanshu.liftly.feature.exercises.navigation.ExerciseDetailRoute
+import com.himanshu.liftly.feature.exercises.navigation.exerciseDetailScreen
 import com.himanshu.liftly.feature.exercises.navigation.exercisesScreen
 import com.himanshu.liftly.feature.history.navigation.historyScreen
 import com.himanshu.liftly.feature.home.navigation.HomeRoute
@@ -76,7 +78,8 @@ private fun LiftlyNavShell() {
             NavHost(navController = navController, startDestination = HomeRoute) {
                 homeScreen(onOpenActiveWorkout = { navController.navigate(WorkoutRoute) })
                 routinesScreen()
-                exercisesScreen()
+                exercisesScreen(onOpenExercise = { navController.navigate(ExerciseDetailRoute(it)) })
+                exerciseDetailScreen(onBack = { navController.popBackStack() })
                 historyScreen()
                 settingsScreen()
                 workoutScreen()

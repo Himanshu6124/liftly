@@ -1,6 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="exercises_title">Exercises</string>
-    <string name="exercises_empty_title">Exercise library</string>
-    <string name="exercises_empty_message">Browse exercises with form guides, muscles and cues.</string>
+    <string name="exercises_search_hint">Search exercises</string>
+    <string name="exercises_clear_search">Clear search</string>
+    <string name="exercises_section_favorites">Favorites</string>
+    <string name="exercises_section_results">Results</string>
+    <string name="exercises_no_results_title">No matches</string>
+    <string name="exercises_no_results_message">Nothing matches “%1$s”. Try a shorter word or clear the filters.</string>
+    <string name="exercises_clear_filters">Clear filters</string>
+    <string name="exercises_favorite_add">Add %1$s to favorites</string>
+    <string name="exercises_favorite_remove">Remove %1$s from favorites</string>
+    <string name="exercises_row_subtitle">%1$s · %2$s</string>
+
+    <string name="detail_back">Back</string>
+    <string name="detail_tab_form">Form</string>
+    <string name="detail_tab_history">History</string>
+    <string name="detail_tab_records">Records</string>
+    <string name="detail_cues">Key cues</string>
+    <string name="detail_mistakes">Common mistakes</string>
+    <string name="detail_muscles">Muscles</string>
+    <string name="detail_primary">Primary</string>
+    <string name="detail_secondary">Secondary</string>
+    <string name="detail_how_to">How to</string>
+    <string name="detail_watch_video">Watch video</string>
+    <string name="detail_note">My note</string>
+    <string name="detail_note_hint">e.g. seat height 4, grip on the rings</string>
+    <string name="detail_history_empty_title">No history yet</string>
+    <string name="detail_history_empty_message">Log this exercise in a workout and every session shows up here.</string>
+    <string name="detail_records_empty_title">No records yet</string>
+    <string name="detail_records_empty_message">Your best weight, reps and estimated 1RM appear after your first logged session.</string>
+    <string name="detail_not_found">This exercise no longer exists.</string>
+    <string name="detail_demo_description">Start and end position of %1$s</string>
 </resources>

@@ -4,7 +4,7 @@ Offline-first strength training tracker for **Android, iOS and Desktop**, built 
 Compose Multiplatform. You log **per exercise, not per set**: do all your sets, then open the
 exercise and save them together in a sheet that is already filled in from last time.
 
-> Status: **Milestone 1 (setup) done.** See [Roadmap](#roadmap).
+> Status: **Milestone 2 (exercise library + form guide) done.** See [Roadmap](#roadmap).
 
 ## Requirements
 
@@ -61,7 +61,8 @@ Composable ──Intent──▶ ViewModel ──▶ UseCase ──▶ Repositor
 | `core/data` | Room database, DAOs, sync engine, repository implementations |
 | `core/datastore` | `SettingsRepository` on DataStore Preferences |
 | `core/platform` | `Haptics`, `Notifier`, `UrlLauncher`, `ShareService` per platform |
-| `core/designsystem` | Theme (light/dark/dynamic), spacing, shared components |
+| `core/designsystem` | Theme (light/dark/dynamic), spacing, shared components (thumbnail, demo, muscle diagram) |
+| `core/resources` | Bundled exercise seed JSON + images (Compose resources) |
 | `feature/*` | One module per feature: screen, ViewModel, navigation entry, strings |
 
 Conventions: each screen has a stateful `XxxScreen` (gets the ViewModel from Koin) and a
@@ -90,10 +91,23 @@ is ready for a backend from version 1:
 Nothing else changes: screens, use cases and repositories stay as they are. Details and
 trade-offs are in [`DECISIONS.md`](DECISIONS.md).
 
+## Exercise data
+
+The bundled library (129 exercises with images) is generated from
+[free-exercise-db](https://github.com/yuhonas/free-exercise-db) (public domain) plus Liftly's own
+aliases, form cues and common mistakes in `tools/seed/curation.py`. To change it:
+
+```bash
+python3 tools/seed/build_seed.py path/to/free-exercise-db/dist/exercises.json --images
+```
+
+Then bump `SEED_VERSION` in `RoomExerciseSeeder.kt` (and `version` in the JSON) so existing
+installs pick up the change. Favorites, notes and custom exercises are never overwritten.
+
 ## Roadmap
 
 1. ✅ Setup: KMP targets, build-logic, Koin, navigation shell, theme, Room + DataStore, sync-ready schema, CI
-2. Exercise library + form guide (seed data, search, Exercise Detail, muscle diagram)
+2. ✅ Exercise library + form guide (129 exercises, fuzzy search, filters, favorites, form tab, muscle diagram, notes)
 3. Active workout (start/resume/finish, exercise picker, checklist cards)
 4. Batch Log Sheet (pre-fill, quick reps parser, swipe quick-log, undo)
 5. Log sheet complete (per-set mode, warm-ups, RPE, tracking types, PRs)

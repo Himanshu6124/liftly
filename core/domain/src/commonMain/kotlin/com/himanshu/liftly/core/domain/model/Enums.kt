@@ -1,5 +1,8 @@
 package com.himanshu.liftly.core.domain.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 enum class Muscle {
     CHEST,
     FRONT_DELTS,
@@ -23,22 +26,32 @@ enum class Muscle {
     NECK,
 }
 
+@Serializable
 enum class Equipment { BARBELL, DUMBBELL, MACHINE, CABLE, BODYWEIGHT, KETTLEBELL, BAND, EZ_BAR, SMITH_MACHINE, OTHER }
 
+@Serializable
 enum class TrackingType { WEIGHT_REPS, REPS_ONLY, TIME, DISTANCE }
 
+@Serializable
 enum class Mechanic { COMPOUND, ISOLATION }
 
+@Serializable
 enum class Difficulty { BEGINNER, INTERMEDIATE, EXPERT }
 
+@Serializable
 enum class ExerciseStatus { PENDING, LOGGED, SKIPPED }
 
+@Serializable
 enum class InputMode { UNIFORM, PER_SET }
 
+@Serializable
 enum class SetType { NORMAL, WARMUP, DROP, FAILURE }
 
+@Serializable
 enum class PrType { EST_1RM, MAX_WEIGHT, MAX_REPS, MAX_VOLUME }
 
+@Serializable
 enum class WeightUnit { KG, LB }
 
+@Serializable
 enum class ThemeMode { SYSTEM, LIGHT, DARK }

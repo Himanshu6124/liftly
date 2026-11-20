@@ -58,3 +58,32 @@ backend later with minimal change.
   Room). Pure logic tests live in `commonTest` and run on every target.
 - **AGP pinned to 9.2.1** (not the newest 9.5.x) because current stable Android Studio only
   opens projects up to AGP 9.2.1. Bump it once Studio supports newer versions.
+
+## Milestone 2: exercise library and form guide
+
+- **Seed data:** 129 exercises built from free-exercise-db (public domain) by
+  `tools/seed/build_seed.py`. Aliases, form cues, common mistakes and the finer muscle mapping
+  (front/side/rear delts, upper/lower back) are written for Liftly in `tools/seed/curation.py`.
+  Attribution: `core/resources/LICENSE-exercise-data.md` (also shown in Settings → About, M7).
+- **All 129 exercises have bundled images** (2 per exercise, 360 px, ~6 MB), so the library works
+  fully offline and Coil's network module isn't needed yet. `imagePaths` may also hold URLs; add
+  `coil-network-ktor3` when the first URL-based image appears.
+- **Resources live in a `core/resources` module** (seed JSON + images). `core/data` doesn't read
+  them directly: it declares a `SeedSource` interface the app binds, so data stays free of
+  Compose and the seeder is testable with plain strings.
+- **Seeded rows** get ids `seed:<seedKey>`, start `SYNCED` with `updatedAt = 0`, so they are never
+  pushed to a backend until the user changes them (favorite, note), and any real edit wins
+  conflicts. Upgrades (seed version bump) replace library content only, matched by `seedKey`.
+  Known gap: if another device's copy of a seeded row is pulled, its library text may be older
+  than this device's seed; harmless now, and fixable by syncing only user fields for seed rows.
+- **Filter chips use 6 muscle groups** (Chest, Back, Shoulders, Arms, Legs, Core) instead of 20
+  muscles, plus equipment chips: fewer taps, and a group covers what people mean by "back day".
+- **Favorite toggle is on every library row** (heart icon) so favoriting doesn't require opening
+  the detail screen.
+- **Form tab order:** demo → key cues → common mistakes → muscles → step-by-step → note.
+  Cues come first because that's what people check between sets; the spec lists the same items
+  in a different order.
+- **Personal note autosaves** 0.5 s after typing stops and is flushed when leaving the screen,
+  using an app-wide coroutine scope so the write isn't cancelled with the screen.
+- **History / Records tabs** show empty states until workouts exist (Milestones 3–5). Creating
+  custom exercises arrives with the exercise picker in Milestone 3 ("Create '<query>'").
