@@ -5,14 +5,18 @@ import androidx.lifecycle.viewModelScope
 import com.himanshu.liftly.core.domain.model.DraftSet
 import com.himanshu.liftly.core.domain.model.ExerciseStatus
 import com.himanshu.liftly.core.domain.model.UserSettings
+import com.himanshu.liftly.core.domain.repository.ExerciseRepository
 import com.himanshu.liftly.core.domain.repository.RoutineRepository
 import com.himanshu.liftly.core.domain.repository.SettingsRepository
 import com.himanshu.liftly.core.domain.repository.WorkoutRepository
 import com.himanshu.liftly.core.domain.usecase.GetLogSheetPrefillUseCase
 import com.himanshu.liftly.core.domain.usecase.LogExerciseSetsUseCase
 import com.himanshu.liftly.core.domain.util.AppScope
+import com.himanshu.liftly.core.domain.util.TimeProvider
 import com.himanshu.liftly.core.domain.util.toDraftSets
 import com.himanshu.liftly.core.platform.Haptics
+import com.himanshu.liftly.feature.workout.rest.RestAlarm
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -26,6 +30,8 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Instant
 
 /**
  * The active workout is read straight from Room, so the screen survives process death:
@@ -39,6 +45,9 @@ class ActiveWorkoutViewModel(
     private val prefill: GetLogSheetPrefillUseCase,
     private val haptics: Haptics,
     private val appScope: AppScope,
+    private val exercises: ExerciseRepository,
+    private val restAlarm: RestAlarm,
+    private val time: TimeProvider,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ActiveWorkoutUiState())
@@ -54,6 +63,8 @@ class ActiveWorkoutViewModel(
     private val lastSets = MutableStateFlow<Map<String, List<DraftSet>>>(emptyMap())
     private var userSettings = UserSettings()
     private val requestedHints = mutableSetOf<String>()
+    private var restJob: Job? = null
+    private var restJobFor: Instant? = null
 
     init {
         combine(workouts.observeActiveWorkout(), settings.settings, lastSets) { active, s, last ->
@@ -63,6 +74,7 @@ class ActiveWorkoutViewModel(
         }
             // While finishing/discarding, the workout disappearing is expected: the Closed effect navigates.
             .onEach { ui -> _state.update { s -> ui ?: if (s.isClosing) s else s.copy(isLoading = false, workoutId = null) } }
+            .onEach { watchRest(_state.value.restEndsAt) }
             .launchIn(viewModelScope)
     }
 
@@ -130,6 +142,9 @@ class ActiveWorkoutViewModel(
                 }
             }
 
+            is ActiveWorkoutIntent.RestStart, is ActiveWorkoutIntent.RestAdjust, ActiveWorkoutIntent.RestStop ->
+                workoutId?.let { onRestIntent(it, intent) }
+
             ActiveWorkoutIntent.UpdateRoutineTargets -> {
                 val routineId = _state.value.routineId
                 if (workoutId != null && routineId != null) {
@@ -144,13 +159,7 @@ class ActiveWorkoutViewModel(
 
             ActiveWorkoutIntent.DiscardCancelled -> _state.update { it.copy(showDiscardDialog = false) }
 
-            ActiveWorkoutIntent.DiscardConfirmed -> workoutId?.let { id ->
-                _state.update { it.copy(showDiscardDialog = false, isClosing = true) }
-                viewModelScope.launch {
-                    appScope.launch { workouts.discard(id) }.join()
-                    _effects.send(ActiveWorkoutEffect.Closed(finished = false))
-                }
-            }
+            ActiveWorkoutIntent.DiscardConfirmed -> workoutId?.let(::discard)
         }
     }
 
@@ -221,10 +230,20 @@ class ActiveWorkoutViewModel(
         onIntent(ActiveWorkoutIntent.CommitOrder(ids))
     }
 
+    private fun discard(id: String) {
+        _state.update { it.copy(showDiscardDialog = false, isClosing = true) }
+        restAlarm.cancel()
+        viewModelScope.launch {
+            appScope.launch { workouts.discard(id) }.join()
+            _effects.send(ActiveWorkoutEffect.Closed(finished = false))
+        }
+    }
+
     private fun finish() {
         val s = _state.value
         val id = s.workoutId ?: return
         _state.update { it.copy(showFinishSheet = false, isClosing = true) }
+        restAlarm.cancel()
         viewModelScope.launch {
             // A workout with no exercises at all has nothing worth keeping in history.
             if (s.cards.isEmpty()) {
@@ -234,6 +253,57 @@ class ActiveWorkoutViewModel(
                 appScope.launch { workouts.finish(id) }.join()
                 _effects.send(ActiveWorkoutEffect.Closed(finished = true, workoutId = id))
             }
+        }
+    }
+
+    private fun onRestIntent(workoutId: String, intent: ActiveWorkoutIntent) {
+        when (intent) {
+            is ActiveWorkoutIntent.RestStart -> {
+                _state.value.restExercise?.let { card -> write { exercises.setRestSeconds(card.exerciseId, intent.seconds) } }
+                startRest(workoutId, time.now() + intent.seconds.seconds)
+            }
+
+            is ActiveWorkoutIntent.RestAdjust -> _state.value.restEndsAt?.let { current ->
+                val endsAt = current + intent.seconds.seconds
+                if (endsAt <= time.now()) stopRest(workoutId) else startRest(workoutId, endsAt)
+            }
+
+            ActiveWorkoutIntent.RestStop -> stopRest(workoutId)
+
+            else -> Unit
+        }
+    }
+
+    private fun startRest(workoutId: String, endsAt: Instant) {
+        _state.update { it.copy(restEndsAt = endsAt) } // immediate feedback; the DB echo follows
+        restAlarm.schedule(endsAt)
+        write { workouts.setRestTimer(workoutId, endsAt) }
+    }
+
+    private fun stopRest(workoutId: String) {
+        _state.update { it.copy(restEndsAt = null) }
+        restAlarm.cancel()
+        write { workouts.setRestTimer(workoutId, null) }
+    }
+
+    /**
+     * One job per rest end time: buzz when it's reached while the screen is open, then clear it.
+     * A rest that ran out while the app was closed is cleared silently (its notification already fired).
+     */
+    private fun watchRest(endsAt: Instant?) {
+        if (endsAt == restJobFor) return
+        restJob?.cancel()
+        restJobFor = endsAt
+        val workoutId = _state.value.workoutId ?: return
+        if (endsAt == null) return
+        restJob = viewModelScope.launch {
+            val remaining = endsAt - time.now()
+            if (remaining.isPositive()) {
+                delay(remaining)
+                haptics.success()
+            }
+            _state.update { if (it.restEndsAt == endsAt) it.copy(restEndsAt = null) else it }
+            write { workouts.setRestTimer(workoutId, null) }
         }
     }
 

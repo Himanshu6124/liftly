@@ -196,6 +196,12 @@ class RoomWorkoutRepository(
         if (w.name != trimmed) workouts.upsertAll(listOf(w.copy(name = trimmed, sync = w.sync.touch(now()))))
     }
 
+    override suspend fun setRestTimer(workoutId: EntityId, endsAt: Instant?) = write {
+        val w = workouts.getById(workoutId) ?: return@write
+        val millis = endsAt?.toEpochMilliseconds()
+        if (w.restEndsAt != millis) workouts.upsertAll(listOf(w.copy(restEndsAt = millis, sync = w.sync.touch(now()))))
+    }
+
     override suspend fun reorder(workoutId: EntityId, orderedWorkoutExerciseIds: List<EntityId>) = write {
         val now = now()
         val position = orderedWorkoutExerciseIds.withIndex().associate { (i, id) -> id to i }

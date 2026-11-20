@@ -23,4 +23,5 @@ internal fun ExerciseEntity.toDomain() = Exercise(
     isFavorite = isFavorite,
     isCustom = isCustom,
     isArchived = isArchived,
+    restSeconds = restSeconds,
 )

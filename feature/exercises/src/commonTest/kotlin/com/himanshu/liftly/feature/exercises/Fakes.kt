@@ -27,6 +27,8 @@ class FakeExerciseRepository(initial: List<Exercise>) : ExerciseRepository {
         return id
     }
 
+    override suspend fun setRestSeconds(id: String, seconds: Int) = Unit
+
     override suspend fun setUserNote(id: String, note: String?) {
         noteWrites += note
         exercises.update { all -> all.map { if (it.id == id) it.copy(userNote = note) else it } }
@@ -93,6 +95,7 @@ class FakeRecentWorkoutRepository(recent: List<String> = emptyList()) : com.hima
     override fun observeExerciseSessions(exerciseId: String) = sessions
     override fun observeWorkingSetsByExercise(from: kotlin.time.Instant, to: kotlin.time.Instant) =
         kotlinx.coroutines.flow.flowOf(emptyList<com.himanshu.liftly.core.domain.model.ExerciseSetCount>())
+    override suspend fun setRestTimer(workoutId: String, endsAt: kotlin.time.Instant?) = Unit
     override fun observeRecords(exerciseId: String) =
         kotlinx.coroutines.flow.flowOf(emptyList<com.himanshu.liftly.core.domain.model.PersonalRecord>())
     override suspend fun restoreLog(snapshot: com.himanshu.liftly.core.domain.model.LogSnapshot) = Unit

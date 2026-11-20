@@ -28,6 +28,8 @@ data class Exercise(
     val isFavorite: Boolean,
     val isCustom: Boolean,
     val isArchived: Boolean,
+    /** Rest time last used for this exercise, in seconds (null = app default). */
+    val restSeconds: Int? = null,
 )
 
 data class Routine(
@@ -57,6 +59,8 @@ data class Workout(
     val startedAt: Instant,
     val endedAt: Instant?,
     val notes: String?,
+    /** When the running rest timer ends; null when no rest is running. */
+    val restEndsAt: Instant? = null,
 ) {
     val isInProgress: Boolean get() = endedAt == null
 }

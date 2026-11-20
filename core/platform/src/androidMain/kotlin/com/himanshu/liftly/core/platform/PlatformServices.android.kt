@@ -52,7 +52,7 @@ private class AndroidShareService(private val context: Context) : ShareService {
 
 actual val platformServicesModule: Module = module {
     single<Haptics> { AndroidHaptics(androidContext()) }
-    single<Notifier> { LoggingNotifier() }
+    single<Notifier> { AndroidNotifier(androidContext()) }
     single<UrlLauncher> { AndroidUrlLauncher(androidContext()) }
     single<ShareService> { AndroidShareService(androidContext()) }
 }

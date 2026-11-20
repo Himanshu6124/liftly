@@ -20,6 +20,7 @@ internal fun WorkoutEntity.toDomain() = Workout(
     startedAt = startedAt.toInstant(),
     endedAt = endedAt?.toInstant(),
     notes = notes,
+    restEndsAt = restEndsAt?.toInstant(),
 )
 
 internal fun WorkoutExerciseEntity.toDomain() = WorkoutExercise(

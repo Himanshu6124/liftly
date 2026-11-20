@@ -36,6 +36,7 @@ kotlin {
 
 dependencies {
     implementation(projects.composeApp)
+    implementation(projects.core.platform) // notification permission hook
     implementation(libs.androidx.activity.compose)
     implementation(project.dependencies.platform(libs.koin.bom))
     implementation(libs.koin.android)

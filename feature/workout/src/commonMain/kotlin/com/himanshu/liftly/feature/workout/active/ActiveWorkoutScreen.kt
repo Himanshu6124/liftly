@@ -3,6 +3,7 @@ package com.himanshu.liftly.feature.workout.active
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -44,6 +45,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -82,6 +84,7 @@ import com.himanshu.liftly.feature.workout.resources.workout_routine_name
 import com.himanshu.liftly.feature.workout.resources.workout_save
 import com.himanshu.liftly.feature.workout.resources.workout_save_as_routine
 import com.himanshu.liftly.feature.workout.resources.workout_update_routine
+import com.himanshu.liftly.feature.workout.rest.RestTimerButton
 import com.himanshu.liftly.feature.workout.summary.SaveRoutineDialog
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.Flow
@@ -178,11 +181,14 @@ fun ActiveWorkoutContent(
         snackbarHost = { SnackbarHost(snackbar) },
         floatingActionButton = {
             if (state.cards.isNotEmpty()) {
-                ExtendedFloatingActionButton(
-                    onClick = { showPicker = true },
-                    icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                    text = { Text(stringResource(Res.string.workout_add_exercise)) },
-                )
+                Row(horizontalArrangement = Arrangement.spacedBy(LiftlyTheme.spacing.sm), verticalAlignment = Alignment.CenterVertically) {
+                    RestTimerButton(state.restEndsAt, state.restSuggestion, state.restRemembered, onIntent)
+                    ExtendedFloatingActionButton(
+                        onClick = { showPicker = true },
+                        icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+                        text = { Text(stringResource(Res.string.workout_add_exercise)) },
+                    )
+                }
             }
         },
     ) { padding ->

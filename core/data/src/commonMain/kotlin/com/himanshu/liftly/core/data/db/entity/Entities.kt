@@ -42,6 +42,8 @@ data class ExerciseEntity(
     val isCustom: Boolean,
     val isArchived: Boolean,
     @Embedded override val sync: SyncMeta,
+    /** Rest time the user last picked for this exercise (seconds); added in schema v2. */
+    val restSeconds: Int? = null,
 ) : SyncableEntity
 
 @Serializable
@@ -87,6 +89,8 @@ data class WorkoutEntity(
     val endedAt: Long?,
     val notes: String?,
     @Embedded override val sync: SyncMeta,
+    /** When the running rest timer ends (epoch millis), null when none; added in schema v2. */
+    val restEndsAt: Long? = null,
 ) : SyncableEntity
 
 @Serializable

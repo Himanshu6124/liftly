@@ -16,6 +16,9 @@ interface ExerciseRepository {
     /** Blank notes are stored as null. */
     suspend fun setUserNote(id: EntityId, note: String?)
 
+    /** Remembers the rest time picked for this exercise. */
+    suspend fun setRestSeconds(id: EntityId, seconds: Int)
+
     /** Creates a custom exercise and returns its id. */
     suspend fun createCustom(exercise: NewCustomExercise): EntityId
 }

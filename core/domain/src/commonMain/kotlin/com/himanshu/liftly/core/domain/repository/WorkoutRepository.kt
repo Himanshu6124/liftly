@@ -34,6 +34,9 @@ interface WorkoutRepository {
 
     suspend fun rename(workoutId: EntityId, name: String)
 
+    /** Starts (or changes) the rest timer to end at [endsAt]; null stops it. */
+    suspend fun setRestTimer(workoutId: EntityId, endsAt: Instant?)
+
     /** Persists a new order; [orderedWorkoutExerciseIds] lists every exercise of the workout. */
     suspend fun reorder(workoutId: EntityId, orderedWorkoutExerciseIds: List<EntityId>)
 

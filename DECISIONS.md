@@ -264,3 +264,22 @@ backend later with minimal change.
   muscle, with a floor so light work stays visible). `MuscleDiagram` now always fits inside the
   box it's given instead of trusting its aspect ratio, which overdrew when a caller fixed the
   height and the width separately.
+
+## Milestone 12 (Phase 2): rest timer
+
+- **Manual, one floating button** next to "Add exercise": tap → presets 1:00 / 1:30 / 2:00 / 3:00;
+  while running it shows the countdown, and tap → +30 s / −30 s / Stop.
+- **Stored as `workouts.restEndsAt`**, an absolute time, never a counter: it survives the app being
+  backgrounded or killed, and the countdown is always `restEndsAt − now`.
+- **Remembered per exercise** (`exercises.restSeconds`, synced like the personal note). The rest
+  belongs to the next exercise to do (first not-logged card), since with batch logging you rest
+  between sets of the exercise you haven't logged yet. Its last time is marked in the menu.
+- **End of rest:** a local notification scheduled for `restEndsAt` (works with the app closed)
+  plus a success haptic when the screen is open. iOS doesn't show notifications for the app in
+  the foreground, so the haptic covers that case. Permission is requested the first time a rest
+  starts, never at launch.
+- **Android alarms:** exact when the system allows (`canScheduleExactAlarms`), otherwise inexact,
+  which can be late by a few minutes in Doze. We don't ask for `USE_EXACT_ALARM` (Play reserves it
+  for alarm/calendar apps). A foreground-service countdown is Phase 3 (ongoing notification).
+- **Schema v2** via Room auto-migration (two nullable columns). Verified on a v1 database with
+  data: version 2, all rows kept.

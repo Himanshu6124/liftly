@@ -65,6 +65,7 @@ class RoomExerciseSeeder(
         isCustom = false,
         isArchived = current?.isArchived ?: false,
         sync = current?.sync ?: SyncMeta(updatedAt = 0, syncStatus = SyncStatus.SYNCED),
+        restSeconds = current?.restSeconds,
     )
 
     companion object {

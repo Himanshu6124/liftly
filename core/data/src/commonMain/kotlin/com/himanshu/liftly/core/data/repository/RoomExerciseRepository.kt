@@ -36,6 +36,8 @@ class RoomExerciseRepository(
     override suspend fun setUserNote(id: EntityId, note: String?) =
         edit(id) { it.copy(userNote = note?.trim()?.takeIf(String::isNotEmpty)) }
 
+    override suspend fun setRestSeconds(id: EntityId, seconds: Int) = edit(id) { it.copy(restSeconds = seconds) }
+
     override suspend fun createCustom(exercise: NewCustomExercise): EntityId {
         val id = ids.newId()
         dao.upsertAll(

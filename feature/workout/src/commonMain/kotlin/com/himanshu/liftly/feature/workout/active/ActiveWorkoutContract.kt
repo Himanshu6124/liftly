@@ -9,6 +9,7 @@ import com.himanshu.liftly.core.domain.model.Muscle
 import com.himanshu.liftly.core.domain.model.WeightUnit
 import com.himanshu.liftly.core.domain.util.SetFormatter
 import com.himanshu.liftly.core.domain.util.toDraftSets
+import com.himanshu.liftly.feature.workout.rest.RestTimer
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -29,6 +30,8 @@ data class ExerciseCardUi(
     val lastHint: String? = null,
     /** Set a personal record in this workout. */
     val hasPr: Boolean = false,
+    /** Rest time remembered for this exercise (seconds), null = app default. */
+    val restSeconds: Int? = null,
 )
 
 @Immutable
@@ -50,7 +53,18 @@ data class ActiveWorkoutUiState(
     /** Briefly highlighted card (the next pending one after a log). */
     val highlightedId: String? = null,
     val showDiscardDialog: Boolean = false,
+    /** When the running rest timer ends; null = no rest running. */
+    val restEndsAt: Instant? = null,
 ) {
+    /** The exercise a rest belongs to: the next one to do, or the last card when all are done. */
+    val restExercise: ExerciseCardUi? get() = cards.firstOrNull { it.status == ExerciseStatus.PENDING } ?: cards.lastOrNull()
+
+    /** Preset to mark in the rest menu: what was last used for [restExercise], else the default. */
+    val restSuggestion: Int get() = restExercise?.restSeconds ?: RestTimer.DEFAULT_SECONDS
+
+    /** Whether [restSuggestion] was actually used before for this exercise (labelled "last used"). */
+    val restRemembered: Boolean get() = restExercise?.restSeconds != null
+
     val pendingCount: Int get() = cards.count { it.status == ExerciseStatus.PENDING }
     val exerciseIds: List<String> get() = cards.map { it.exerciseId }
 
@@ -87,6 +101,9 @@ sealed interface ActiveWorkoutIntent {
     data object SaveAsRoutineCancelled : ActiveWorkoutIntent
     data class SaveAsRoutine(val name: String) : ActiveWorkoutIntent
     data object UpdateRoutineTargets : ActiveWorkoutIntent
+    data class RestStart(val seconds: Int) : ActiveWorkoutIntent
+    data class RestAdjust(val seconds: Int) : ActiveWorkoutIntent
+    data object RestStop : ActiveWorkoutIntent
 }
 
 sealed interface ActiveWorkoutEffect {
@@ -115,6 +132,7 @@ internal fun ActiveWorkout.toUiState(
     name = workout.name,
     startedAt = workout.startedAt,
     routineId = workout.routineId,
+    restEndsAt = workout.restEndsAt,
     cards = exercises.map { e ->
         ExerciseCardUi(
             workoutExerciseId = e.workoutExercise.id,
@@ -127,6 +145,7 @@ internal fun ActiveWorkout.toUiState(
             summary = if (e.workoutExercise.status == ExerciseStatus.LOGGED) SetFormatter.summary(e.sets.toDraftSets(), unit) else null,
             lastHint = lastSets[e.exercise.id]?.let { SetFormatter.hint(it, unit) },
             hasPr = e.personalRecords.isNotEmpty(),
+            restSeconds = e.exercise.restSeconds,
         )
     }.toImmutableList(),
 )

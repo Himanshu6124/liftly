@@ -109,4 +109,13 @@
     <string name="pr_max_weight">Heaviest weight</string>
     <string name="pr_max_reps">Most reps</string>
     <string name="pr_max_volume">Best volume</string>
+    <string name="rest_button">Rest</string>
+    <string name="rest_menu_description">Start a rest timer</string>
+    <string name="rest_preset_remembered">%1$s (last used)</string>
+    <string name="rest_running_description">Rest timer, %1$s left. Tap to change or stop.</string>
+    <string name="rest_add">+30 s</string>
+    <string name="rest_subtract">−30 s</string>
+    <string name="rest_stop">Stop</string>
+    <string name="rest_notification_title">Rest is over</string>
+    <string name="rest_notification_body">Time for your next set.</string>
 </resources>

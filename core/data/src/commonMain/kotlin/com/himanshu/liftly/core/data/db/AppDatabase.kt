@@ -1,5 +1,6 @@
 package com.himanshu.liftly.core.data.db
 
+import androidx.room.AutoMigration
 import androidx.room.ConstructedBy
 import androidx.room.Database
 import androidx.room.RoomDatabase
@@ -36,8 +37,12 @@ import kotlinx.coroutines.IO
         PersonalRecordEntity::class,
         SyncCursorEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
+    autoMigrations = [
+        // v2: exercises.restSeconds, workouts.restEndsAt (rest timer).
+        AutoMigration(from = 1, to = 2),
+    ],
 )
 @TypeConverters(Converters::class)
 @ConstructedBy(AppDatabaseConstructor::class)

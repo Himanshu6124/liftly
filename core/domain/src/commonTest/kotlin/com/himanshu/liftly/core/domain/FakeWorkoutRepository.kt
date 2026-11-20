@@ -44,6 +44,7 @@ class FakeWorkoutRepository : WorkoutRepository {
         kotlinx.coroutines.flow.flowOf(emptyList<com.himanshu.liftly.core.domain.model.ExerciseSession>())
     override fun observeWorkingSetsByExercise(from: kotlin.time.Instant, to: kotlin.time.Instant) =
         kotlinx.coroutines.flow.flowOf(emptyList<com.himanshu.liftly.core.domain.model.ExerciseSetCount>())
+    override suspend fun setRestTimer(workoutId: String, endsAt: kotlin.time.Instant?) = Unit
     override fun observeRecords(exerciseId: String) =
         kotlinx.coroutines.flow.flowOf(emptyList<com.himanshu.liftly.core.domain.model.PersonalRecord>())
     override suspend fun restoreLog(snapshot: com.himanshu.liftly.core.domain.model.LogSnapshot) = Unit

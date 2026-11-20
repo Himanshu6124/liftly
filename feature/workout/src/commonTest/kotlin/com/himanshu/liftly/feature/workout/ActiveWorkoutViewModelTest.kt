@@ -5,6 +5,7 @@ import com.himanshu.liftly.core.domain.model.ExerciseStatus
 import com.himanshu.liftly.core.domain.usecase.GetLogSheetPrefillUseCase
 import com.himanshu.liftly.core.domain.usecase.LogExerciseSetsUseCase
 import com.himanshu.liftly.core.domain.util.AppScope
+import com.himanshu.liftly.core.domain.util.TimeProvider
 import com.himanshu.liftly.feature.workout.active.ActiveWorkoutEffect
 import com.himanshu.liftly.feature.workout.active.ActiveWorkoutIntent
 import com.himanshu.liftly.feature.workout.active.ActiveWorkoutViewModel
@@ -13,6 +14,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -24,6 +26,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ActiveWorkoutViewModelTest {
@@ -38,6 +41,9 @@ class ActiveWorkoutViewModelTest {
     private val haptics = CountingHaptics()
 
     private val routines = FakeRoutines()
+    private val exercises = FakeExercises()
+    private val restAlarm = RecordingRestAlarm()
+    private val clock = TimeProvider { Instant.fromEpochMilliseconds(dispatcher.scheduler.currentTime) }
 
     private fun vm(repo: FakeWorkoutRepository, settings: FakeSettings = FakeSettings()) = ActiveWorkoutViewModel(
         repo,
@@ -47,6 +53,9 @@ class ActiveWorkoutViewModelTest {
         GetLogSheetPrefillUseCase(),
         haptics,
         AppScope(CoroutineScope(dispatcher)),
+        exercises,
+        restAlarm,
+        clock,
     )
 
     @Test
@@ -232,6 +241,61 @@ class ActiveWorkoutViewModelTest {
             assertEquals(listOf("w1" to " Push "), routines.savedFromWorkout)
             assertFalse(vm.state.value.showSaveRoutineDialog)
         }
+    }
+
+    @Test
+    fun restStartRemembersTheTimeForTheNextExerciseAndSchedulesTheAlarm() = runTest(dispatcher) {
+        val repo = FakeWorkoutRepository(listOf("A", "B"))
+        repo.setStatus("we0", ExerciseStatus.LOGGED)
+        val vm = vm(repo)
+        vm.onIntent(ActiveWorkoutIntent.RestStart(120))
+        val endsAt = clock.now() + 120.seconds
+        assertEquals(endsAt, vm.state.value.restEndsAt)
+        assertEquals(endsAt, restAlarm.scheduledFor)
+        assertEquals(endsAt, repo.active.value?.workout?.restEndsAt)
+        val next = vm.state.value.cards[1].exerciseId // B is the next one to do
+        assertEquals(mapOf(next to 120), exercises.restSeconds)
+    }
+
+    @Test
+    fun restBuzzesWhenItEndsAndClears() = runTest(dispatcher) {
+        val repo = FakeWorkoutRepository(listOf("A"))
+        val vm = vm(repo)
+        vm.onIntent(ActiveWorkoutIntent.RestStart(60))
+        advanceTimeBy(59.seconds)
+        assertEquals(0, haptics.success)
+        advanceTimeBy(2.seconds)
+        assertEquals(1, haptics.success)
+        assertEquals(null, vm.state.value.restEndsAt)
+        assertEquals(null, repo.active.value?.workout?.restEndsAt)
+    }
+
+    @Test
+    fun restAdjustAndStop() = runTest(dispatcher) {
+        val repo = FakeWorkoutRepository(listOf("A"))
+        val vm = vm(repo)
+        vm.onIntent(ActiveWorkoutIntent.RestStart(60))
+        vm.onIntent(ActiveWorkoutIntent.RestAdjust(30))
+        assertEquals(clock.now() + 90.seconds, vm.state.value.restEndsAt)
+        vm.onIntent(ActiveWorkoutIntent.RestAdjust(-120)) // past zero: stops
+        assertEquals(null, vm.state.value.restEndsAt)
+        assertEquals(1, restAlarm.cancels)
+        vm.onIntent(ActiveWorkoutIntent.RestStart(60))
+        vm.onIntent(ActiveWorkoutIntent.RestStop)
+        assertEquals(null, vm.state.value.restEndsAt)
+        assertEquals(2, restAlarm.cancels)
+        advanceTimeBy(5.minutes)
+        assertEquals(0, haptics.success, "a stopped rest never buzzes")
+    }
+
+    @Test
+    fun finishingCancelsTheRestAlarm() = runTest(dispatcher) {
+        val repo = FakeWorkoutRepository(listOf("A"))
+        repo.setStatus("we0", ExerciseStatus.LOGGED)
+        val vm = vm(repo)
+        vm.onIntent(ActiveWorkoutIntent.RestStart(60))
+        vm.onIntent(ActiveWorkoutIntent.FinishRequested)
+        assertEquals(null, restAlarm.scheduledFor)
     }
 
     @Test
