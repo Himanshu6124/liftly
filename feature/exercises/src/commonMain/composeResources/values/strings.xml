@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="exercises_title">Exercises</string>
+    <string name="exercises_empty_title">Exercise library</string>
+    <string name="exercises_empty_message">Browse exercises with form guides, muscles and cues.</string>
+</resources>

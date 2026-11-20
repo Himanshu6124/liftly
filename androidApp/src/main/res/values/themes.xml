@@ -1,0 +1,6 @@
+<resources>
+    <style name="Theme.Liftly" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/ic_launcher_background</item>
+    </style>
+    <color name="ic_launcher_background">#121212</color>
+</resources>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="workout_title">Workout</string>
+    <string name="workout_empty_title">Active workout</string>
+    <string name="workout_empty_message">Your exercise checklist will appear here.</string>
+</resources>

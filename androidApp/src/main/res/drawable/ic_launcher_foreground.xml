@@ -1,0 +1,6 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- Simple dumbbell mark -->
+    <path android:fillColor="#FFB59A" android:pathData="M30,42h6v24h-6z M38,36h6v36h-6z M64,36h6v36h-6z M72,42h6v24h-6z M44,51h20v6h-20z"/>
+</vector>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_title">Home</string>
+    <string name="home_greeting">Ready to lift?</string>
+    <string name="home_start_empty">Start empty workout</string>
+    <string name="home_no_routines">Create a routine to start it with one tap next time.</string>
+    <string name="home_sync_local_only">Saved on this device</string>
+    <string name="home_sync_syncing">Syncing…</string>
+    <string name="home_sync_synced">Synced</string>
+    <string name="home_sync_failed">Sync paused, will retry</string>
+</resources>
