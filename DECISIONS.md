@@ -185,3 +185,21 @@ backend later with minimal change.
   delete + insert). Deleting a routine has Undo; workouts that referenced it keep their history.
 - **Reordering routines:** long-press + drag on the Routines tab; the editor uses ▲/▼ buttons
   (simpler inside a scrolling form with text fields).
+
+## Milestone 7: history, summary, settings
+
+- **Finishing a workout opens the Summary** (duration, volume, working sets, logged/skipped, new
+  PRs, muscle map, Save as routine / Update routine). "Done" returns Home; the back stack is
+  Home → Summary so Back also lands on Home. Discarding still goes straight Home.
+- **History stats are computed in SQL** (one query with sub-selects) so the list stays fast and
+  reacts to edits of past workouts. Volume and set counts exclude warm-ups everywhere.
+- **Weeks start on Monday** (ISO); headers read "This week", "Last week", then "Week of <date>".
+- **Editing a past workout** reuses the Batch Log Sheet unchanged (tap an exercise in the detail).
+  PR detection runs against all other sessions, including later ones.
+- **Deleting a workout** (detail ⋮ menu) closes the detail and the History list shows the Undo
+  snackbar (a small shared `HistoryUndo` holder bridges the two screens). Undo revives every
+  row, including PRs, keeping server versions for sync.
+- **Settings are device-local** (DataStore): unit, increment (choices follow the unit: 1/1.25/2.5/5 kg
+  or 2.5/5/10 lb, each unit remembers its own), default sets (1–10), theme, wallpaper colors (only
+  shown where supported: Android 12+), open-next-automatically. Changing the unit converts
+  every displayed weight; storage stays in kg.

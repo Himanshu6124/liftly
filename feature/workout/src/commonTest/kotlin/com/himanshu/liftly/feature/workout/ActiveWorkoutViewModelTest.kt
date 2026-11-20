@@ -99,7 +99,7 @@ class ActiveWorkoutViewModelTest {
 
         vm.effects.test {
             vm.onIntent(ActiveWorkoutIntent.FinishConfirmed)
-            assertEquals(ActiveWorkoutEffect.Closed(finished = true), awaitItem())
+            assertEquals(ActiveWorkoutEffect.Closed(finished = true, workoutId = "w1"), awaitItem())
             assertTrue(repo.finished)
         }
     }
@@ -111,7 +111,7 @@ class ActiveWorkoutViewModelTest {
         val vm = vm(repo)
         vm.effects.test {
             vm.onIntent(ActiveWorkoutIntent.FinishRequested)
-            assertEquals(ActiveWorkoutEffect.Closed(finished = true), awaitItem())
+            assertEquals(ActiveWorkoutEffect.Closed(finished = true, workoutId = "w1"), awaitItem())
         }
     }
 

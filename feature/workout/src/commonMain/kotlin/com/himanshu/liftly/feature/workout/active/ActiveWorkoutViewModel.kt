@@ -231,7 +231,7 @@ class ActiveWorkoutViewModel(
                 _effects.send(ActiveWorkoutEffect.Closed(finished = false))
             } else {
                 appScope.launch { workouts.finish(id) }.join()
-                _effects.send(ActiveWorkoutEffect.Closed(finished = true))
+                _effects.send(ActiveWorkoutEffect.Closed(finished = true, workoutId = id))
             }
         }
     }

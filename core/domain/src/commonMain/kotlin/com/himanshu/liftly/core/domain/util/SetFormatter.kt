@@ -60,6 +60,20 @@ object SetFormatter {
         }
     }
 
+    /** One set: `100 kg × 5`, `12 reps`, `1:00`, `5000 m · 25:00`. */
+    fun single(set: DraftSet, unit: WeightUnit): String = when {
+        set.distanceM != null -> listOfNotNull(
+            "${number(set.distanceM, WeightUnit.KG)} m",
+            set.durationSec?.let(::clock),
+        ).joinToString(" · ")
+
+        set.reps == null && set.durationSec != null -> clock(set.durationSec)
+
+        set.weightKg != null -> "${weight(set.weightKg, unit)} × ${set.reps ?: "–"}"
+
+        else -> "${set.reps ?: "–"} reps"
+    }
+
     fun weight(kg: Double?, unit: WeightUnit): String = "${number(kg, unit)} ${unit.symbol}"
 
     /** 80.0 → "80", 77.5 → "77.5"; converted to [unit] and rounded to 0.1. */

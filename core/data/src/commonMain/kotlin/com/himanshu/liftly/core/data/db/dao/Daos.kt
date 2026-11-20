@@ -15,6 +15,7 @@ import com.himanshu.liftly.core.data.db.entity.WorkoutEntity
 import com.himanshu.liftly.core.data.db.entity.WorkoutExerciseEntity
 import com.himanshu.liftly.core.data.db.entity.WorkoutExerciseWithExercise
 import com.himanshu.liftly.core.data.db.entity.WorkoutSetEntity
+import com.himanshu.liftly.core.data.db.entity.WorkoutWithStats
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -109,6 +110,34 @@ interface WorkoutDao : SyncDao<WorkoutEntity> {
 
     @Query("SELECT * FROM workouts WHERE endedAt IS NOT NULL AND deletedAt IS NULL ORDER BY startedAt DESC LIMIT 1")
     fun observeLastFinished(): Flow<WorkoutEntity?>
+
+    @Query("SELECT * FROM workouts WHERE id = :id AND deletedAt IS NULL")
+    fun observeById(id: String): Flow<WorkoutEntity?>
+
+    /** Finished workouts with list stats computed in SQL (working sets exclude warm-ups). */
+    @Query(
+        """
+        SELECT w.*,
+          (SELECT COUNT(*) FROM workout_exercises we WHERE we.workoutId = w.id AND we.deletedAt IS NULL) AS exerciseCount,
+          (SELECT COUNT(*) FROM workout_exercises we
+             WHERE we.workoutId = w.id AND we.deletedAt IS NULL AND we.status = 'LOGGED') AS loggedCount,
+          (SELECT COUNT(*) FROM workout_sets s JOIN workout_exercises we ON we.id = s.workoutExerciseId
+             WHERE we.workoutId = w.id AND s.deletedAt IS NULL AND we.deletedAt IS NULL
+               AND we.status = 'LOGGED' AND s.setType != 'WARMUP') AS workingSets,
+          (SELECT COALESCE(SUM(COALESCE(s.weightKg, 0) * COALESCE(s.reps, 0)), 0)
+             FROM workout_sets s JOIN workout_exercises we ON we.id = s.workoutExerciseId
+             WHERE we.workoutId = w.id AND s.deletedAt IS NULL AND we.deletedAt IS NULL
+               AND we.status = 'LOGGED' AND s.setType != 'WARMUP') AS volumeKg,
+          (SELECT COUNT(*) FROM personal_records pr
+             JOIN workout_sets s ON s.id = pr.workoutSetId
+             JOIN workout_exercises we ON we.id = s.workoutExerciseId
+             WHERE we.workoutId = w.id AND pr.deletedAt IS NULL AND s.deletedAt IS NULL) AS prCount
+        FROM workouts w
+        WHERE w.endedAt IS NOT NULL AND w.deletedAt IS NULL
+        ORDER BY w.startedAt DESC
+        """,
+    )
+    fun observeHistory(): Flow<List<WorkoutWithStats>>
 }
 
 @Dao

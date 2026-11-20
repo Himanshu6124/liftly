@@ -13,6 +13,7 @@ import com.himanshu.liftly.core.data.db.writeTransaction
 import com.himanshu.liftly.core.data.sync.SyncSql
 import com.himanshu.liftly.core.domain.model.ActiveWorkout
 import com.himanshu.liftly.core.domain.model.ActiveWorkoutExercise
+import com.himanshu.liftly.core.domain.model.DeletedWorkout
 import com.himanshu.liftly.core.domain.model.DraftSet
 import com.himanshu.liftly.core.domain.model.EntityId
 import com.himanshu.liftly.core.domain.model.ExerciseStatus
@@ -26,6 +27,7 @@ import com.himanshu.liftly.core.domain.model.RemovedWorkoutExercise
 import com.himanshu.liftly.core.domain.model.RoutineTarget
 import com.himanshu.liftly.core.domain.model.SetType
 import com.himanshu.liftly.core.domain.model.Workout
+import com.himanshu.liftly.core.domain.model.WorkoutHistoryItem
 import com.himanshu.liftly.core.domain.model.WorkoutSet
 import com.himanshu.liftly.core.domain.model.WorkoutSummaryLine
 import com.himanshu.liftly.core.domain.repository.WorkoutRepository
@@ -57,8 +59,13 @@ class RoomWorkoutRepository(
 
     private fun now() = time.now().toEpochMilliseconds()
 
+    override fun observeActiveWorkout(): Flow<ActiveWorkout?> = assemble(workouts.observeInProgress())
+
+    override fun observeWorkout(workoutId: EntityId): Flow<ActiveWorkout?> = assemble(workouts.observeById(workoutId))
+
+    /** Joins a workout with its exercises, sets and records; re-emits on any change to them. */
     @OptIn(ExperimentalCoroutinesApi::class)
-    override fun observeActiveWorkout(): Flow<ActiveWorkout?> = workouts.observeInProgress()
+    private fun assemble(workoutFlow: Flow<WorkoutEntity?>): Flow<ActiveWorkout?> = workoutFlow
         .distinctUntilChanged()
         .flatMapLatest { workout ->
             if (workout == null) {
@@ -87,6 +94,62 @@ class RoomWorkoutRepository(
             }
         }
         .distinctUntilChanged()
+
+    override fun observeHistory(): Flow<List<WorkoutHistoryItem>> = workouts.observeHistory().map { rows ->
+        rows.map { r ->
+            WorkoutHistoryItem(r.workout.toDomain(), r.exerciseCount, r.loggedCount, r.workingSets, r.volumeKg, r.prCount)
+        }
+    }.distinctUntilChanged()
+
+    override suspend fun deleteWorkout(workoutId: EntityId): DeletedWorkout? = write {
+        val w = workouts.getById(workoutId) ?: return@write null
+        val wes = workoutExercises.getForWorkout(workoutId)
+        val allSets = sets.getForWorkoutExercises(wes.map { it.id })
+        val prs = records.getForSets(allSets.map { it.id })
+        val now = now()
+        sql.delete("personal_records", prs.map { it.id }, now)
+        sql.delete("workout_sets", allSets.map { it.id }, now)
+        sql.delete("workout_exercises", wes.map { it.id }, now)
+        sql.delete("workouts", listOf(workoutId), now)
+        DeletedWorkout(w.toDomain(), wes.map { it.toDomain() }, allSets.map { it.toDomain() }, prs.map { it.toDomain() })
+    }
+
+    override suspend fun restoreWorkout(deleted: DeletedWorkout) = write {
+        val now = now()
+        val w = deleted.workout
+        val oldW = workouts.getByIdsIncludingDeleted(listOf(w.id)).firstOrNull()
+        workouts.upsertAll(
+            listOf(
+                WorkoutEntity(
+                    w.id,
+                    w.name,
+                    w.routineId,
+                    w.startedAt.toEpochMilliseconds(),
+                    w.endedAt?.toEpochMilliseconds(),
+                    w.notes,
+                    revive(oldW, now),
+                ),
+            ),
+        )
+        val oldWe = workoutExercises.getByIdsIncludingDeleted(deleted.exercises.map { it.id }).associateBy { it.id }
+        workoutExercises.upsertAll(deleted.exercises.map { it.toEntity(revive(oldWe[it.id], now)) })
+        val oldSets = sets.getByIdsIncludingDeleted(deleted.sets.map { it.id }).associateBy { it.id }
+        sets.upsertAll(deleted.sets.map { it.toEntity(revive(oldSets[it.id], now)) })
+        val oldPrs = records.getByIdsIncludingDeleted(deleted.personalRecords.map { it.id }).associateBy { it.id }
+        records.upsertAll(
+            deleted.personalRecords.map { pr ->
+                PersonalRecordEntity(
+                    pr.id,
+                    pr.exerciseId,
+                    pr.type,
+                    pr.value,
+                    pr.workoutSetId,
+                    pr.achievedAt.toEpochMilliseconds(),
+                    revive(oldPrs[pr.id], now),
+                )
+            },
+        )
+    }
 
     override suspend fun getInProgressWorkout(): Workout? = workouts.getInProgress()?.toDomain()
 

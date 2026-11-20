@@ -44,5 +44,11 @@ class FakeWorkoutRepository : WorkoutRepository {
         kotlinx.coroutines.flow.flowOf(emptyList<com.himanshu.liftly.core.domain.model.PersonalRecord>())
     override suspend fun restoreLog(snapshot: com.himanshu.liftly.core.domain.model.LogSnapshot) = Unit
     override fun observeLastFinished() = kotlinx.coroutines.flow.flowOf<com.himanshu.liftly.core.domain.model.WorkoutSummaryLine?>(null)
+    override fun observeHistory() = kotlinx.coroutines.flow.flowOf(emptyList<com.himanshu.liftly.core.domain.model.WorkoutHistoryItem>())
+    override fun observeWorkout(
+        workoutId: String,
+    ) = kotlinx.coroutines.flow.flowOf<com.himanshu.liftly.core.domain.model.ActiveWorkout?>(null)
+    override suspend fun deleteWorkout(workoutId: String): com.himanshu.liftly.core.domain.model.DeletedWorkout? = null
+    override suspend fun restoreWorkout(deleted: com.himanshu.liftly.core.domain.model.DeletedWorkout) = Unit
     override fun observeRecentExerciseIds(limit: Int): Flow<List<String>> = flowOf(emptyList())
 }

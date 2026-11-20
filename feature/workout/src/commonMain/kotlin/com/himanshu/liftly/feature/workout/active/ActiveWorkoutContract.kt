@@ -93,7 +93,7 @@ sealed interface ActiveWorkoutEffect {
         enum class Kind { SKIPPED, REMOVED, LOGGED }
     }
 
-    data class Closed(val finished: Boolean) : ActiveWorkoutEffect
+    data class Closed(val finished: Boolean, val workoutId: String? = null) : ActiveWorkoutEffect
 
     data class Info(val kind: Kind, val arg: String = "") : ActiveWorkoutEffect {
         enum class Kind { ROUTINE_SAVED, TARGETS_UPDATED }

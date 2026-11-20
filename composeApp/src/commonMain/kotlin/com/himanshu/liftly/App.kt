@@ -30,7 +30,9 @@ import com.himanshu.liftly.core.designsystem.theme.LiftlyTheme
 import com.himanshu.liftly.feature.exercises.navigation.ExerciseDetailRoute
 import com.himanshu.liftly.feature.exercises.navigation.exerciseDetailScreen
 import com.himanshu.liftly.feature.exercises.navigation.exercisesScreen
+import com.himanshu.liftly.feature.history.navigation.WorkoutDetailRoute
 import com.himanshu.liftly.feature.history.navigation.historyScreen
+import com.himanshu.liftly.feature.history.navigation.workoutDetailScreen
 import com.himanshu.liftly.feature.home.navigation.HomeRoute
 import com.himanshu.liftly.feature.home.navigation.homeScreen
 import com.himanshu.liftly.feature.routines.navigation.RoutineEditorRoute
@@ -38,7 +40,9 @@ import com.himanshu.liftly.feature.routines.navigation.routineEditorScreen
 import com.himanshu.liftly.feature.routines.navigation.routinesScreen
 import com.himanshu.liftly.feature.settings.navigation.settingsScreen
 import com.himanshu.liftly.feature.workout.navigation.WorkoutRoute
+import com.himanshu.liftly.feature.workout.navigation.WorkoutSummaryRoute
 import com.himanshu.liftly.feature.workout.navigation.workoutScreen
+import com.himanshu.liftly.feature.workout.navigation.workoutSummaryScreen
 import com.himanshu.liftly.navigation.TopLevelDestination
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -99,13 +103,22 @@ private fun LiftlyNavShell(hasWorkoutInProgress: suspend () -> Boolean) {
                 }, onOpenGuide = { navController.navigate(ExerciseDetailRoute(it)) })
                 exercisesScreen(onOpenExercise = { navController.navigate(ExerciseDetailRoute(it)) })
                 exerciseDetailScreen(onBack = { navController.popBackStack() })
-                historyScreen()
+                historyScreen(onOpenWorkout = { navController.navigate(WorkoutDetailRoute(it)) })
+                workoutDetailScreen(onBack = {
+                    navController.popBackStack()
+                }, onOpenGuide = { navController.navigate(ExerciseDetailRoute(it)) })
                 settingsScreen()
                 workoutScreen(
-                    // Summary screen arrives in Milestone 7; for now finishing returns Home.
-                    onClose = { navController.popBackStack(HomeRoute, inclusive = false) },
+                    onClose = { finishedId ->
+                        if (finishedId != null) {
+                            navController.navigate(WorkoutSummaryRoute(finishedId)) { popUpTo(HomeRoute) }
+                        } else {
+                            navController.popBackStack(HomeRoute, inclusive = false)
+                        }
+                    },
                     onOpenGuide = { navController.navigate(ExerciseDetailRoute(it)) },
                 )
+                workoutSummaryScreen(onDone = { navController.popBackStack(HomeRoute, inclusive = false) })
             }
         }
     }

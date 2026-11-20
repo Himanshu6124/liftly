@@ -82,6 +82,7 @@ import com.himanshu.liftly.feature.workout.resources.workout_routine_name
 import com.himanshu.liftly.feature.workout.resources.workout_save
 import com.himanshu.liftly.feature.workout.resources.workout_save_as_routine
 import com.himanshu.liftly.feature.workout.resources.workout_update_routine
+import com.himanshu.liftly.feature.workout.summary.SaveRoutineDialog
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -93,7 +94,7 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 
 @Composable
 fun ActiveWorkoutScreen(
-    onClose: (finished: Boolean) -> Unit,
+    onClose: (finishedWorkoutId: String?) -> Unit,
     onOpenGuide: (exerciseId: String) -> Unit,
     viewModel: ActiveWorkoutViewModel = koinViewModel(),
 ) {
@@ -104,7 +105,7 @@ fun ActiveWorkoutScreen(
     LaunchedEffect(viewModel) {
         viewModel.effects.collect { effect ->
             when (effect) {
-                is ActiveWorkoutEffect.Closed -> onClose(effect.finished)
+                is ActiveWorkoutEffect.Closed -> onClose(effect.workoutId.takeIf { effect.finished })
 
                 is ActiveWorkoutEffect.ScrollTo -> scrollRequests.tryEmit(effect.workoutExerciseId)
 
@@ -132,7 +133,7 @@ fun ActiveWorkoutScreen(
         }
     }
     // Opened with nothing in progress (e.g. finished on another screen): just leave.
-    LaunchedEffect(state.noWorkout) { if (state.noWorkout) onClose(false) }
+    LaunchedEffect(state.noWorkout) { if (state.noWorkout) onClose(null) }
 
     ActiveWorkoutContent(
         state = state,
@@ -255,7 +256,11 @@ fun ActiveWorkoutContent(
     if (state.showFinishSheet) FinishSheet(state.pendingCount, onIntent)
     if (state.showDiscardDialog) DiscardDialog(onIntent)
     if (state.showSaveRoutineDialog) {
-        SaveRoutineDialog(state.name.ifBlank { state.startedAt?.let { defaultWorkoutName(it) }.orEmpty() }, onIntent)
+        SaveRoutineDialog(
+            defaultName = state.name.ifBlank { state.startedAt?.let { defaultWorkoutName(it) }.orEmpty() },
+            onSave = { onIntent(ActiveWorkoutIntent.SaveAsRoutine(it)) },
+            onDismiss = { onIntent(ActiveWorkoutIntent.SaveAsRoutineCancelled) },
+        )
     }
 }
 
@@ -361,32 +366,6 @@ private fun FinishSheet(pendingCount: Int, onIntent: (ActiveWorkoutIntent) -> Un
             }
         }
     }
-}
-
-@Composable
-private fun SaveRoutineDialog(defaultName: String, onIntent: (ActiveWorkoutIntent) -> Unit) {
-    val name = remember { androidx.compose.foundation.text.input.TextFieldState(defaultName) }
-    AlertDialog(
-        onDismissRequest = { onIntent(ActiveWorkoutIntent.SaveAsRoutineCancelled) },
-        title = { Text(stringResource(Res.string.workout_save_as_routine)) },
-        text = {
-            androidx.compose.material3.OutlinedTextField(
-                state = name,
-                label = { Text(stringResource(Res.string.workout_routine_name)) },
-                lineLimits = androidx.compose.foundation.text.input.TextFieldLineLimits.SingleLine,
-            )
-        },
-        confirmButton = {
-            Button(onClick = { onIntent(ActiveWorkoutIntent.SaveAsRoutine(name.text.toString())) }, enabled = name.text.isNotBlank()) {
-                Text(stringResource(Res.string.workout_save))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = {
-                onIntent(ActiveWorkoutIntent.SaveAsRoutineCancelled)
-            }) { Text(stringResource(Res.string.workout_cancel)) }
-        },
-    )
 }
 
 /** The one destructive action that asks for confirmation (everything else has Undo). */

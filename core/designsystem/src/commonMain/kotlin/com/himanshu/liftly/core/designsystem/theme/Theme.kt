@@ -27,6 +27,9 @@ data class Spacing(
 
 val LocalSpacing = staticCompositionLocalOf { Spacing() }
 
+/** Whether [LiftlyTheme]'s dynamicColor has any effect here (Android 12+). */
+expect val supportsDynamicColor: Boolean
+
 /** Android 12+ wallpaper colors; null on platforms without dynamic color. */
 @Composable
 internal expect fun platformDynamicColorScheme(dark: Boolean): ColorScheme?

@@ -1,6 +1,7 @@
 package com.himanshu.liftly.core.domain.repository
 
 import com.himanshu.liftly.core.domain.model.ActiveWorkout
+import com.himanshu.liftly.core.domain.model.DeletedWorkout
 import com.himanshu.liftly.core.domain.model.DraftSet
 import com.himanshu.liftly.core.domain.model.EntityId
 import com.himanshu.liftly.core.domain.model.ExerciseStatus
@@ -11,6 +12,7 @@ import com.himanshu.liftly.core.domain.model.LogSnapshot
 import com.himanshu.liftly.core.domain.model.PersonalRecord
 import com.himanshu.liftly.core.domain.model.RemovedWorkoutExercise
 import com.himanshu.liftly.core.domain.model.Workout
+import com.himanshu.liftly.core.domain.model.WorkoutHistoryItem
 import com.himanshu.liftly.core.domain.model.WorkoutSet
 import com.himanshu.liftly.core.domain.model.WorkoutSummaryLine
 import com.himanshu.liftly.core.domain.usecase.PrHit
@@ -70,6 +72,17 @@ interface WorkoutRepository {
 
     /** Puts a workout exercise back exactly as captured by [logSets]. */
     suspend fun restoreLog(snapshot: LogSnapshot)
+
+    /** Finished workouts, newest first, with list-level stats. */
+    fun observeHistory(): Flow<List<WorkoutHistoryItem>>
+
+    /** Any workout (finished or not) with exercises, sets and records. */
+    fun observeWorkout(workoutId: EntityId): Flow<ActiveWorkout?>
+
+    /** Deletes a finished workout; returns what's needed to undo it. */
+    suspend fun deleteWorkout(workoutId: EntityId): DeletedWorkout?
+
+    suspend fun restoreWorkout(deleted: DeletedWorkout)
 
     /** The most recently finished workout, for Home. */
     fun observeLastFinished(): Flow<WorkoutSummaryLine?>

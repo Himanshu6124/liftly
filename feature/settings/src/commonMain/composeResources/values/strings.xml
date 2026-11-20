@@ -1,6 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="settings_title">Settings</string>
-    <string name="settings_empty_title">Settings</string>
-    <string name="settings_empty_message">Units, increments, theme and more.</string>
+    <string name="settings_units">Units</string>
+    <string name="settings_kg">kg</string>
+    <string name="settings_lb">lb</string>
+    <string name="settings_increment">Weight step for − / +</string>
+    <string name="settings_default_sets">Default number of sets</string>
+    <string name="settings_default_sets_hint">Used the first time you log an exercise</string>
+    <string name="settings_sets_down">Fewer default sets</string>
+    <string name="settings_sets_up">More default sets</string>
+    <string name="settings_workout">Workout</string>
+    <string name="settings_auto_open">Open next exercise automatically</string>
+    <string name="settings_auto_open_hint">After saving, the next exercise's log sheet opens right away</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_dynamic_color">Use wallpaper colors</string>
+    <string name="settings_about">About</string>
+    <string name="settings_version">Liftly %1$s</string>
+    <string name="settings_storage">All your data is stored on this device.</string>
+    <string name="settings_attribution">Exercise instructions and photos: free-exercise-db by yuhonas (github.com/yuhonas/free-exercise-db), public domain (Unlicense). Aliases, form cues and common mistakes written for Liftly.</string>
 </resources>

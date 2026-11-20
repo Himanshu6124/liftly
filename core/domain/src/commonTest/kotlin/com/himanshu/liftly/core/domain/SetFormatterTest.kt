@@ -47,4 +47,12 @@ class SetFormatterTest {
         assertEquals("1:00, 0:45", SetFormatter.summary(listOf(DraftSet(durationSec = 60), DraftSet(durationSec = 45)), WeightUnit.KG))
         assertEquals("5000 m · 25:00", SetFormatter.summary(listOf(DraftSet(distanceM = 5000.0, durationSec = 1500)), WeightUnit.LB))
     }
+
+    @Test
+    fun singleSetLines() {
+        assertEquals("100 kg × 5", SetFormatter.single(DraftSet(100.0, 5), WeightUnit.KG))
+        assertEquals("12 reps", SetFormatter.single(DraftSet(null, 12), WeightUnit.KG))
+        assertEquals("1:00", SetFormatter.single(DraftSet(durationSec = 60), WeightUnit.KG))
+        assertEquals("400 m · 1:30", SetFormatter.single(DraftSet(distanceM = 400.0, durationSec = 90), WeightUnit.KG))
+    }
 }

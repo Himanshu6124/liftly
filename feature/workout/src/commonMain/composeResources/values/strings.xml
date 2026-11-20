@@ -96,4 +96,17 @@
     <string name="workout_save">Save</string>
     <string name="snackbar_routine_saved">Saved routine %1$s</string>
     <string name="snackbar_targets_updated">Routine targets updated</string>
+    <string name="summary_title">Workout complete</string>
+    <string name="summary_done">Done</string>
+    <string name="summary_duration">Duration</string>
+    <string name="summary_volume">Volume</string>
+    <string name="summary_sets">Working sets</string>
+    <string name="summary_exercises">Exercises</string>
+    <string name="summary_exercises_value">%1$d logged · %2$d skipped</string>
+    <string name="summary_prs">New personal records</string>
+    <string name="summary_muscles">Muscles trained</string>
+    <string name="pr_est_1rm">Est. 1RM</string>
+    <string name="pr_max_weight">Heaviest weight</string>
+    <string name="pr_max_reps">Most reps</string>
+    <string name="pr_max_volume">Best volume</string>
 </resources>

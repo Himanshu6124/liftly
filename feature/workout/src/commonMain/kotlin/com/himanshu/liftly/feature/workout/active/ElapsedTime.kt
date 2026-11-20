@@ -39,7 +39,7 @@ internal fun ElapsedTime(startedAt: Instant, modifier: Modifier = Modifier) {
     )
 }
 
-internal fun formatElapsed(d: Duration): String {
+fun formatElapsed(d: Duration): String {
     val total = d.inWholeSeconds.coerceAtLeast(0)
     val h = total / 3600
     val m = (total % 3600) / 60
