@@ -40,6 +40,12 @@ kotlin {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
         }
+        getByName("desktopTest").dependencies {
+            implementation(kotlin("test"))
+            implementation(libs.compose.ui.test)
+            implementation(libs.room.runtime)
+            implementation(libs.sqlite.bundled)
+        }
     }
 }
 

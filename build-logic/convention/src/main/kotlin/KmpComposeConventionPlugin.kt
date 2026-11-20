@@ -4,6 +4,7 @@ import org.jetbrains.compose.resources.ResourcesExtension
 import org.gradle.api.plugins.ExtensionAware
 import org.gradle.kotlin.dsl.configure
 import org.jetbrains.compose.ComposeExtension
+import org.jetbrains.kotlin.compose.compiler.gradle.ComposeCompilerGradlePluginExtension
 
 /** Shared module that contains Compose UI. */
 class KmpComposeConventionPlugin : Plugin<Project> {
@@ -27,6 +28,10 @@ class KmpComposeConventionPlugin : Plugin<Project> {
                 implementation(libs.lib("androidx-lifecycle-runtime-compose"))
                 implementation(libs.lib("koin-compose"))
             }
+        }
+
+        extensions.configure<ComposeCompilerGradlePluginExtension> {
+            stabilityConfigurationFiles.add(rootProject.layout.projectDirectory.file("config/compose-stability.conf"))
         }
 
         extensions.configure<ComposeExtension> {

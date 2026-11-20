@@ -43,6 +43,8 @@ data class ActiveWorkoutUiState(
     val showSaveRoutineDialog: Boolean = false,
     val cards: ImmutableList<ExerciseCardUi> = persistentListOf(),
     val showFinishSheet: Boolean = false,
+    /** Finish/discard in progress: navigation comes from the Closed effect, not from the workout vanishing. */
+    val isClosing: Boolean = false,
     /** Workout exercise whose Batch Log Sheet is open. */
     val logSheetFor: String? = null,
     /** Briefly highlighted card (the next pending one after a log). */
@@ -53,7 +55,7 @@ data class ActiveWorkoutUiState(
     val exerciseIds: List<String> get() = cards.map { it.exerciseId }
 
     /** Loaded, but there is no workout in progress (finished, discarded, or never started). */
-    val noWorkout: Boolean get() = !isLoading && workoutId == null
+    val noWorkout: Boolean get() = !isLoading && workoutId == null && !isClosing
 }
 
 sealed interface ActiveWorkoutIntent {

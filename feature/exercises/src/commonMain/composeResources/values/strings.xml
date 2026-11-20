@@ -5,6 +5,7 @@
     <string name="exercises_clear_search">Clear search</string>
     <string name="exercises_section_favorites">Favorites</string>
     <string name="exercises_section_results">Results</string>
+    <string name="exercises_select_hint">Select an exercise to see its form guide</string>
     <string name="exercises_no_results_title">No matches</string>
     <string name="exercises_no_results_message">Nothing matches “%1$s”. Try a shorter word or clear the filters.</string>
     <string name="exercises_clear_filters">Clear filters</string>

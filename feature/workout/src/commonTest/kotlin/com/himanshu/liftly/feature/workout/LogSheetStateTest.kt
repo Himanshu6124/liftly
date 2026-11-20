@@ -24,7 +24,7 @@ import kotlin.test.assertTrue
 class LogSheetStateTest {
     private val haptics = CountingHaptics()
 
-    private fun TestScope.holder(
+    private suspend fun TestScope.holder(
         repo: FakeWorkoutRepository,
         settings: UserSettings = UserSettings(),
     ) = LogSheetState(
@@ -36,7 +36,7 @@ class LogSheetStateTest {
         LogExerciseSetsUseCase(repo),
         haptics,
         backgroundScope,
-    )
+    ).also { it.load() }
 
     private val benchWithHistory get() = FakeWorkoutRepository(
         listOf("Bench"),

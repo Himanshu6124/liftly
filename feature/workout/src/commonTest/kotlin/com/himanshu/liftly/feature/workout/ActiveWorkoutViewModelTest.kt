@@ -116,6 +116,20 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun finishingDoesNotReportNoWorkoutWhenTheWorkoutDisappears() = runTest(dispatcher) {
+        // Regression: the active workout turning null must not race the Closed effect (Summary) to Home.
+        val repo = FakeWorkoutRepository(listOf("A"))
+        repo.setStatus("we0", ExerciseStatus.LOGGED)
+        val vm = vm(repo)
+        vm.effects.test {
+            vm.onIntent(ActiveWorkoutIntent.FinishRequested)
+            repo.active.value = null
+            assertEquals(ActiveWorkoutEffect.Closed(finished = true, workoutId = "w1"), awaitItem())
+            assertFalse(vm.state.value.noWorkout)
+        }
+    }
+
+    @Test
     fun finishingAnEmptyWorkoutDiscardsIt() = runTest(dispatcher) {
         val repo = FakeWorkoutRepository(emptyList())
         val vm = vm(repo)
@@ -134,9 +148,12 @@ class ActiveWorkoutViewModelTest {
         vm.onIntent(ActiveWorkoutIntent.DiscardRequested)
         assertTrue(vm.state.value.showDiscardDialog)
         assertFalse(repo.discarded)
-        vm.onIntent(ActiveWorkoutIntent.DiscardConfirmed)
+        vm.effects.test {
+            vm.onIntent(ActiveWorkoutIntent.DiscardConfirmed)
+            assertEquals(ActiveWorkoutEffect.Closed(finished = false), awaitItem())
+        }
         assertTrue(repo.discarded)
-        assertTrue(vm.state.value.noWorkout)
+        assertFalse(vm.state.value.noWorkout) // navigation comes from the effect only
     }
 
     @Test

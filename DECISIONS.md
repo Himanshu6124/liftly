@@ -203,3 +203,24 @@ backend later with minimal change.
   or 2.5/5/10 lb, each unit remembers its own), default sets (1–10), theme, wallpaper colors (only
   shown where supported: Android 12+), open-next-automatically. Changing the unit converts
   every displayed weight; storage stays in kg.
+
+## Milestone 8: MVP hardening
+
+- **E2E test on Desktop (JVM)** with the Compose UI test API: it runs the real `App()` with
+  real ViewModels and Room (in memory) on every CI run, without an emulator. Clicks use the
+  semantics `OnClick` action so buttons below the small test window still work; the swipe
+  quick-log is exercised through its screen-reader custom action.
+- Writing it found three real bugs, now fixed and covered:
+  - A `fillMaxHeight` divider inside the filter `LazyRow` stretched the row over the whole
+    sheet on wide screens (the exercise list disappeared). It now has a fixed height.
+  - The Batch Log Sheet started loading from `init` inside `remember` (a side effect during
+    composition); the loaded values could miss recomposition. Loading now starts from a
+    `LaunchedEffect`.
+  - Finishing a workout raced two navigations: the workout disappearing (→ Home) and the
+    Closed effect (→ Summary). While finishing or discarding, the ViewModel now ignores the
+    workout vanishing, so only the effect navigates.
+- **Compose stability config** (`config/compose-stability.conf`) marks domain models and
+  date/time types stable: they're immutable but live in a module without the Compose
+  compiler, so screens taking them could not skip recomposition.
+- **List-detail only for the exercise library.** It's the one screen people browse; history
+  and routines keep full-screen detail (their detail screens have their own actions and undo).

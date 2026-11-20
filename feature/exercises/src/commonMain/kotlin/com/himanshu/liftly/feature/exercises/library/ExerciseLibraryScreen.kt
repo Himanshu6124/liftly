@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -157,7 +158,8 @@ private fun FilterRow(state: ExerciseLibraryUiState, onIntent: (ExerciseLibraryI
                 label = { Text(group.label()) },
             )
         }
-        item(key = "divider") { VerticalDivider(Modifier.padding(vertical = spacing.sm)) }
+        // Fixed height: a fillMaxHeight divider inside a LazyRow stretches the whole row once it's visible.
+        item(key = "divider") { VerticalDivider(Modifier.padding(vertical = spacing.sm).height(32.dp)) }
         items(Equipment.entries, key = { "e-${it.name}" }) { equipment ->
             FilterChip(
                 selected = state.equipment == equipment,

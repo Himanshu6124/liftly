@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -236,7 +237,8 @@ private fun PickerFilters(group: MuscleGroup?, equipment: Equipment?, onIntent: 
                 onIntent(ExercisePickerIntent.MuscleGroupToggled(g))
             }, label = { Text(g.label()) })
         }
-        item(key = "divider") { VerticalDivider(Modifier.padding(vertical = spacing.sm)) }
+        // Fixed height: a fillMaxHeight divider inside a LazyRow stretches the whole row once it's visible.
+        item(key = "divider") { VerticalDivider(Modifier.padding(vertical = spacing.sm).height(32.dp)) }
         items(Equipment.entries, key = { "e-${it.name}" }) { e ->
             FilterChip(selected = equipment == e, onClick = {
                 onIntent(ExercisePickerIntent.EquipmentToggled(e))

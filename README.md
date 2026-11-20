@@ -4,7 +4,7 @@ Offline-first strength training tracker for **Android, iOS and Desktop**, built 
 Compose Multiplatform. You log **per exercise, not per set**: do all your sets, then open the
 exercise and save them together in a sheet that is already filled in from last time.
 
-> Status: **Milestone 7 (history, summary, settings) done.** See [Roadmap](#roadmap).
+> Status: **Phase 1 (MVP) complete.** See [Roadmap](#roadmap).
 
 ## Requirements
 
@@ -37,6 +37,18 @@ To sign for a physical iPhone, set `TEAM_ID` in `iosApp/Configuration/Config.xcc
 ./gradlew ktlintCheck detekt
 ```
 
+Tests by layer:
+
+| Layer | Where | Runs on |
+|---|---|---|
+| Domain (parsers, pre-fill, PR detection, stats) | `core/domain/src/commonTest` | JVM, Android host, iOS simulator |
+| Data (Room DAOs, repositories, sync engine, seeder) | `core/data/src/desktopTest` | JVM with in-memory SQLite |
+| ViewModels / sheet state | `feature/*/src/commonTest` | JVM, Android host, iOS simulator |
+| End-to-end UI | `composeApp/src/desktopTest/.../WorkoutFlowE2ETest.kt` | JVM (Compose UI test, real app + in-memory DB) |
+
+The E2E test drives the real app: start an empty workout, add two exercises, log one in the
+Batch Log Sheet, quick-log the other, finish, and check History.
+
 CI (`.github/workflows/ci.yml`) runs lint, tests and Android + Desktop builds on Linux, and
 iOS tests + the Xcode build on macOS.
 
@@ -68,6 +80,13 @@ Composable ──Intent──▶ ViewModel ──▶ UseCase ──▶ Repositor
 Conventions: each screen has a stateful `XxxScreen` (gets the ViewModel from Koin) and a
 stateless `XxxContent`. ViewModels expose `state: StateFlow`, `effects: Flow` and
 `onIntent(...)`. Weight is stored in kg; timestamps as epoch millis.
+
+Adaptive layout: bottom bar on phones, navigation rail on medium widths, drawer on expanded
+widths; the exercise library becomes list + detail side by side on expanded widths.
+
+Accessibility: every icon button has a label, list/section titles are headings, swipe and
+drag gestures have screen-reader actions or menu equivalents (Log same as last time, Skip,
+Remove, Move up/down), and primary actions are at least 56 dp tall.
 
 ## Offline-first and backend sync
 
@@ -113,5 +132,5 @@ installs pick up the change. Favorites, notes and custom exercises are never ove
 5. ✅ Log sheet complete (per-set mode, set types, warm-ups, RPE, notes, time/distance, PR detection + badge, Records tab)
 6. ✅ Routines (create/edit/delete with undo, targets, reorder, next-routine rotation and 1-tap start on Home, save/update from a workout)
 7. ✅ History (weekly, edit, delete with undo), workout summary, settings
-8. MVP hardening (accessibility, adaptive layouts, E2E UI test)
+8. ✅ MVP hardening (accessibility, adaptive list-detail, stability config, E2E UI test)
 9. Phase 2 and Phase 3 features

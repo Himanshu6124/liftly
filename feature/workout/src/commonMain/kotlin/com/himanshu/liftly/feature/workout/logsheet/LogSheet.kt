@@ -139,6 +139,7 @@ fun LogSheet(
     val holder = remember(workoutExerciseId) {
         LogSheetState(workoutExerciseId, workouts, settings, prefill, parse, log, haptics, scope)
     }
+    LaunchedEffect(holder) { holder.load() }
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         LogSheetContent(holder = holder, onSave = { holder.save(onSaved) }, onFormGuide = { onFormGuide(holder.state.exerciseId) })
     }

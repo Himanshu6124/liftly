@@ -61,7 +61,8 @@ class ActiveWorkoutViewModel(
             if (active != null) loadMissingHints(active.workout.id, active.exercises.map { it.exercise.id }, last)
             active?.toUiState(_state.value, s.weightUnit, last)
         }
-            .onEach { ui -> _state.update { s -> ui ?: s.copy(isLoading = false, workoutId = null) } }
+            // While finishing/discarding, the workout disappearing is expected: the Closed effect navigates.
+            .onEach { ui -> _state.update { s -> ui ?: if (s.isClosing) s else s.copy(isLoading = false, workoutId = null) } }
             .launchIn(viewModelScope)
     }
 
@@ -144,7 +145,7 @@ class ActiveWorkoutViewModel(
             ActiveWorkoutIntent.DiscardCancelled -> _state.update { it.copy(showDiscardDialog = false) }
 
             ActiveWorkoutIntent.DiscardConfirmed -> workoutId?.let { id ->
-                _state.update { it.copy(showDiscardDialog = false) }
+                _state.update { it.copy(showDiscardDialog = false, isClosing = true) }
                 viewModelScope.launch {
                     appScope.launch { workouts.discard(id) }.join()
                     _effects.send(ActiveWorkoutEffect.Closed(finished = false))
@@ -223,7 +224,7 @@ class ActiveWorkoutViewModel(
     private fun finish() {
         val s = _state.value
         val id = s.workoutId ?: return
-        _state.update { it.copy(showFinishSheet = false) }
+        _state.update { it.copy(showFinishSheet = false, isClosing = true) }
         viewModelScope.launch {
             // A workout with no exercises at all has nothing worth keeping in history.
             if (s.cards.isEmpty()) {

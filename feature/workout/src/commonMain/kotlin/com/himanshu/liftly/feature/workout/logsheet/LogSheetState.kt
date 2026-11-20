@@ -134,11 +134,9 @@ class LogSheetState(
             )
         }
 
-    init {
-        scope.launch { load() }
-    }
-
-    private suspend fun load() {
+    /** Called from a LaunchedEffect (after composition commits), not from init: no side effects in composition. */
+    suspend fun load() {
+        if (!base.isLoading) return
         val data = workouts.getLogSheetData(workoutExerciseId) ?: return
         val userSettings = settings.settings.first()
         val unit = userSettings.weightUnit
