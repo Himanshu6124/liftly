@@ -2,10 +2,18 @@ package com.himanshu.liftly.feature.exercises.detail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.himanshu.liftly.core.domain.model.ExerciseSession
+import com.himanshu.liftly.core.domain.model.WeightUnit
 import com.himanshu.liftly.core.domain.repository.ExerciseRepository
 import com.himanshu.liftly.core.domain.repository.SettingsRepository
 import com.himanshu.liftly.core.domain.repository.WorkoutRepository
 import com.himanshu.liftly.core.domain.util.AppScope
+import com.himanshu.liftly.core.domain.util.ExerciseProgress
+import com.himanshu.liftly.core.domain.util.ProgressMetric
+import com.himanshu.liftly.core.domain.util.ProgressRange
+import com.himanshu.liftly.core.domain.util.SetFormatter
+import com.himanshu.liftly.core.domain.util.TimeProvider
+import com.himanshu.liftly.core.domain.util.toDraftSets
 import com.himanshu.liftly.core.platform.UrlLauncher
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.FlowPreview
@@ -29,11 +37,13 @@ class ExerciseDetailViewModel(
     private val urlLauncher: UrlLauncher,
     workouts: WorkoutRepository,
     settings: SettingsRepository,
+    private val time: TimeProvider,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ExerciseDetailUiState())
     val state: StateFlow<ExerciseDetailUiState> = _state.asStateFlow()
 
+    private var sessions: List<ExerciseSession> = emptyList()
     private var noteLoaded = false
     private var lastSavedNote: String? = null
 
@@ -61,6 +71,18 @@ class ExerciseDetailViewModel(
             .onEach { (records, unit) -> _state.update { it.copy(records = records, unit = unit) } }
             .launchIn(viewModelScope)
 
+        combine(workouts.observeExerciseSessions(exerciseId), settings.settings) { list, s -> list to s.weightUnit }
+            .onEach { (list, unit) ->
+                sessions = list
+                _state.update { st ->
+                    st.copy(
+                        sessions = list.map { it.toUi(unit) }.toImmutableList(),
+                        progress = progress(st.progress.metric, st.progress.range),
+                    )
+                }
+            }
+            .launchIn(viewModelScope)
+
         // Save the note shortly after typing stops.
         _state.map { it.noteDraft }
             .drop(1)
@@ -81,7 +103,31 @@ class ExerciseDetailViewModel(
             is ExerciseDetailIntent.TabSelected -> _state.update { it.copy(tab = intent.tab) }
 
             ExerciseDetailIntent.WatchVideo -> _state.value.exercise?.videoUrl?.let(urlLauncher::open)
+
+            is ExerciseDetailIntent.MetricSelected -> _state.update {
+                it.copy(progress = progress(intent.metric, it.progress.range))
+            }
+
+            is ExerciseDetailIntent.RangeSelected -> _state.update {
+                it.copy(progress = progress(it.progress.metric, intent.range))
+            }
+
+            is ExerciseDetailIntent.PointSelected -> _state.update { it.copy(progress = it.progress.copy(selected = intent.index)) }
         }
+    }
+
+    /** Chart state for [metric] (or the first one with data) over [range]; selects the latest point. */
+    private fun progress(metric: ProgressMetric?, range: ProgressRange): ProgressUi {
+        val metrics = ExerciseProgress.available(sessions)
+        val chosen = metric?.takeIf { it in metrics } ?: metrics.firstOrNull()
+        val points = chosen?.let { ExerciseProgress.series(sessions, it, range, time.now()) }.orEmpty()
+        return ProgressUi(
+            metrics = metrics.toImmutableList(),
+            metric = chosen,
+            range = range,
+            points = points.toImmutableList(),
+            selected = points.lastIndex.takeIf { it >= 0 },
+        )
     }
 
     private fun saveNote(note: String) {
@@ -100,3 +146,6 @@ class ExerciseDetailViewModel(
         const val NOTE_DEBOUNCE_MS = 500L
     }
 }
+
+private fun ExerciseSession.toUi(unit: WeightUnit) =
+    SessionUi(workoutId, workoutName, performedAt, SetFormatter.summary(sets.toDraftSets(), unit))

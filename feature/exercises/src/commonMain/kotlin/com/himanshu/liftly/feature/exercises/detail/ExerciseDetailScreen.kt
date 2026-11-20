@@ -156,11 +156,15 @@ fun ExerciseDetailContent(
                     when (state.tab) {
                         DetailTab.FORM -> FormTab(exercise, state.noteDraft, onIntent)
 
-                        DetailTab.HISTORY -> EmptyState(
-                            Icons.Filled.DateRange,
-                            stringResource(Res.string.detail_history_empty_title),
-                            stringResource(Res.string.detail_history_empty_message),
-                        )
+                        DetailTab.HISTORY -> if (state.sessions.isEmpty()) {
+                            EmptyState(
+                                Icons.Filled.DateRange,
+                                stringResource(Res.string.detail_history_empty_title),
+                                stringResource(Res.string.detail_history_empty_message),
+                            )
+                        } else {
+                            HistoryTab(state, onIntent)
+                        }
 
                         DetailTab.RECORDS -> if (state.records.isEmpty()) {
                             EmptyState(

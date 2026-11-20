@@ -73,6 +73,28 @@ class HistoryRepositoryTest {
     }
 
     @Test
+    fun exerciseSessionsGroupSetsPerWorkoutNewestFirstAndSkipDeleted() = runTest {
+        val bench = ex("Bench")
+        suspend fun workout(start: Long, name: String, sets: List<DraftSet>): String {
+            clock = start
+            val w = repo.createWorkout(name, null, listOf(bench))
+            log(repo.observeActiveWorkout().first()!!.exercises.single().workoutExercise.id, sets, InputMode.UNIFORM)
+            repo.finish(w)
+            return w
+        }
+        val a = workout(1_000, "Push A", listOf(DraftSet(60.0, 8), DraftSet(60.0, 8)))
+        val b = workout(200_000_000, "Push B", listOf(DraftSet(40.0, 10, setType = SetType.WARMUP), DraftSet(70.0, 5)))
+        val c = workout(300_000_000, "Push C", listOf(DraftSet(72.5, 5)))
+        repo.deleteWorkout(c)
+
+        val sessions = repo.observeExerciseSessions(bench).first()
+        assertEquals(listOf(b, a), sessions.map { it.workoutId })
+        assertEquals(listOf("Push B", "Push A"), sessions.map { it.workoutName })
+        assertEquals(listOf(40.0, 70.0), sessions[0].sets.map { it.weightKg })
+        assertEquals(Instant.fromEpochMilliseconds(200_000_000), sessions[0].performedAt)
+    }
+
+    @Test
     fun deleteAndUndoRestoresEverything() = runTest {
         val w = session(1_000, listOf(DraftSet(100.0, 5)))
         val before = assertNotNull(repo.observeWorkout(w).first())

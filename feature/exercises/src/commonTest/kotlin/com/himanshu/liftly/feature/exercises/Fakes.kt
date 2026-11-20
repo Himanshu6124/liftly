@@ -58,6 +58,7 @@ fun exercise(
 
 class FakeRecentWorkoutRepository(recent: List<String> = emptyList()) : com.himanshu.liftly.core.domain.repository.WorkoutRepository {
     val recentIds = MutableStateFlow(recent)
+    val sessions = MutableStateFlow(emptyList<com.himanshu.liftly.core.domain.model.ExerciseSession>())
     override fun observeLastFinished() = kotlinx.coroutines.flow.flowOf<com.himanshu.liftly.core.domain.model.WorkoutSummaryLine?>(null)
     override fun observeHistory() = kotlinx.coroutines.flow.flowOf(emptyList<com.himanshu.liftly.core.domain.model.WorkoutHistoryItem>())
     override fun observeWorkout(
@@ -89,6 +90,7 @@ class FakeRecentWorkoutRepository(recent: List<String> = emptyList()) : com.hima
     ): com.himanshu.liftly.core.domain.model.LogSnapshot = error("not used")
     override suspend fun getSessionHistory(exerciseId: String, excludeWorkoutExerciseId: String) =
         emptyList<List<com.himanshu.liftly.core.domain.model.WorkoutSet>>()
+    override fun observeExerciseSessions(exerciseId: String) = sessions
     override fun observeRecords(exerciseId: String) =
         kotlinx.coroutines.flow.flowOf(emptyList<com.himanshu.liftly.core.domain.model.PersonalRecord>())
     override suspend fun restoreLog(snapshot: com.himanshu.liftly.core.domain.model.LogSnapshot) = Unit

@@ -224,3 +224,17 @@ backend later with minimal change.
   compiler, so screens taking them could not skip recomposition.
 - **List-detail only for the exercise library.** It's the one screen people browse; history
   and routines keep full-screen detail (their detail screens have their own actions and undo).
+
+## Milestone 9 (Phase 2): exercise progress charts
+
+- **Charts are a small Canvas composable** (`core/designsystem/.../LineChart.kt`), not a chart
+  library: one line, dots, three labelled grid lines, tap-to-select. It is reused later for body
+  measurements. Screen readers get a one-sentence summary (first and latest value) instead of
+  the drawing.
+- **Metrics per session, working sets only:** est. 1RM (Epley, reps ≤ 12), best weight, volume,
+  most reps, total reps, longest set, distance. Only metrics that have data are offered, so a
+  plank shows "Longest set" and a pull-up "Most reps".
+- **Ranges 1M / 3M / 1Y / All**, counted back from today; default All.
+- Values stay in kg in state and are converted when formatted, like everywhere else.
+- The History tab lists every session (date, workout name, sets) under the chart. Sessions of
+  the workout in progress are included once that exercise is logged.

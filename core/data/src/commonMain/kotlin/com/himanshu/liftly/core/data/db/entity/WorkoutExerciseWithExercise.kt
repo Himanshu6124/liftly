@@ -15,6 +15,8 @@ data class WorkoutWithStats(
 data class SetWithDate(
     @Embedded val set: WorkoutSetEntity,
     val performedAt: Long,
+    val workoutId: String,
+    val workoutName: String,
 )
 
 data class PersonalRecordWithWorkoutExercise(

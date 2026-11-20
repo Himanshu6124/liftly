@@ -220,7 +220,7 @@ interface WorkoutSetDao : SyncDao<WorkoutSetEntity> {
     /** Every logged set of an exercise with its workout's start time (for records and charts). */
     @Query(
         """
-        SELECT s.*, w.startedAt AS performedAt FROM workout_sets s
+        SELECT s.*, w.startedAt AS performedAt, w.id AS workoutId, w.name AS workoutName FROM workout_sets s
         JOIN workout_exercises we ON we.id = s.workoutExerciseId
         JOIN workouts w ON w.id = we.workoutId
         WHERE we.exerciseId = :exerciseId AND we.status = 'LOGGED'

@@ -54,6 +54,8 @@ class HomeViewModelTest {
         ): com.himanshu.liftly.core.domain.model.LogSnapshot = error("not used")
         override suspend fun getSessionHistory(exerciseId: String, excludeWorkoutExerciseId: String) =
             emptyList<List<com.himanshu.liftly.core.domain.model.WorkoutSet>>()
+        override fun observeExerciseSessions(exerciseId: String) =
+            kotlinx.coroutines.flow.flowOf(emptyList<com.himanshu.liftly.core.domain.model.ExerciseSession>())
         override fun observeRecords(exerciseId: String) =
             kotlinx.coroutines.flow.flowOf(emptyList<com.himanshu.liftly.core.domain.model.PersonalRecord>())
         override suspend fun restoreLog(snapshot: com.himanshu.liftly.core.domain.model.LogSnapshot) = Unit

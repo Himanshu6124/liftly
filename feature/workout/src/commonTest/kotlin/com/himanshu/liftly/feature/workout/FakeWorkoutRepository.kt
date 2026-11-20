@@ -110,6 +110,10 @@ class FakeWorkoutRepository(
     override suspend fun getSessionHistory(exerciseId: String, excludeWorkoutExerciseId: String): List<List<WorkoutSet>> =
         lastSessions[exerciseId.removePrefix("ex-")]?.let { listOf(it) }.orEmpty()
 
+    override fun observeExerciseSessions(exerciseId: String) =
+
+        kotlinx.coroutines.flow.flowOf(emptyList<com.himanshu.liftly.core.domain.model.ExerciseSession>())
+
     override fun observeRecords(exerciseId: String) = flowOf(emptyList<com.himanshu.liftly.core.domain.model.PersonalRecord>())
 
     override suspend fun logSets(

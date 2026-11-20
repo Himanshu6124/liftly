@@ -4,7 +4,7 @@ Offline-first strength training tracker for **Android, iOS and Desktop**, built 
 Compose Multiplatform. You log **per exercise, not per set**: do all your sets, then open the
 exercise and save them together in a sheet that is already filled in from last time.
 
-> Status: **Phase 1 (MVP) complete.** See [Roadmap](#roadmap).
+> Status: **Phase 1 (MVP) complete; Phase 2 in progress.** See [Roadmap](#roadmap).
 
 ## Requirements
 
@@ -133,4 +133,6 @@ installs pick up the change. Favorites, notes and custom exercises are never ove
 6. ✅ Routines (create/edit/delete with undo, targets, reorder, next-routine rotation and 1-tap start on Home, save/update from a workout)
 7. ✅ History (weekly, edit, delete with undo), workout summary, settings
 8. ✅ MVP hardening (accessibility, adaptive list-detail, stability config, E2E UI test)
-9. Phase 2 and Phase 3 features
+9. ✅ Phase 2: exercise progress charts (est. 1RM, best weight, volume; 1M/3M/1Y/All)
+10. Phase 2: Home heatmap + streak + weekly goal, weekly sets per muscle, rest timer, plate calculator + warm-ups, supersets, body measurements
+11. Phase 3

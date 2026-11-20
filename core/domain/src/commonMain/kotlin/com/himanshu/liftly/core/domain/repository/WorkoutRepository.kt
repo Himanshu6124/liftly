@@ -4,6 +4,7 @@ import com.himanshu.liftly.core.domain.model.ActiveWorkout
 import com.himanshu.liftly.core.domain.model.DeletedWorkout
 import com.himanshu.liftly.core.domain.model.DraftSet
 import com.himanshu.liftly.core.domain.model.EntityId
+import com.himanshu.liftly.core.domain.model.ExerciseSession
 import com.himanshu.liftly.core.domain.model.ExerciseStatus
 import com.himanshu.liftly.core.domain.model.InputMode
 import com.himanshu.liftly.core.domain.model.LastSession
@@ -69,6 +70,9 @@ interface WorkoutRepository {
 
     /** Current best per record type for one exercise. */
     fun observeRecords(exerciseId: EntityId): Flow<List<PersonalRecord>>
+
+    /** Every logged session of [exerciseId], newest first, with its sets (warm-ups included). */
+    fun observeExerciseSessions(exerciseId: EntityId): Flow<List<ExerciseSession>>
 
     /** Puts a workout exercise back exactly as captured by [logSets]. */
     suspend fun restoreLog(snapshot: LogSnapshot)

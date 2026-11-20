@@ -16,6 +16,7 @@ import com.himanshu.liftly.core.domain.model.ActiveWorkoutExercise
 import com.himanshu.liftly.core.domain.model.DeletedWorkout
 import com.himanshu.liftly.core.domain.model.DraftSet
 import com.himanshu.liftly.core.domain.model.EntityId
+import com.himanshu.liftly.core.domain.model.ExerciseSession
 import com.himanshu.liftly.core.domain.model.ExerciseStatus
 import com.himanshu.liftly.core.domain.model.InputMode
 import com.himanshu.liftly.core.domain.model.LastSession
@@ -366,6 +367,21 @@ class RoomWorkoutRepository(
      * Bests are computed from every logged working set (not from stored PR rows), so they're right
      * even for the very first session and after edits or deletions.
      */
+    override fun observeExerciseSessions(exerciseId: EntityId): Flow<List<ExerciseSession>> =
+        sets.observeLoggedForExercise(exerciseId).map { rows ->
+            rows.groupBy { it.set.workoutExerciseId }.values
+                .map { session ->
+                    val first = session.first()
+                    ExerciseSession(
+                        workoutId = first.workoutId,
+                        workoutName = first.workoutName,
+                        performedAt = first.performedAt.toInstant(),
+                        sets = session.map { it.set.toDomain() }.sortedBy { it.orderIndex },
+                    )
+                }
+                .sortedByDescending { it.performedAt }
+        }
+
     override fun observeRecords(exerciseId: EntityId): Flow<List<PersonalRecord>> =
         sets.observeLoggedForExercise(exerciseId).map { rows ->
             val working = rows.filter { it.set.setType != SetType.WARMUP }

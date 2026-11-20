@@ -17,3 +17,11 @@ data class DeletedWorkout(
     val sets: List<WorkoutSet>,
     val personalRecords: List<PersonalRecord>,
 )
+
+/** One logged session of a single exercise (Exercise Detail → History tab and charts). */
+data class ExerciseSession(
+    val workoutId: EntityId,
+    val workoutName: String,
+    val performedAt: kotlin.time.Instant,
+    val sets: List<WorkoutSet>,
+)
