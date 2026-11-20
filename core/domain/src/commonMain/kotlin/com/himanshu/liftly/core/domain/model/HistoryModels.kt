@@ -25,3 +25,6 @@ data class ExerciseSession(
     val performedAt: kotlin.time.Instant,
     val sets: List<WorkoutSet>,
 )
+
+/** Working sets of one exercise in a time window, with the muscles it trains. */
+data class ExerciseSetCount(val primary: Muscle, val secondary: List<Muscle>, val workingSets: Int)

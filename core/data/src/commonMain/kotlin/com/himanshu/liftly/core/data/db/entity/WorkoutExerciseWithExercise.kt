@@ -29,3 +29,9 @@ data class WorkoutExerciseWithExercise(
     @Relation(parentColumn = "exerciseId", entityColumn = "id")
     val exercise: ExerciseEntity?,
 )
+
+data class ExerciseSetCountRow(
+    val primaryMuscle: com.himanshu.liftly.core.domain.model.Muscle,
+    val secondaryMuscles: List<com.himanshu.liftly.core.domain.model.Muscle>,
+    val workingSets: Int,
+)

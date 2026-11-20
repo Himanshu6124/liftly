@@ -251,3 +251,16 @@ backend later with minimal change.
   112 composables. Screen readers get "Trained on N of the last M days".
 - The card only appears once there's a finished workout. Home now waits for its first data
   before showing empty-state hints, so "Create a routine" no longer flashes on launch.
+
+## Milestone 11 (Phase 2): weekly sets per muscle
+
+- Shown at the top of History (that's where you look back), browsable week by week.
+- **Counting:** each logged working set counts 1 for the exercise's primary muscle and ½ for each
+  secondary muscle (warm-ups excluded). This is the common way to estimate weekly volume per
+  muscle; bench press then credits chest 1 and triceps/front delts ½ each.
+- One SQL query groups working sets per exercise for the week; the per-muscle split is a pure
+  domain function (`MuscleSets`), so it's unit-tested without a database.
+- The body diagram reuses `MuscleDiagram` as a heatmap (intensity relative to the week's top
+  muscle, with a floor so light work stays visible). `MuscleDiagram` now always fits inside the
+  box it's given instead of trusting its aspect ratio, which overdrew when a caller fixed the
+  height and the width separately.

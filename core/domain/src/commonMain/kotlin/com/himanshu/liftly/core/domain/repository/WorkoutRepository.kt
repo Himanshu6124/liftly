@@ -5,6 +5,7 @@ import com.himanshu.liftly.core.domain.model.DeletedWorkout
 import com.himanshu.liftly.core.domain.model.DraftSet
 import com.himanshu.liftly.core.domain.model.EntityId
 import com.himanshu.liftly.core.domain.model.ExerciseSession
+import com.himanshu.liftly.core.domain.model.ExerciseSetCount
 import com.himanshu.liftly.core.domain.model.ExerciseStatus
 import com.himanshu.liftly.core.domain.model.InputMode
 import com.himanshu.liftly.core.domain.model.LastSession
@@ -18,6 +19,7 @@ import com.himanshu.liftly.core.domain.model.WorkoutSet
 import com.himanshu.liftly.core.domain.model.WorkoutSummaryLine
 import com.himanshu.liftly.core.domain.usecase.PrHit
 import kotlinx.coroutines.flow.Flow
+import kotlin.time.Instant
 
 interface WorkoutRepository {
     /** The single in-progress workout (endedAt == null), or null. */
@@ -73,6 +75,9 @@ interface WorkoutRepository {
 
     /** Every logged session of [exerciseId], newest first, with its sets (warm-ups included). */
     fun observeExerciseSessions(exerciseId: EntityId): Flow<List<ExerciseSession>>
+
+    /** Logged working sets per exercise for workouts started in [from, to). */
+    fun observeWorkingSetsByExercise(from: Instant, to: Instant): Flow<List<ExerciseSetCount>>
 
     /** Puts a workout exercise back exactly as captured by [logSets]. */
     suspend fun restoreLog(snapshot: LogSnapshot)

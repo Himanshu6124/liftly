@@ -95,6 +95,15 @@ class HistoryRepositoryTest {
     }
 
     @Test
+    fun workingSetsByExerciseCountsLoggedWorkingSetsInRange() = runTest {
+        session(1_000, listOf(DraftSet(40.0, 10, setType = SetType.WARMUP), DraftSet(100.0, 5), DraftSet(100.0, 5)))
+        session(500_000_000, listOf(DraftSet(60.0, 10))) // outside the range
+        val counts = repo.observeWorkingSetsByExercise(Instant.fromEpochMilliseconds(0), Instant.fromEpochMilliseconds(100_000)).first()
+        assertEquals(listOf(2), counts.map { it.workingSets }, "warm-up excluded, later workout excluded")
+        assertEquals(Muscle.CHEST, counts.single().primary)
+    }
+
+    @Test
     fun deleteAndUndoRestoresEverything() = runTest {
         val w = session(1_000, listOf(DraftSet(100.0, 5)))
         val before = assertNotNull(repo.observeWorkout(w).first())

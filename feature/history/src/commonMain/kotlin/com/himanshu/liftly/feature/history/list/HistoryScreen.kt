@@ -70,12 +70,19 @@ fun HistoryScreen(onOpenWorkout: (String) -> Unit, viewModel: HistoryViewModel =
         )
         if (result == SnackbarResult.ActionPerformed) viewModel.undoDelete() else viewModel.dismissUndo()
     }
-    HistoryContent(state, snackbar, onOpenWorkout)
+    val muscleWeek by viewModel.muscleWeek.collectAsStateWithLifecycle()
+    HistoryContent(state, muscleWeek, snackbar, onOpenWorkout, viewModel::showWeek)
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun HistoryContent(state: HistoryUiState, snackbar: SnackbarHostState, onOpenWorkout: (String) -> Unit) {
+fun HistoryContent(
+    state: HistoryUiState,
+    muscleWeek: MuscleWeekUi,
+    snackbar: SnackbarHostState,
+    onOpenWorkout: (String) -> Unit,
+    onShowWeek: (delta: Int) -> Unit,
+) {
     val spacing = LiftlyTheme.spacing
     Scaffold(modifier = Modifier.statusBarsPadding(), snackbarHost = { SnackbarHost(snackbar) }) { padding ->
         if (!state.isLoading && state.weeks.isEmpty()) {
@@ -92,6 +99,9 @@ fun HistoryContent(state: HistoryUiState, snackbar: SnackbarHostState, onOpenWor
             contentPadding = PaddingValues(bottom = spacing.lg),
             verticalArrangement = Arrangement.spacedBy(spacing.sm),
         ) {
+            item(key = "muscles") {
+                MuscleWeekCard(muscleWeek, onShowWeek, Modifier.padding(horizontal = spacing.md, vertical = spacing.sm))
+            }
             state.weeks.forEach { week ->
                 stickyHeader(key = "w-${week.weekStart}") {
                     SectionHeader(week.title(), Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background))

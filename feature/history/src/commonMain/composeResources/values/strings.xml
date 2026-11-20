@@ -18,4 +18,14 @@
     <string name="history_warmup">W</string>
     <string name="history_tap_to_edit">Tap an exercise to edit its sets.</string>
     <string name="history_prs">%1$d PR</string>
+    <string name="muscles_title">Sets per muscle</string>
+    <string name="muscles_week_this">This week</string>
+    <string name="muscles_week_last">Last week</string>
+    <string name="muscles_week_of">Week of %1$s</string>
+    <string name="muscles_previous_week">Previous week</string>
+    <string name="muscles_next_week">Next week</string>
+    <string name="muscles_empty">No working sets this week.</string>
+    <string name="muscles_hint">Primary muscle 1 set, secondary ½</string>
+    <string name="muscles_diagram">Muscles trained, darker = more sets</string>
+    <string name="muscles_bar">%1$s: %2$s sets</string>
 </resources>

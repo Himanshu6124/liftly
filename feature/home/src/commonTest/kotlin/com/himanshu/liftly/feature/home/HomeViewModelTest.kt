@@ -56,6 +56,8 @@ class HomeViewModelTest {
             emptyList<List<com.himanshu.liftly.core.domain.model.WorkoutSet>>()
         override fun observeExerciseSessions(exerciseId: String) =
             kotlinx.coroutines.flow.flowOf(emptyList<com.himanshu.liftly.core.domain.model.ExerciseSession>())
+        override fun observeWorkingSetsByExercise(from: kotlin.time.Instant, to: kotlin.time.Instant) =
+            kotlinx.coroutines.flow.flowOf(emptyList<com.himanshu.liftly.core.domain.model.ExerciseSetCount>())
         override fun observeRecords(exerciseId: String) =
             kotlinx.coroutines.flow.flowOf(emptyList<com.himanshu.liftly.core.domain.model.PersonalRecord>())
         override suspend fun restoreLog(snapshot: com.himanshu.liftly.core.domain.model.LogSnapshot) = Unit

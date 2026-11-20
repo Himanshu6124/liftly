@@ -10,7 +10,9 @@ import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.minus
+import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Duration
 import kotlin.time.Instant
@@ -56,6 +58,8 @@ data class WeekGroup(val weekStart: LocalDate, val relative: RelativeWeek, val i
 enum class RelativeWeek { THIS_WEEK, LAST_WEEK, EARLIER }
 
 object WeekGrouping {
+    private const val DAYS_PER_WEEK = 7
+
     fun group(items: List<WorkoutHistoryItem>, now: Instant, zone: TimeZone = TimeZone.currentSystemDefault()): List<WeekGroup> {
         val thisWeek = weekStart(now, zone)
         val lastWeek = thisWeek.minus(DatePeriod(days = 7))
@@ -71,6 +75,13 @@ object WeekGrouping {
                 WeekGroup(start, relative, list)
             }
             .sortedByDescending { it.weekStart }
+    }
+
+    /** Monday 00:00 of the week [offset] weeks from the current one (0 = this week, -1 = last) and the next Monday. */
+    fun weekBounds(now: Instant, offset: Int, zone: TimeZone = TimeZone.currentSystemDefault()): Triple<LocalDate, Instant, Instant> {
+        val start = weekStart(now, zone).plus(DatePeriod(days = DAYS_PER_WEEK * offset))
+        val end = start.plus(DatePeriod(days = DAYS_PER_WEEK))
+        return Triple(start, start.atStartOfDayIn(zone), end.atStartOfDayIn(zone))
     }
 
     fun weekStart(at: Instant, zone: TimeZone): LocalDate {

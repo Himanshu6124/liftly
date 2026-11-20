@@ -17,6 +17,7 @@ import com.himanshu.liftly.core.domain.model.DeletedWorkout
 import com.himanshu.liftly.core.domain.model.DraftSet
 import com.himanshu.liftly.core.domain.model.EntityId
 import com.himanshu.liftly.core.domain.model.ExerciseSession
+import com.himanshu.liftly.core.domain.model.ExerciseSetCount
 import com.himanshu.liftly.core.domain.model.ExerciseStatus
 import com.himanshu.liftly.core.domain.model.InputMode
 import com.himanshu.liftly.core.domain.model.LastSession
@@ -45,6 +46,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlin.time.Instant
 
 class RoomWorkoutRepository(
     private val db: AppDatabase,
@@ -380,6 +382,11 @@ class RoomWorkoutRepository(
                     )
                 }
                 .sortedByDescending { it.performedAt }
+        }
+
+    override fun observeWorkingSetsByExercise(from: Instant, to: Instant): Flow<List<ExerciseSetCount>> =
+        sets.observeWorkingSetsByExercise(from.toEpochMilliseconds(), to.toEpochMilliseconds()).map { rows ->
+            rows.map { ExerciseSetCount(it.primaryMuscle, it.secondaryMuscles, it.workingSets) }
         }
 
     override fun observeRecords(exerciseId: EntityId): Flow<List<PersonalRecord>> =

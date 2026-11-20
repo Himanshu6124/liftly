@@ -30,6 +30,16 @@ class HistoryTest {
     private fun item(id: String, start: Instant) = WorkoutHistoryItem(Workout(id, "", null, start, start, null), 1, 1, 3, 100.0, 0)
 
     @Test
+    fun weekBoundsAreMondayToMondayWithOffset() {
+        val now = at(2026, 11, 21) // Saturday
+        val (start, from, to) = WeekGrouping.weekBounds(now, 0, zone)
+        assertEquals(LocalDate(2026, 11, 16), start)
+        assertEquals(LocalDateTime(2026, 11, 16, 0, 0).toInstant(zone), from)
+        assertEquals(LocalDateTime(2026, 11, 23, 0, 0).toInstant(zone), to)
+        assertEquals(LocalDate(2026, 11, 2), WeekGrouping.weekBounds(now, -2, zone).first)
+    }
+
+    @Test
     fun groupsByMondayWeeksNewestFirst() {
         val now = at(2026, 11, 21) // Saturday
         val groups = WeekGrouping.group(

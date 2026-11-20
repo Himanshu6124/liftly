@@ -5,6 +5,7 @@ import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Upsert
 import com.himanshu.liftly.core.data.db.entity.ExerciseEntity
+import com.himanshu.liftly.core.data.db.entity.ExerciseSetCountRow
 import com.himanshu.liftly.core.data.db.entity.PersonalRecordEntity
 import com.himanshu.liftly.core.data.db.entity.PersonalRecordWithWorkoutExercise
 import com.himanshu.liftly.core.data.db.entity.RoutineEntity
@@ -229,6 +230,22 @@ interface WorkoutSetDao : SyncDao<WorkoutSetEntity> {
         """,
     )
     fun observeLoggedForExercise(exerciseId: String): Flow<List<SetWithDate>>
+
+    /** Logged working sets per exercise (with its muscles) for workouts started in [from, to). */
+    @Query(
+        """
+        SELECT e.primaryMuscle AS primaryMuscle, e.secondaryMuscles AS secondaryMuscles, COUNT(*) AS workingSets
+        FROM workout_sets s
+        JOIN workout_exercises we ON we.id = s.workoutExerciseId
+        JOIN workouts w ON w.id = we.workoutId
+        JOIN exercises e ON e.id = we.exerciseId
+        WHERE we.status = 'LOGGED' AND s.setType != 'WARMUP'
+          AND s.deletedAt IS NULL AND we.deletedAt IS NULL AND w.deletedAt IS NULL
+          AND w.startedAt >= :from AND w.startedAt < :to
+        GROUP BY e.id
+        """,
+    )
+    fun observeWorkingSetsByExercise(from: Long, to: Long): Flow<List<ExerciseSetCountRow>>
 
     @Query(
         """

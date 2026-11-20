@@ -34,9 +34,18 @@ fun MuscleDiagram(
             .aspectRatio(FIGURE_W * 2 / FIGURE_H)
             .semantics { this.contentDescription = contentDescription },
     ) {
-        val scale = size.height / FIGURE_H
-        drawFigure(offsetX = 0f, scale = scale, regions = FRONT, intensity = intensity, highlight = highlight, body = body)
-        drawFigure(offsetX = FIGURE_W * scale, scale = scale, regions = BACK, intensity = intensity, highlight = highlight, body = body)
+        // Fit both figures inside whatever box we got (never overdraw), centred horizontally.
+        val scale = minOf(size.height / FIGURE_H, size.width / (FIGURE_W * 2))
+        val left = (size.width - FIGURE_W * 2 * scale) / 2
+        drawFigure(offsetX = left, scale = scale, regions = FRONT, intensity = intensity, highlight = highlight, body = body)
+        drawFigure(
+            offsetX = left + FIGURE_W * scale,
+            scale = scale,
+            regions = BACK,
+            intensity = intensity,
+            highlight = highlight,
+            body = body,
+        )
     }
 }
 
