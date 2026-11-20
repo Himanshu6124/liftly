@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.himanshu.liftly.core.domain.model.DraftSet
 import com.himanshu.liftly.core.domain.model.ExerciseStatus
 import com.himanshu.liftly.core.domain.model.UserSettings
+import com.himanshu.liftly.core.domain.repository.RoutineRepository
 import com.himanshu.liftly.core.domain.repository.SettingsRepository
 import com.himanshu.liftly.core.domain.repository.WorkoutRepository
 import com.himanshu.liftly.core.domain.usecase.GetLogSheetPrefillUseCase
@@ -32,6 +33,7 @@ import kotlinx.coroutines.launch
  */
 class ActiveWorkoutViewModel(
     private val workouts: WorkoutRepository,
+    private val routines: RoutineRepository,
     private val settings: SettingsRepository,
     private val logSets: LogExerciseSetsUseCase,
     private val prefill: GetLogSheetPrefillUseCase,
@@ -114,6 +116,28 @@ class ActiveWorkoutViewModel(
             ActiveWorkoutIntent.FinishConfirmed -> finish()
 
             ActiveWorkoutIntent.FinishCancelled -> _state.update { it.copy(showFinishSheet = false) }
+
+            ActiveWorkoutIntent.SaveAsRoutineRequested -> _state.update { it.copy(showSaveRoutineDialog = true) }
+
+            ActiveWorkoutIntent.SaveAsRoutineCancelled -> _state.update { it.copy(showSaveRoutineDialog = false) }
+
+            is ActiveWorkoutIntent.SaveAsRoutine -> workoutId?.let { id ->
+                _state.update { it.copy(showSaveRoutineDialog = false) }
+                viewModelScope.launch {
+                    appScope.async { routines.saveWorkoutAsRoutine(id, intent.name) }.await()
+                    _effects.send(ActiveWorkoutEffect.Info(ActiveWorkoutEffect.Info.Kind.ROUTINE_SAVED, intent.name.trim()))
+                }
+            }
+
+            ActiveWorkoutIntent.UpdateRoutineTargets -> {
+                val routineId = _state.value.routineId
+                if (workoutId != null && routineId != null) {
+                    viewModelScope.launch {
+                        appScope.async { routines.updateTargetsFromWorkout(routineId, workoutId) }.await()
+                        _effects.send(ActiveWorkoutEffect.Info(ActiveWorkoutEffect.Info.Kind.TARGETS_UPDATED))
+                    }
+                }
+            }
 
             ActiveWorkoutIntent.DiscardRequested -> _state.update { it.copy(showDiscardDialog = true) }
 

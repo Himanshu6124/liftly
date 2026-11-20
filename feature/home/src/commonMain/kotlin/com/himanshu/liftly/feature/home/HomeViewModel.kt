@@ -3,10 +3,17 @@ package com.himanshu.liftly.feature.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.himanshu.liftly.core.domain.model.ExerciseStatus
+import com.himanshu.liftly.core.domain.model.RoutineWithExercises
+import com.himanshu.liftly.core.domain.repository.RoutineRepository
+import com.himanshu.liftly.core.domain.repository.SettingsRepository
 import com.himanshu.liftly.core.domain.repository.WorkoutRepository
 import com.himanshu.liftly.core.domain.sync.SyncController
 import com.himanshu.liftly.core.domain.sync.SyncState
+import com.himanshu.liftly.core.domain.usecase.NextRoutine
+import com.himanshu.liftly.core.domain.usecase.StartRoutineUseCase
 import com.himanshu.liftly.core.domain.usecase.StartWorkoutUseCase
+import com.himanshu.liftly.feature.routines.list.toRow
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -19,10 +26,21 @@ import kotlinx.coroutines.launch
 class HomeViewModel(
     syncController: SyncController,
     workouts: WorkoutRepository,
+    routines: RoutineRepository,
+    settings: SettingsRepository,
     private val startWorkout: StartWorkoutUseCase,
+    private val startRoutine: StartRoutineUseCase,
 ) : ViewModel() {
+    private var latestRoutines: List<RoutineWithExercises> = emptyList()
 
-    val state: StateFlow<HomeUiState> = combine(syncController.state, workouts.observeActiveWorkout()) { sync, active ->
+    val state: StateFlow<HomeUiState> = combine(
+        syncController.state,
+        workouts.observeActiveWorkout(),
+        routines.observeRoutines(),
+        workouts.observeLastFinished(),
+        settings.settings,
+    ) { sync, active, routineList, last, s ->
+        latestRoutines = routineList
         HomeUiState(
             syncLabel = sync.toLabel(),
             inProgress = active?.let { a ->
@@ -33,6 +51,12 @@ class HomeViewModel(
                     loggedCount = a.exercises.count { it.workoutExercise.status == ExerciseStatus.LOGGED },
                 )
             },
+            nextRoutine = NextRoutine.pick(routineList)?.toRow(),
+            routines = routineList.map { it.toRow() }.toImmutableList(),
+            lastWorkout = last?.let { l ->
+                LastWorkoutCard(l.workout.name, l.workout.startedAt, l.workout.endedAt, l.exerciseCount, l.loggedCount, l.volumeKg)
+            },
+            unit = s.weightUnit,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 
@@ -47,6 +71,13 @@ class HomeViewModel(
             }
 
             HomeIntent.ResumeWorkout -> viewModelScope.launch { _effects.send(HomeEffect.OpenActiveWorkout) }
+
+            is HomeIntent.StartRoutine -> latestRoutines.find { it.routine.id == intent.routineId }?.let { r ->
+                viewModelScope.launch {
+                    startRoutine(r)
+                    _effects.send(HomeEffect.OpenActiveWorkout)
+                }
+            }
         }
     }
 

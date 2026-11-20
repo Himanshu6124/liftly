@@ -3,4 +3,29 @@
     <string name="routines_title">Routines</string>
     <string name="routines_empty_title">No routines yet</string>
     <string name="routines_empty_message">Create a routine like Push Day to start it with one tap.</string>
+    <string name="routines_new">New routine</string>
+    <string name="routines_start">Start %1$s</string>
+    <string name="routines_exercises">%1$d exercises</string>
+    <string name="routines_last_done">Last done %1$s</string>
+    <string name="routines_never_done">Not done yet</string>
+    <string name="routines_deleted">Deleted %1$s</string>
+    <string name="routines_undo">Undo</string>
+    <string name="routines_delete">Delete</string>
+    <string name="routines_edit">Edit</string>
+    <string name="routines_options">Options for %1$s</string>
+
+    <string name="editor_new_title">New routine</string>
+    <string name="editor_edit_title">Edit routine</string>
+    <string name="editor_back">Back</string>
+    <string name="editor_save">Save</string>
+    <string name="editor_name">Name</string>
+    <string name="editor_name_hint">e.g. Push Day</string>
+    <string name="editor_add_exercises">Add exercises</string>
+    <string name="editor_sets">Sets</string>
+    <string name="editor_reps">Reps</string>
+    <string name="editor_weight">Weight</string>
+    <string name="editor_remove">Remove %1$s</string>
+    <string name="editor_move_up">Move %1$s up</string>
+    <string name="editor_move_down">Move %1$s down</string>
+    <string name="editor_empty">Add the exercises you do in this routine. Targets are optional: the log sheet uses your last session first.</string>
 </resources>

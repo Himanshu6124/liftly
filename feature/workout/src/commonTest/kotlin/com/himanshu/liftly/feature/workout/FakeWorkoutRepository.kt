@@ -85,6 +85,7 @@ class FakeWorkoutRepository(
         discarded = true
         active.value = null
     }
+    override fun observeLastFinished() = kotlinx.coroutines.flow.flowOf<com.himanshu.liftly.core.domain.model.WorkoutSummaryLine?>(null)
     override fun observeRecentExerciseIds(limit: Int): Flow<List<String>> = flowOf(emptyList())
 
     private fun find(id: String) = active.value?.exercises?.first { it.workoutExercise.id == id }

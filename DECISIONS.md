@@ -166,3 +166,22 @@ backend later with minimal change.
 - **TIME exercises** take one duration per set ("1:00 0:45", "60x3", "1.30" for keypads without
   ':'). **DISTANCE exercises** take metres + optional time as one entry. Metres avoid a km/mi
   setting for now; summaries read "5000 m · 25:00".
+
+## Milestone 6: routines
+
+- **Next routine rotation** (`NextRoutine.pick`): never-done routines first (in the user's order),
+  then the one with the oldest `lastPerformedAt`. Empty routines are never offered. Finishing a
+  workout started from a routine stamps the routine's `lastPerformedAt` with the workout start.
+- **Home's primary card** is "Resume workout" while one runs, otherwise "Next up: Start <routine>"
+  (1 tap). "Start empty workout" is the secondary button. On Home, tapping a routine *starts* it;
+  on the Routines tab, tapping a routine *edits* it. Both have a ▶ button that starts it, and ⋮ menus.
+- **Routine targets are optional.** Pre-fill uses the last session first; targets only matter for
+  exercises never done before. "Update routine targets" (workout ⋮ menu, routine workouts only)
+  copies today's working-set count, most common reps and top weight; unlogged exercises keep their
+  old targets.
+- **Save as routine** is in the workout ⋮ menu now (name pre-filled from the workout); the summary
+  screen (Milestone 7) will offer it too. Unlogged exercises get 3 sets and no target weight.
+- **Editing a routine keeps line ids** for unchanged exercises (so sync sees updates, not
+  delete + insert). Deleting a routine has Undo; workouts that referenced it keep their history.
+- **Reordering routines:** long-press + drag on the Routines tab; the editor uses ▲/▼ buttons
+  (simpler inside a scrolling form with text fields).

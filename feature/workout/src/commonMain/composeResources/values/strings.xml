@@ -90,4 +90,10 @@
     <string name="card_pr">New personal record</string>
     <string name="snackbar_pr">🏆 New PR on %1$s</string>
     <string name="card_quick_log">Log same as last time</string>
+    <string name="workout_save_as_routine">Save as routine</string>
+    <string name="workout_update_routine">Update routine targets</string>
+    <string name="workout_routine_name">Routine name</string>
+    <string name="workout_save">Save</string>
+    <string name="snackbar_routine_saved">Saved routine %1$s</string>
+    <string name="snackbar_targets_updated">Routine targets updated</string>
 </resources>

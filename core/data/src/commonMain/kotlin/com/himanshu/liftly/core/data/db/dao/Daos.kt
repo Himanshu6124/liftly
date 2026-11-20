@@ -31,6 +31,10 @@ interface ExerciseDao : SyncDao<ExerciseEntity> {
     @Query("SELECT * FROM exercises WHERE id = :id AND deletedAt IS NULL")
     fun observeById(id: String): Flow<ExerciseEntity?>
 
+    /** Includes archived exercises: routines and history may still reference them. */
+    @Query("SELECT * FROM exercises WHERE deletedAt IS NULL")
+    fun observeAllIncludingArchived(): Flow<List<ExerciseEntity>>
+
     @Query("SELECT COUNT(*) FROM exercises WHERE deletedAt IS NULL")
     suspend fun count(): Int
 
@@ -54,6 +58,12 @@ interface RoutineDao : SyncDao<RoutineEntity> {
 
     @Query("SELECT * FROM routines WHERE id = :id AND deletedAt IS NULL")
     suspend fun getById(id: String): RoutineEntity?
+
+    @Query("SELECT * FROM routines WHERE deletedAt IS NULL ORDER BY orderIndex")
+    suspend fun getAll(): List<RoutineEntity>
+
+    @Query("SELECT COALESCE(MAX(orderIndex), -1) FROM routines WHERE deletedAt IS NULL")
+    suspend fun maxOrderIndex(): Int
 }
 
 @Dao
@@ -72,6 +82,12 @@ interface RoutineExerciseDao : SyncDao<RoutineExerciseEntity> {
         """,
     )
     suspend fun getTarget(routineId: String, exerciseId: String): RoutineExerciseEntity?
+
+    @Query("SELECT * FROM routine_exercises WHERE deletedAt IS NULL ORDER BY orderIndex")
+    fun observeAll(): Flow<List<RoutineExerciseEntity>>
+
+    @Query("SELECT * FROM routine_exercises WHERE routineId = :routineId AND deletedAt IS NULL ORDER BY orderIndex")
+    suspend fun getForRoutine(routineId: String): List<RoutineExerciseEntity>
 }
 
 @Dao
@@ -90,6 +106,9 @@ interface WorkoutDao : SyncDao<WorkoutEntity> {
 
     @Query("SELECT * FROM workouts WHERE endedAt IS NULL AND deletedAt IS NULL ORDER BY startedAt DESC LIMIT 1")
     suspend fun getInProgress(): WorkoutEntity?
+
+    @Query("SELECT * FROM workouts WHERE endedAt IS NOT NULL AND deletedAt IS NULL ORDER BY startedAt DESC LIMIT 1")
+    fun observeLastFinished(): Flow<WorkoutEntity?>
 }
 
 @Dao

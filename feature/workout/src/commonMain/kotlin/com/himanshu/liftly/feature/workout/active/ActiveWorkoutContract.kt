@@ -38,6 +38,9 @@ data class ActiveWorkoutUiState(
     /** Empty = user never named it; the UI shows "Morning workout" etc. */
     val name: String = "",
     val startedAt: Instant? = null,
+    /** Routine this workout was started from (enables "Update routine targets"). */
+    val routineId: String? = null,
+    val showSaveRoutineDialog: Boolean = false,
     val cards: ImmutableList<ExerciseCardUi> = persistentListOf(),
     val showFinishSheet: Boolean = false,
     /** Workout exercise whose Batch Log Sheet is open. */
@@ -78,6 +81,10 @@ sealed interface ActiveWorkoutIntent {
     data object DiscardRequested : ActiveWorkoutIntent
     data object DiscardConfirmed : ActiveWorkoutIntent
     data object DiscardCancelled : ActiveWorkoutIntent
+    data object SaveAsRoutineRequested : ActiveWorkoutIntent
+    data object SaveAsRoutineCancelled : ActiveWorkoutIntent
+    data class SaveAsRoutine(val name: String) : ActiveWorkoutIntent
+    data object UpdateRoutineTargets : ActiveWorkoutIntent
 }
 
 sealed interface ActiveWorkoutEffect {
@@ -87,6 +94,10 @@ sealed interface ActiveWorkoutEffect {
     }
 
     data class Closed(val finished: Boolean) : ActiveWorkoutEffect
+
+    data class Info(val kind: Kind, val arg: String = "") : ActiveWorkoutEffect {
+        enum class Kind { ROUTINE_SAVED, TARGETS_UPDATED }
+    }
 
     /** Scroll the list so this card is visible. */
     data class ScrollTo(val workoutExerciseId: String) : ActiveWorkoutEffect
@@ -101,6 +112,7 @@ internal fun ActiveWorkout.toUiState(
     workoutId = workout.id,
     name = workout.name,
     startedAt = workout.startedAt,
+    routineId = workout.routineId,
     cards = exercises.map { e ->
         ExerciseCardUi(
             workoutExerciseId = e.workoutExercise.id,

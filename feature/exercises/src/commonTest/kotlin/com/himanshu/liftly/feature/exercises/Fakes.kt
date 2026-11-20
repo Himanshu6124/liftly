@@ -58,6 +58,7 @@ fun exercise(
 
 class FakeRecentWorkoutRepository(recent: List<String> = emptyList()) : com.himanshu.liftly.core.domain.repository.WorkoutRepository {
     val recentIds = MutableStateFlow(recent)
+    override fun observeLastFinished() = kotlinx.coroutines.flow.flowOf<com.himanshu.liftly.core.domain.model.WorkoutSummaryLine?>(null)
     override fun observeRecentExerciseIds(limit: Int): Flow<List<String>> = recentIds
     override fun observeActiveWorkout() = kotlinx.coroutines.flow.flowOf(null)
     override suspend fun getInProgressWorkout() = null

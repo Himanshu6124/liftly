@@ -37,8 +37,11 @@ class ActiveWorkoutViewModelTest {
 
     private val haptics = CountingHaptics()
 
+    private val routines = FakeRoutines()
+
     private fun vm(repo: FakeWorkoutRepository, settings: FakeSettings = FakeSettings()) = ActiveWorkoutViewModel(
         repo,
+        routines,
         settings,
         LogExerciseSetsUseCase(repo),
         GetLogSheetPrefillUseCase(),
@@ -198,6 +201,20 @@ class ActiveWorkoutViewModelTest {
         )
         vm.onIntent(ActiveWorkoutIntent.Logged("we1", undo))
         assertEquals("we0", vm.state.value.logSheetFor)
+    }
+
+    @Test
+    fun saveAsRoutineAndUpdateTargets() = runTest(dispatcher) {
+        val repo = FakeWorkoutRepository(listOf("Bench"))
+        val vm = vm(repo)
+        vm.effects.test {
+            vm.onIntent(ActiveWorkoutIntent.SaveAsRoutineRequested)
+            assertTrue(vm.state.value.showSaveRoutineDialog)
+            vm.onIntent(ActiveWorkoutIntent.SaveAsRoutine(" Push "))
+            assertEquals(ActiveWorkoutEffect.Info(ActiveWorkoutEffect.Info.Kind.ROUTINE_SAVED, "Push"), awaitItem())
+            assertEquals(listOf("w1" to " Push "), routines.savedFromWorkout)
+            assertFalse(vm.state.value.showSaveRoutineDialog)
+        }
     }
 
     @Test

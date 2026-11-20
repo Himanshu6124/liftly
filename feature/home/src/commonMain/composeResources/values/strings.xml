@@ -11,4 +11,11 @@
     <string name="home_resume">Resume workout</string>
     <string name="home_in_progress">In progress</string>
     <string name="home_in_progress_detail">%1$d of %2$d exercises logged</string>
+    <string name="home_start_routine">Start %1$s</string>
+    <string name="home_next_up">Next up</string>
+    <string name="home_routine_exercises">%1$d exercises · %2$s</string>
+    <string name="home_your_routines">Your routines</string>
+    <string name="home_new_routine">New routine</string>
+    <string name="home_last_workout">Last workout</string>
+    <string name="home_last_workout_detail">%1$s · %2$d/%3$d exercises · %4$s</string>
 </resources>

@@ -12,6 +12,7 @@ import com.himanshu.liftly.core.domain.model.PersonalRecord
 import com.himanshu.liftly.core.domain.model.RemovedWorkoutExercise
 import com.himanshu.liftly.core.domain.model.Workout
 import com.himanshu.liftly.core.domain.model.WorkoutSet
+import com.himanshu.liftly.core.domain.model.WorkoutSummaryLine
 import com.himanshu.liftly.core.domain.usecase.PrHit
 import kotlinx.coroutines.flow.Flow
 
@@ -69,6 +70,9 @@ interface WorkoutRepository {
 
     /** Puts a workout exercise back exactly as captured by [logSets]. */
     suspend fun restoreLog(snapshot: LogSnapshot)
+
+    /** The most recently finished workout, for Home. */
+    fun observeLastFinished(): Flow<WorkoutSummaryLine?>
 
     /** Ids of the most recently logged distinct exercises, newest first. */
     fun observeRecentExerciseIds(limit: Int): Flow<List<EntityId>>

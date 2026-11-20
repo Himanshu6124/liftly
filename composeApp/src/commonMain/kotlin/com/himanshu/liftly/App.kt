@@ -33,6 +33,8 @@ import com.himanshu.liftly.feature.exercises.navigation.exercisesScreen
 import com.himanshu.liftly.feature.history.navigation.historyScreen
 import com.himanshu.liftly.feature.home.navigation.HomeRoute
 import com.himanshu.liftly.feature.home.navigation.homeScreen
+import com.himanshu.liftly.feature.routines.navigation.RoutineEditorRoute
+import com.himanshu.liftly.feature.routines.navigation.routineEditorScreen
 import com.himanshu.liftly.feature.routines.navigation.routinesScreen
 import com.himanshu.liftly.feature.settings.navigation.settingsScreen
 import com.himanshu.liftly.feature.workout.navigation.WorkoutRoute
@@ -88,8 +90,13 @@ private fun LiftlyNavShell(hasWorkoutInProgress: suspend () -> Boolean) {
     ) {
         Box(Modifier.fillMaxSize()) {
             NavHost(navController = navController, startDestination = HomeRoute) {
-                homeScreen(onOpenActiveWorkout = { navController.navigate(WorkoutRoute) { launchSingleTop = true } })
-                routinesScreen()
+                val openWorkout = { navController.navigate(WorkoutRoute) { launchSingleTop = true } }
+                val editRoutine = { id: String? -> navController.navigate(RoutineEditorRoute(id)) }
+                homeScreen(onOpenActiveWorkout = openWorkout, onEditRoutine = editRoutine)
+                routinesScreen(onOpenWorkout = openWorkout, onEditRoutine = editRoutine)
+                routineEditorScreen(onDone = {
+                    navController.popBackStack()
+                }, onOpenGuide = { navController.navigate(ExerciseDetailRoute(it)) })
                 exercisesScreen(onOpenExercise = { navController.navigate(ExerciseDetailRoute(it)) })
                 exerciseDetailScreen(onBack = { navController.popBackStack() })
                 historyScreen()

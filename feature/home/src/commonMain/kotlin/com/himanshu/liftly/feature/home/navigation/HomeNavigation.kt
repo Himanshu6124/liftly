@@ -8,6 +8,6 @@ import kotlinx.serialization.Serializable
 @Serializable
 data object HomeRoute
 
-fun NavGraphBuilder.homeScreen(onOpenActiveWorkout: () -> Unit) {
-    composable<HomeRoute> { HomeScreen(onOpenActiveWorkout = onOpenActiveWorkout) }
+fun NavGraphBuilder.homeScreen(onOpenActiveWorkout: () -> Unit, onEditRoutine: (String?) -> Unit) {
+    composable<HomeRoute> { HomeScreen(onOpenActiveWorkout = onOpenActiveWorkout, onEditRoutine = onEditRoutine) }
 }

@@ -4,7 +4,7 @@ Offline-first strength training tracker for **Android, iOS and Desktop**, built 
 Compose Multiplatform. You log **per exercise, not per set**: do all your sets, then open the
 exercise and save them together in a sheet that is already filled in from last time.
 
-> Status: **Milestone 5 (complete log sheet + personal records) done.** See [Roadmap](#roadmap).
+> Status: **Milestone 6 (routines) done.** See [Roadmap](#roadmap).
 
 ## Requirements
 
@@ -111,7 +111,7 @@ installs pick up the change. Favorites, notes and custom exercises are never ove
 3. ✅ Active workout (start/resume/finish/discard, picker with suggestions + custom exercises, reorder, auto-resume)
 4. ✅ Batch Log Sheet (pre-fill, quick reps parser, weight nudge, swipe quick-log/skip with undo, auto-advance)
 5. ✅ Log sheet complete (per-set mode, set types, warm-ups, RPE, notes, time/distance, PR detection + badge, Records tab)
-6. Routines (CRUD, next-routine rotation, 1-tap start)
+6. ✅ Routines (create/edit/delete with undo, targets, reorder, next-routine rotation and 1-tap start on Home, save/update from a workout)
 7. History, Summary, Settings
 8. MVP hardening (accessibility, adaptive layouts, E2E UI test)
 9. Phase 2 and Phase 3 features

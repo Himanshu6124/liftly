@@ -27,12 +27,14 @@ import com.himanshu.liftly.core.domain.model.RoutineTarget
 import com.himanshu.liftly.core.domain.model.SetType
 import com.himanshu.liftly.core.domain.model.Workout
 import com.himanshu.liftly.core.domain.model.WorkoutSet
+import com.himanshu.liftly.core.domain.model.WorkoutSummaryLine
 import com.himanshu.liftly.core.domain.repository.WorkoutRepository
 import com.himanshu.liftly.core.domain.sync.SyncController
 import com.himanshu.liftly.core.domain.usecase.PrHit
 import com.himanshu.liftly.core.domain.util.IdGenerator
 import com.himanshu.liftly.core.domain.util.Strength
 import com.himanshu.liftly.core.domain.util.TimeProvider
+import com.himanshu.liftly.core.domain.util.toDraftSets
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -361,6 +363,24 @@ class RoomWorkoutRepository(
             ),
         )
     }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override fun observeLastFinished(): Flow<WorkoutSummaryLine?> = workouts.observeLastFinished()
+        .distinctUntilChanged()
+        .flatMapLatest { w ->
+            if (w == null) {
+                flowOf(null)
+            } else {
+                combine(workoutExercises.observeWithExercise(w.id), sets.observeForWorkout(w.id)) { rows, allSets ->
+                    WorkoutSummaryLine(
+                        workout = w.toDomain(),
+                        exerciseCount = rows.size,
+                        loggedCount = rows.count { it.workoutExercise.status == ExerciseStatus.LOGGED },
+                        volumeKg = Strength.volume(allSets.map { it.toDomain() }.toDraftSets()),
+                    )
+                }
+            }
+        }
 
     override fun observeRecentExerciseIds(limit: Int): Flow<List<EntityId>> =
         workoutExercises.observeRecentExerciseIds(limit).distinctUntilChanged()

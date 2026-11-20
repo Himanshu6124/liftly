@@ -60,7 +60,9 @@ import com.himanshu.liftly.feature.workout.logsheet.LogSheet
 import com.himanshu.liftly.feature.workout.resources.Res
 import com.himanshu.liftly.feature.workout.resources.snackbar_logged
 import com.himanshu.liftly.feature.workout.resources.snackbar_removed
+import com.himanshu.liftly.feature.workout.resources.snackbar_routine_saved
 import com.himanshu.liftly.feature.workout.resources.snackbar_skipped
+import com.himanshu.liftly.feature.workout.resources.snackbar_targets_updated
 import com.himanshu.liftly.feature.workout.resources.snackbar_undo
 import com.himanshu.liftly.feature.workout.resources.workout_add_exercise
 import com.himanshu.liftly.feature.workout.resources.workout_cancel
@@ -76,6 +78,10 @@ import com.himanshu.liftly.feature.workout.resources.workout_finish_title
 import com.himanshu.liftly.feature.workout.resources.workout_keep_going
 import com.himanshu.liftly.feature.workout.resources.workout_more
 import com.himanshu.liftly.feature.workout.resources.workout_rename
+import com.himanshu.liftly.feature.workout.resources.workout_routine_name
+import com.himanshu.liftly.feature.workout.resources.workout_save
+import com.himanshu.liftly.feature.workout.resources.workout_save_as_routine
+import com.himanshu.liftly.feature.workout.resources.workout_update_routine
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -101,6 +107,13 @@ fun ActiveWorkoutScreen(
                 is ActiveWorkoutEffect.Closed -> onClose(effect.finished)
 
                 is ActiveWorkoutEffect.ScrollTo -> scrollRequests.tryEmit(effect.workoutExerciseId)
+
+                is ActiveWorkoutEffect.Info -> snackbar.showSnackbar(
+                    when (effect.kind) {
+                        ActiveWorkoutEffect.Info.Kind.ROUTINE_SAVED -> getString(Res.string.snackbar_routine_saved, effect.arg)
+                        ActiveWorkoutEffect.Info.Kind.TARGETS_UPDATED -> getString(Res.string.snackbar_targets_updated)
+                    },
+                )
 
                 is ActiveWorkoutEffect.Undoable -> {
                     val message = getString(
@@ -241,6 +254,9 @@ fun ActiveWorkoutContent(
     }
     if (state.showFinishSheet) FinishSheet(state.pendingCount, onIntent)
     if (state.showDiscardDialog) DiscardDialog(onIntent)
+    if (state.showSaveRoutineDialog) {
+        SaveRoutineDialog(state.name.ifBlank { state.startedAt?.let { defaultWorkoutName(it) }.orEmpty() }, onIntent)
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -297,6 +313,22 @@ private fun WorkoutTopBar(state: ActiveWorkoutUiState, onIntent: (ActiveWorkoutI
                     editing = true
                 })
                 DropdownMenuItem(
+                    text = { Text(stringResource(Res.string.workout_save_as_routine)) },
+                    onClick = {
+                        menuOpen = false
+                        onIntent(ActiveWorkoutIntent.SaveAsRoutineRequested)
+                    },
+                )
+                if (state.routineId != null) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(Res.string.workout_update_routine)) },
+                        onClick = {
+                            menuOpen = false
+                            onIntent(ActiveWorkoutIntent.UpdateRoutineTargets)
+                        },
+                    )
+                }
+                DropdownMenuItem(
                     text = { Text(stringResource(Res.string.workout_discard), color = MaterialTheme.colorScheme.error) },
                     onClick = {
                         menuOpen = false
@@ -329,6 +361,32 @@ private fun FinishSheet(pendingCount: Int, onIntent: (ActiveWorkoutIntent) -> Un
             }
         }
     }
+}
+
+@Composable
+private fun SaveRoutineDialog(defaultName: String, onIntent: (ActiveWorkoutIntent) -> Unit) {
+    val name = remember { androidx.compose.foundation.text.input.TextFieldState(defaultName) }
+    AlertDialog(
+        onDismissRequest = { onIntent(ActiveWorkoutIntent.SaveAsRoutineCancelled) },
+        title = { Text(stringResource(Res.string.workout_save_as_routine)) },
+        text = {
+            androidx.compose.material3.OutlinedTextField(
+                state = name,
+                label = { Text(stringResource(Res.string.workout_routine_name)) },
+                lineLimits = androidx.compose.foundation.text.input.TextFieldLineLimits.SingleLine,
+            )
+        },
+        confirmButton = {
+            Button(onClick = { onIntent(ActiveWorkoutIntent.SaveAsRoutine(name.text.toString())) }, enabled = name.text.isNotBlank()) {
+                Text(stringResource(Res.string.workout_save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = {
+                onIntent(ActiveWorkoutIntent.SaveAsRoutineCancelled)
+            }) { Text(stringResource(Res.string.workout_cancel)) }
+        },
+    )
 }
 
 /** The one destructive action that asks for confirmation (everything else has Undo). */

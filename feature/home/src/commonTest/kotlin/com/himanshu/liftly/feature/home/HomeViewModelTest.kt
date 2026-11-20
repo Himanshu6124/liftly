@@ -57,7 +57,37 @@ class HomeViewModelTest {
         override fun observeRecords(exerciseId: String) =
             kotlinx.coroutines.flow.flowOf(emptyList<com.himanshu.liftly.core.domain.model.PersonalRecord>())
         override suspend fun restoreLog(snapshot: com.himanshu.liftly.core.domain.model.LogSnapshot) = Unit
+        override fun observeLastFinished() = kotlinx.coroutines.flow.flowOf<com.himanshu.liftly.core.domain.model.WorkoutSummaryLine?>(null)
         override fun observeRecentExerciseIds(limit: Int) = kotlinx.coroutines.flow.flowOf(emptyList<String>())
+    }
+
+    private val routines = object : com.himanshu.liftly.core.domain.repository.RoutineRepository {
+        override fun observeRoutines() = kotlinx.coroutines.flow.flowOf(
+            emptyList<com.himanshu.liftly.core.domain.model.RoutineWithExercises>(),
+        )
+        override fun observeRoutine(
+            id: String,
+        ) = kotlinx.coroutines.flow.flowOf<com.himanshu.liftly.core.domain.model.RoutineWithExercises?>(null)
+        override suspend fun saveRoutine(
+            id: String?,
+            name: String,
+            notes: String?,
+            exercises: List<com.himanshu.liftly.core.domain.model.RoutineExerciseDraft>,
+        ) = "r"
+        override suspend fun deleteRoutine(id: String) = null
+        override suspend fun restoreRoutine(snapshot: com.himanshu.liftly.core.domain.model.RoutineWithExercises) = Unit
+        override suspend fun reorderRoutines(orderedIds: List<String>) = Unit
+        override suspend fun saveWorkoutAsRoutine(workoutId: String, name: String) = "r"
+        override suspend fun updateTargetsFromWorkout(routineId: String, workoutId: String) = Unit
+    }
+
+    private val settings = object : com.himanshu.liftly.core.domain.repository.SettingsRepository {
+        override val settings = kotlinx.coroutines.flow.MutableStateFlow(com.himanshu.liftly.core.domain.model.UserSettings())
+        override suspend fun update(
+            transform: (com.himanshu.liftly.core.domain.model.UserSettings) -> com.himanshu.liftly.core.domain.model.UserSettings,
+        ) = Unit
+        override suspend fun seedVersion() = 1
+        override suspend fun setSeedVersion(version: Int) = Unit
     }
 
     @BeforeTest
@@ -68,7 +98,14 @@ class HomeViewModelTest {
 
     @Test
     fun mapsSyncStateToLabel() = runTest {
-        val vm = HomeViewModel(sync, workouts, StartWorkoutUseCase(workouts))
+        val vm = HomeViewModel(
+            sync,
+            workouts,
+            routines,
+            settings,
+            StartWorkoutUseCase(workouts),
+            com.himanshu.liftly.core.domain.usecase.StartRoutineUseCase(StartWorkoutUseCase(workouts)),
+        )
         vm.state.test {
             assertEquals(SyncLabel.LOCAL_ONLY, awaitItem().syncLabel)
             sync.flow.value = SyncState.Syncing
@@ -78,7 +115,14 @@ class HomeViewModelTest {
 
     @Test
     fun startEmptyWorkoutEmitsNavigationEffect() = runTest {
-        val vm = HomeViewModel(sync, workouts, StartWorkoutUseCase(workouts))
+        val vm = HomeViewModel(
+            sync,
+            workouts,
+            routines,
+            settings,
+            StartWorkoutUseCase(workouts),
+            com.himanshu.liftly.core.domain.usecase.StartRoutineUseCase(StartWorkoutUseCase(workouts)),
+        )
         vm.effects.test {
             vm.onIntent(HomeIntent.StartEmptyWorkout)
             assertEquals(HomeEffect.OpenActiveWorkout, awaitItem())
