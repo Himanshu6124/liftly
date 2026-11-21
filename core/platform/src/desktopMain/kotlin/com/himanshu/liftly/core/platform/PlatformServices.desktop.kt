@@ -33,4 +33,5 @@ actual val platformServicesModule: Module = module {
     single<UrlLauncher> { DesktopUrlLauncher() }
     single<ShareService> { DesktopShareService() }
     single<OngoingWorkoutIndicator> { NoOngoingWorkoutIndicator }
+    single<HomeWidgetBridge> { NoHomeWidgets }
 }

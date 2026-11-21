@@ -9,6 +9,7 @@ import com.himanshu.liftly.core.resources.resources.Res
 import com.himanshu.liftly.feature.exercises.di.exercisesModule
 import com.himanshu.liftly.feature.history.di.historyModule
 import com.himanshu.liftly.feature.home.di.homeModule
+import com.himanshu.liftly.feature.home.widget.HomeWidgetPublisher
 import com.himanshu.liftly.feature.routines.di.routinesModule
 import com.himanshu.liftly.feature.settings.di.settingsModule
 import com.himanshu.liftly.feature.workout.di.workoutModule
@@ -42,4 +43,8 @@ val liftlyModules = listOf(
 fun initKoin(platformConfig: KoinAppDeclaration = {}): KoinApplication = startKoin {
     platformConfig()
     modules(liftlyModules)
-}.also { it.koin.get<OngoingWorkoutPublisher>().start() }
+}.also {
+    // System UI fed from the database for as long as the process lives.
+    it.koin.get<OngoingWorkoutPublisher>().start()
+    it.koin.get<HomeWidgetPublisher>().start()
+}

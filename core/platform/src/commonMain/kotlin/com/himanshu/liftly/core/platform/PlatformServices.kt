@@ -30,5 +30,8 @@ class LoggingNotifier : Notifier {
     override fun cancel(id: String) = log.d { "cancel $id" }
 }
 
-/** Binds [Haptics], [Notifier], [UrlLauncher] and [ShareService] for the current platform. */
+/**
+ * Binds [Haptics], [Notifier], [UrlLauncher], [ShareService], [OngoingWorkoutIndicator] and (except on
+ * Android, where the Glance widget lives in the app module) [HomeWidgetBridge] for the current platform.
+ */
 expect val platformServicesModule: Module

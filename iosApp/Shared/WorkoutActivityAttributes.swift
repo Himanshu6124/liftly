@@ -19,6 +19,7 @@ struct WorkoutActivityAttributes: ActivityAttributes {
 /// Plate colors from the app's "Calibrated plates" palette.
 enum LiftlyColors {
     static let red = Color(red: 0xE0 / 255, green: 0x26 / 255, blue: 0x2C / 255)
+    static let blue = Color(red: 0x24 / 255, green: 0x63 / 255, blue: 0xE8 / 255)
     static let yellow = Color(red: 0xF2 / 255, green: 0xC1 / 255, blue: 0x2E / 255)
     static let green = Color(red: 0x1F / 255, green: 0xA8 / 255, blue: 0x63 / 255)
     static let graphite = Color(red: 0x16 / 255, green: 0x18 / 255, blue: 0x1C / 255)

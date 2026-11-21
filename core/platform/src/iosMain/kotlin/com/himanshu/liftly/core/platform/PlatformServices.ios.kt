@@ -81,4 +81,5 @@ actual val platformServicesModule: Module = module {
     single<UrlLauncher> { IosUrlLauncher() }
     single<ShareService> { IosShareService() }
     single<OngoingWorkoutIndicator> { OngoingWorkoutIndicatorHolder }
+    single<HomeWidgetBridge> { HomeWidgetBridgeHolder }
 }

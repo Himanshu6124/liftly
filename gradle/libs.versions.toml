@@ -20,6 +20,7 @@ coil = "3.6.3"
 kermit = "2.2.0"
 turbine = "1.2.1"
 reorderable = "3.1.0"
+glance = "1.2.0"
 detekt = "1.23.8"
 ktlint-plugin = "14.2.0"
 ktlintCli = "1.8.0"
@@ -73,6 +74,7 @@ coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" 
 kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
+glance-appwidget = { module = "androidx.glance:glance-appwidget", version.ref = "glance" }
 
 # build-logic classpath
 android-gradlePlugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }

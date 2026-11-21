@@ -31,6 +31,9 @@ open iosApp/iosApp.xcodeproj
 To sign for a physical iPhone, set `TEAM_ID` in `iosApp/Configuration/Config.xcconfig`.
 The app embeds the `LiftlyWidgets` extension (Live Activity); it was added to the Xcode project
 by `tools/ios/add_widget_target.rb` (Ruby `xcodeproj` gem), which is idempotent.
+The app and the extension share the App Group `group.com.himanshu.liftly` (home-screen widget data).
+To run on a real iPhone, enable that App Group for your team in Xcode → Signing & Capabilities on
+both the `iosApp` and `LiftlyWidgets` targets (the simulator doesn't check it).
 
 ## Test and lint
 
@@ -139,3 +142,4 @@ installs pick up the change. Favorites, notes and custom exercises are never ove
 10. Phase 3
     - ✅ M16 ongoing workout: Android foreground-service notification (elapsed / rest countdown, on-time rest alert), iOS Live Activity (lock screen + Dynamic Island)
     - ✅ M17 "Start next workout": Android app shortcut, iOS Quick Action; `liftly://` deep links (`DeepLinks` in the app shell)
+    - ✅ M18 home-screen widgets (Glance, WidgetKit): this week vs goal, weekly streak, "Start next routine" / "Resume workout"

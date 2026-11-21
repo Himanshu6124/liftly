@@ -4,9 +4,18 @@ require 'xcodeproj'
 
 project_path = File.join(__dir__, '..', '..', 'iosApp', 'iosApp.xcodeproj')
 project = Xcodeproj::Project.open(project_path)
-exit 0 if project.targets.any? { |t| t.name == 'LiftlyWidgets' }
 
 app = project.targets.find { |t| t.name == 'iosApp' }
+existing = project.targets.find { |t| t.name == 'LiftlyWidgets' }
+
+# Adds a source file to a group and targets unless the group already has it (keeps the script idempotent).
+def ensure_source(group, name, targets)
+  return if group.files.any? { |f| f.path == name }
+  ref = group.new_reference(name)
+  targets.each { |t| t.add_file_references([ref]) }
+end
+
+if existing.nil?
 team = app.build_configurations.first.build_settings['DEVELOPMENT_TEAM']
 
 widget = project.new_target(:app_extension, 'LiftlyWidgets', :ios, '16.1')
@@ -57,5 +66,17 @@ embed.symbol_dst_subfolder_spec = :plug_ins
 build_file = embed.add_file_reference(widget.product_reference, true)
 build_file.settings = { 'ATTRIBUTES' => ['RemoveHeadersOnCopy'] }
 
+end
+
+# Milestone 18: week widget + App Group shared by the app and the extension.
+widget = project.targets.find { |t| t.name == 'LiftlyWidgets' }
+shared = project.main_group.find_subpath('Shared')
+ensure_source(shared, 'WidgetShared.swift', [app, widget])
+ensure_source(project.main_group.find_subpath('LiftlyWidgets'), 'WeekWidget.swift', [widget])
+ensure_source(project.main_group.find_subpath('iosApp'), 'HomeWidgetBridge.swift', [app])
+{ app => 'iosApp/iosApp.entitlements', widget => 'LiftlyWidgets/LiftlyWidgets.entitlements' }.each do |target, path|
+  target.build_configurations.each { |c| c.build_settings['CODE_SIGN_ENTITLEMENTS'] = path }
+end
+
 project.save
-puts 'Added LiftlyWidgets'
+puts 'LiftlyWidgets up to date'

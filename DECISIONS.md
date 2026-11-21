@@ -407,3 +407,28 @@ Clean modern); the owner picked **Calibrated plates** and asked for a floating i
   `liftly` URL scheme. With the SwiftUI lifecycle these are delivered to a scene delegate
   (`AppDelegate.swift`), which forwards them to `DeepLinks`; once a custom scene delegate is set,
   SwiftUI's `onOpenURL` no longer fires, so URLs are handled there too.
+
+## Milestone 18 (Phase 3): home-screen widgets
+
+- **One widget, same on both platforms:** "THIS WEEK 2/3" with the week's plates, the weekly streak,
+  and one button: "Start <next routine>" (`liftly://start-next-workout`) or "Resume workout"
+  (`liftly://workout`) while one is running. It reuses the M17 deep links, so tapping it behaves
+  exactly like the shortcut.
+- **Data flow:** `HomeWidgetPublisher` (`feature/home`, started from `initKoin`) computes a
+  `WidgetSnapshot` with the same `TrainingCalendar` and `NextRoutine` as Home and hands it to a
+  `HomeWidgetBridge`. The snapshot is six plain lines of text, so Kotlin, Glance and Swift read it
+  without a shared JSON model.
+- **The widget rolls the week over on its own:** the snapshot carries its week's Monday; past it, a
+  widget shows 0 this week and keeps the streak only if the old week met the goal (the same rule as
+  `TrainingCalendar`). iOS adds a timeline entry at next Monday 00:00; Android re-reads every 3 hours
+  (`updatePeriodMillis`).
+- **Android:** Glance 1.2.0 (latest stable) in `androidApp`, since Glance needs the Compose
+  compiler and lives with the app's receivers. Its bridge is bound in `LiftlyApplication`; the
+  snapshot is kept in SharedPreferences and `updateAll` redraws.
+- **iOS:** WidgetKit in the M16 `LiftlyWidgets` extension (small + medium). WidgetKit is Swift-only,
+  so `AppGroupWidgetBridge` (Swift) implements the Kotlin bridge via `HomeWidgetBridgeHolder`, writes to
+  the **App Group** `group.com.himanshu.liftly` and reloads the timeline. **The owner must enable this
+  App Group for their team** (Signing & Capabilities, both targets) before installing on a real
+  device; the simulator works without it.
+- Widget text is English for now, like the ongoing notification.
+- Desktop has no widgets (`NoHomeWidgets`).
