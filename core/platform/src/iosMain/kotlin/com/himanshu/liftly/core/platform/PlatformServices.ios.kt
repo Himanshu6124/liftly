@@ -82,4 +82,6 @@ actual val platformServicesModule: Module = module {
     single<ShareService> { IosShareService() }
     single<OngoingWorkoutIndicator> { OngoingWorkoutIndicatorHolder }
     single<HomeWidgetBridge> { HomeWidgetBridgeHolder }
+    single<NativeSignIn> { IosNativeSignIn() }
+    single<SecureStore> { SecureStoreHolder }
 }

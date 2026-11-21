@@ -4,6 +4,7 @@ import com.himanshu.liftly.AppViewModel
 import com.himanshu.liftly.core.data.di.dataModule
 import com.himanshu.liftly.core.data.seed.SeedSource
 import com.himanshu.liftly.core.datastore.dataStoreModule
+import com.himanshu.liftly.core.network.networkModule
 import com.himanshu.liftly.core.platform.platformServicesModule
 import com.himanshu.liftly.core.resources.resources.Res
 import com.himanshu.liftly.feature.exercises.di.exercisesModule
@@ -30,6 +31,7 @@ val liftlyModules = listOf(
     dataModule,
     dataStoreModule,
     platformServicesModule,
+    networkModule,
     appModule,
     homeModule,
     exercisesModule,

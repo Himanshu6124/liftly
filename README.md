@@ -76,6 +76,7 @@ Composable ──Intent──▶ ViewModel ──▶ UseCase ──▶ Repositor
 | `build-logic` | Convention plugins: `liftly.kmp.library`, `liftly.kmp.compose`, `liftly.kmp.feature`, `liftly.room` |
 | `core/domain` | Pure Kotlin models, repository interfaces, use cases |
 | `core/data` | Room database, DAOs, sync engine, repository implementations |
+| `core/network` | Ktor client for the server, `AuthSession` (sign-in, single-flight token refresh, tokens in Keychain / Keystore) |
 | `core/protocol` | Sync and auth wire format (JSON DTOs, table names, limits), shared with the backend |
 | `core/datastore` | `SettingsRepository` on DataStore Preferences |
 | `core/platform` | `Haptics`, `Notifier`, `UrlLauncher`, `ShareService`, `OngoingWorkoutIndicator` per platform |

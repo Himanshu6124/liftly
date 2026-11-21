@@ -9,6 +9,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import com.himanshu.liftly.App
+import com.himanshu.liftly.core.platform.AndroidSignIn
 import com.himanshu.liftly.core.platform.NotificationPermission
 import com.himanshu.liftly.navigation.DeepLinks
 
@@ -22,6 +23,7 @@ class MainActivity : ComponentActivity() {
             // Asked lazily: the first time a rest timer is started.
             NotificationPermission.register { notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS) }
         }
+        AndroidSignIn.register(this) // Google sign-in sheet is shown over this activity
         if (savedInstanceState == null) handleLink(intent)
         setContent { App() }
     }
@@ -37,6 +39,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         NotificationPermission.unregister()
+        AndroidSignIn.unregister(this)
         super.onDestroy()
     }
 }

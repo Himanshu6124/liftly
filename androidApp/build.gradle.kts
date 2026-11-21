@@ -13,6 +13,14 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0.0"
+        // Google OAuth *Web* client id of our server (Credential Manager asks Google for an ID
+        // token for it). Set liftly.googleServerClientId in ~/.gradle/gradle.properties; empty
+        // hides Google sign-in.
+        buildConfigField(
+            "String",
+            "GOOGLE_SERVER_CLIENT_ID",
+            "\"${providers.gradleProperty("liftly.googleServerClientId").getOrElse("")}\"",
+        )
     }
 
     buildTypes {
@@ -27,7 +35,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    buildFeatures { compose = true }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
 }
 
 kotlin {

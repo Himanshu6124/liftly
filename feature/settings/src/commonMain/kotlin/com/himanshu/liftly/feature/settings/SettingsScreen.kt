@@ -17,6 +17,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.heading
@@ -32,6 +33,7 @@ import com.himanshu.liftly.core.designsystem.component.SectionHeader
 import com.himanshu.liftly.core.designsystem.theme.LiftlyTheme
 import com.himanshu.liftly.core.designsystem.theme.PlateColors
 import com.himanshu.liftly.core.designsystem.theme.supportsDynamicColor
+import com.himanshu.liftly.core.domain.auth.AuthProvider
 import com.himanshu.liftly.core.domain.model.ThemeMode
 import com.himanshu.liftly.core.domain.model.UserSettings
 import com.himanshu.liftly.core.domain.model.WeightUnit
@@ -100,14 +102,27 @@ class SettingsViewModel(private val repository: SettingsRepository) : ViewModel(
 }
 
 @Composable
-fun SettingsScreen(viewModel: SettingsViewModel = koinViewModel()) {
+fun SettingsScreen(viewModel: SettingsViewModel = koinViewModel(), accountViewModel: AccountViewModel = koinViewModel()) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
-    SettingsContent(settings, viewModel::update)
+    val account by accountViewModel.ui.collectAsStateWithLifecycle()
+    val actions = remember(accountViewModel) {
+        object : AccountActions {
+            override fun signIn(provider: AuthProvider) = accountViewModel.signIn(provider)
+            override fun signOut() = accountViewModel.signOut()
+            override fun deleteAccount() = accountViewModel.deleteAccount()
+        }
+    }
+    SettingsContent(settings, viewModel::update, account, actions)
 }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun SettingsContent(s: UserSettings, update: ((UserSettings) -> UserSettings) -> Unit) {
+fun SettingsContent(
+    s: UserSettings,
+    update: ((UserSettings) -> UserSettings) -> Unit,
+    account: AccountUi = AccountUi(),
+    accountActions: AccountActions? = null,
+) {
     val spacing = LiftlyTheme.spacing
     Column(
         Modifier.fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState())
@@ -119,6 +134,10 @@ fun SettingsContent(s: UserSettings, update: ((UserSettings) -> UserSettings) ->
             style = MaterialTheme.typography.displaySmall,
             modifier = Modifier.padding(horizontal = spacing.md).semantics { heading() },
         )
+        accountActions?.let {
+            AccountSection(account, it)
+            HorizontalDivider()
+        }
         SectionHeader(stringResource(Res.string.settings_units))
         Column(Modifier.padding(horizontal = spacing.md), verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
             Segmented(

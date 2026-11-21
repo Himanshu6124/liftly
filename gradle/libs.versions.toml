@@ -21,6 +21,8 @@ kermit = "2.2.0"
 turbine = "1.2.1"
 reorderable = "3.1.0"
 glance = "1.2.0"
+credentials = "1.6.0"
+googleid = "1.2.1"
 detekt = "1.23.8"
 ktlint-plugin = "14.2.0"
 ktlintCli = "1.8.0"
@@ -93,6 +95,15 @@ compose-gradlePlugin = { module = "org.jetbrains.compose:compose-gradle-plugin",
 compose-compiler-gradlePlugin = { module = "org.jetbrains.kotlin:compose-compiler-gradle-plugin", version.ref = "kotlin" }
 ksp-gradlePlugin = { module = "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin", version.ref = "ksp" }
 room-gradlePlugin = { module = "androidx.room:room-gradle-plugin", version.ref = "room" }
+
+androidx-credentials = { module = "androidx.credentials:credentials", version.ref = "credentials" }
+androidx-credentials-play-services = { module = "androidx.credentials:credentials-play-services-auth", version.ref = "credentials" }
+googleid = { module = "com.google.android.libraries.identity.googleid:googleid", version.ref = "googleid" }
+ktor-client-core = { module = "io.ktor:ktor-client-core" }
+ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp" }
+ktor-client-darwin = { module = "io.ktor:ktor-client-darwin" }
+ktor-client-java = { module = "io.ktor:ktor-client-java" }
+ktor-client-mock = { module = "io.ktor:ktor-client-mock" }
 
 # Backend (server/)
 ktor-bom = { module = "io.ktor:ktor-bom", version.ref = "ktor" }

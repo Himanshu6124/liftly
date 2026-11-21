@@ -56,4 +56,6 @@ actual val platformServicesModule: Module = module {
     single<UrlLauncher> { AndroidUrlLauncher(androidContext()) }
     single<ShareService> { AndroidShareService(androidContext()) }
     single<OngoingWorkoutIndicator> { AndroidOngoingWorkoutIndicator(androidContext()) }
+    single<NativeSignIn> { AndroidNativeSignIn(androidContext()) }
+    single<SecureStore> { AndroidSecureStore(androidContext()) }
 }

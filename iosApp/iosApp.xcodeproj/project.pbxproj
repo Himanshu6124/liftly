@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		1CA13C927C1B791C1DDF11F4 /* HomeWidgetBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = F244E8691C6DD4B899C0D8EB /* HomeWidgetBridge.swift */; };
+		B23142E25FB42328A22BBE57 /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 342CC5DCACD9E63815BBB970 /* KeychainStore.swift */; };
+		D91A8730077D1906142BAE50 /* AppleSignIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07EAC3B5890A57881CF21CA5 /* AppleSignIn.swift */; };
 		1D13B893DDF2B7C31D3A0D6F /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3E225AFA5D2EA66BBE1C248 /* AppDelegate.swift */; };
 		2B14C4DE909998F1F3AC8060 /* LiveActivityIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 569FDA588AE5BCE86A296048 /* LiveActivityIndicator.swift */; };
 		31D594C8A0230AC4CB82A3AC /* LiftlyWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 094539850984AC96E9EA128E /* LiftlyWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -68,6 +70,8 @@
 		D110941CAA2D327A1075364F /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/WidgetKit.framework; sourceTree = DEVELOPER_DIR; };
 		D1397EC5FE5396E9BE3F0314 /* LiftlyWidgetsBundle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LiftlyWidgetsBundle.swift; sourceTree = "<group>"; };
 		EC4A83CCD7A5D6DD24162665 /* WorkoutActivityAttributes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutActivityAttributes.swift; sourceTree = "<group>"; };
+		07EAC3B5890A57881CF21CA5 /* AppleSignIn.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppleSignIn.swift; sourceTree = "<group>"; };
+		342CC5DCACD9E63815BBB970 /* KeychainStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KeychainStore.swift; sourceTree = "<group>"; };
 		F244E8691C6DD4B899C0D8EB /* HomeWidgetBridge.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HomeWidgetBridge.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -140,6 +144,8 @@
 				569FDA588AE5BCE86A296048 /* LiveActivityIndicator.swift */,
 				C3E225AFA5D2EA66BBE1C248 /* AppDelegate.swift */,
 				F244E8691C6DD4B899C0D8EB /* HomeWidgetBridge.swift */,
+				342CC5DCACD9E63815BBB970 /* KeychainStore.swift */,
+				07EAC3B5890A57881CF21CA5 /* AppleSignIn.swift */,
 				2CEE340D356E20ADC32E2C68 /* Assets.xcassets */,
 			);
 			path = iosApp;
@@ -306,6 +312,8 @@
 				1D13B893DDF2B7C31D3A0D6F /* AppDelegate.swift in Sources */,
 				683C4C74D424CC33E6FE4F55 /* WidgetShared.swift in Sources */,
 				1CA13C927C1B791C1DDF11F4 /* HomeWidgetBridge.swift in Sources */,
+				B23142E25FB42328A22BBE57 /* KeychainStore.swift in Sources */,
+				D91A8730077D1906142BAE50 /* AppleSignIn.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

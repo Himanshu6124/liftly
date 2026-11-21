@@ -39,6 +39,7 @@ dependencies {
     testImplementation(platform(libs.embedded.postgres.binaries.bom))
     // Test-only: drive the app's real SyncEngine (Room, in-memory) against this server.
     testImplementation(projects.core.data)
+    testImplementation(projects.core.network)
     testImplementation(libs.room.runtime)
     testImplementation(libs.sqlite.bundled)
 }

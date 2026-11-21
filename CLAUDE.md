@@ -41,8 +41,9 @@ ktlint file-name rule (file with one class must be named after it), JVM-only API
   ViewModels expose `state: StateFlow`, `effects: Flow`, `onIntent(...)`.
 - Modules: `core/domain` (pure Kotlin models, repository interfaces, use cases, utils with unit
   tests), `core/data` (Room KMP, DAOs, sync engine, repositories; tests in `desktopTest` with an
-  in-memory DB), `core/protocol` (sync/auth wire DTOs shared with the backend), `core/datastore` (settings), `core/platform` (Haptics, Notifier, UrlLauncher,
-  ShareService per platform), `core/designsystem` (theme, `LineChart`, `MuscleDiagram`,
+  in-memory DB), `core/protocol` (sync/auth wire DTOs shared with the backend), `core/network` (Ktor client,
+  `AuthSession`: sign-in, token refresh, secure token storage), `core/datastore` (settings), `core/platform` (Haptics, Notifier, UrlLauncher,
+  ShareService, NativeSignIn, SecureStore per platform; iOS ones via Swift holders), `core/designsystem` (theme, `LineChart`, `MuscleDiagram`,
   `EmptyState`, `NumberStepper`, …), `feature/*` (home, workout, exercises, routines, history,
   settings), `composeApp` (App shell, nav, Koin), `androidApp`, `iosApp`, `server` (Ktor +
   PostgreSQL sync backend, JVM only; may depend on `core/protocol` only; `./gradlew :server:runDev`).

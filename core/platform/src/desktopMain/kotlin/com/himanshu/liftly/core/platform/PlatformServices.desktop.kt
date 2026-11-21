@@ -34,4 +34,6 @@ actual val platformServicesModule: Module = module {
     single<ShareService> { DesktopShareService() }
     single<OngoingWorkoutIndicator> { NoOngoingWorkoutIndicator }
     single<HomeWidgetBridge> { NoHomeWidgets }
+    single<NativeSignIn> { NoNativeSignIn }
+    single<SecureStore> { InMemorySecureStore() }
 }

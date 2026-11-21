@@ -523,3 +523,43 @@ Clean modern); the owner picked **Calibrated plates** and asked for a floating i
 - **Tests play Apple and Google** with a local RSA key (`TestAuth`): nonce, audience, expiry,
   forged-signature, unverified-email, rotation/grace/theft, logout, expiry and deletion cases run
   against real PostgreSQL with a controllable clock. No network calls to Apple or Google in tests.
+
+## Milestone 22 (backend): sign-in in the app
+
+- **Account is optional and lives at the top of Settings.** Signed out: a short explanation and
+  the platform's sign-in button. Signed in: the email (or "Signed in"), Sign out, and Delete
+  account behind a confirmation dialog. Signing in doesn't sync yet; that's Milestone 23.
+- **iOS: Sign in with Apple** through a Swift bridge (`AppleSignIn.swift`, registered via
+  `AppleSignInBridgeHolder` like the Live Activity). Swift generates the nonce (SecRandom) and
+  hashes it (CryptoKit), returns the ID token + raw nonce. The button is Apple's own
+  `ASAuthorizationAppleIDButton` embedded with `UIKitView` (its look is required), white on the
+  dark theme, black on light. (Its corner radius doesn't render through Compose's UIKit interop, so it
+  stays square, which Apple's guidelines allow.)
+  Entitlement `com.apple.developer.applesignin` added; **the App ID needs the "Sign in with
+  Apple" capability in the developer account before it works on a device.**
+- **Android: Google via Credential Manager** (`GetSignInWithGoogleOption`), shown over the
+  activity `MainActivity` registers. It needs our server's Google OAuth **Web** client id in the
+  Gradle property `liftly.googleServerClientId` (→ `BuildConfig`); without it the Google button is
+  hidden. The button is a plain outlined "Continue with Google"; Google's branded button is a
+  release item (Milestone 26).
+- **Tokens in platform secure storage** (`SecureStore`): iOS Keychain from Swift
+  (`KeychainStore.swift`, `AfterFirstUnlockThisDeviceOnly`, so background sync can read it and it
+  never moves to another device via backup); Android: AES-GCM key in the Android Keystore + private
+  preferences (Jetpack `EncryptedSharedPreferences` is deprecated; undecryptable values, e.g.
+  after a backup restore, read as signed out). Desktop keeps them in memory only.
+- **`core/network`** (new): Ktor client (OkHttp / Darwin / Java engines), `AuthApi` and
+  `AuthSession` (implements domain `AuthRepository`). Access tokens are refreshed 60 s before
+  expiry and after a 401 (one retry). Refresh is **single-flight** behind a mutex, so concurrent
+  requests never present the same refresh token twice. Only a 401 from the server ends the
+  session (`SignedOut(expired = true)`, "You were signed out"); network errors never do. Sign-out
+  clears tokens locally first, then revokes on the server best-effort.
+- **Dev server URL** for now: `http://localhost:8080` (iOS simulator, desktop) and
+  `http://10.0.2.2:8080` (Android emulator). Plain HTTP is allowed only there: iOS
+  `NSAllowsLocalNetworking`, Android a debug-only network security config. The production URL
+  comes with deploy (Milestone 25).
+- **Tested end to end:** `AppSessionAgainstServerTest` runs the app's `AuthSession` against the
+  real server (sign in with a test-signed Apple token, refresh, delete). On the simulator the
+  Apple sheet opens from the button; a full sign-in needs an Apple Account signed in on the
+  simulator and the capability above.
+- **Still to do for Apple account deletion:** revoking Apple tokens (App Store rule) needs the
+  authorization code and an Apple private key on the server; tracked for Milestone 26.

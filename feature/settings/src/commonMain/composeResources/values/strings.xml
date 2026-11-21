@@ -29,4 +29,21 @@
     <string name="settings_bar_weight">Bar weight</string>
     <string name="settings_plates">Plates you have</string>
     <string name="settings_plates_hint">Used by the plate calculator and to round warm-up sets</string>
+    <string name="settings_account">Account</string>
+    <string name="account_signed_out_hint">Optional. Sign in to back up your workouts and sync them across your devices. Liftly works fully without an account.</string>
+    <string name="account_session_expired">You were signed out. Sign in again to keep backing up.</string>
+    <string name="account_signed_in_as">Signed in as %1$s</string>
+    <string name="account_signed_in">Signed in</string>
+    <string name="account_sign_out">Sign out</string>
+    <string name="account_delete">Delete account</string>
+    <string name="account_delete_title">Delete your account?</string>
+    <string name="account_delete_body">Your account and everything backed up on the server are deleted permanently. Workouts on this device stay.</string>
+    <string name="account_delete_confirm">Delete</string>
+    <string name="account_cancel">Cancel</string>
+    <string name="account_google">Continue with Google</string>
+    <string name="account_apple">Sign in with Apple</string>
+    <string name="account_error_network">Couldn’t reach the server. Check your connection and try again.</string>
+    <string name="account_error_rejected">Sign-in couldn’t be verified. Try again.</string>
+    <string name="account_error_unavailable">Sign-in isn’t available right now.</string>
+    <string name="account_no_providers">Sign-in isn’t available on this device yet.</string>
 </resources>

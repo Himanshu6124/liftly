@@ -23,6 +23,7 @@ kotlin {
             implementation(projects.core.datastore)
             api(projects.core.platform) // exported to Swift
             implementation(projects.core.resources)
+            implementation(projects.core.network)
             implementation(projects.feature.home)
             implementation(projects.feature.workout)
             implementation(projects.feature.exercises)
