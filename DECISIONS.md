@@ -459,3 +459,33 @@ Clean modern); the owner picked **Calibrated plates** and asked for a floating i
   checks `SyncTables` matches `SyncProtocol.TABLES`, since the server will reject unknown tables.
 - One refresh token per sign-in, single-use (rotated on refresh); access token expiry is sent as
   epoch millis so the app can refresh before it expires.
+
+## Milestone 20 (backend): Ktor server running locally
+
+- **`server/`** is a plain Kotlin/JVM module in this repo (Ktor 3 + Netty, HikariCP, Flyway,
+  PostgreSQL JDBC). Its runtime may depend only on `core/protocol`; `checkNoAppModules` (part of
+  `:server:check`) enforces it. App modules (`core/data`, Room) are allowed as **test**
+  dependencies only, to drive the real `SyncEngine` against the server.
+- **Plain JDBC, no ORM:** three SQL statements (upsert, current version, pull) don't need Exposed.
+- **One generic `records` table** keyed by `(user_id, tbl, id)`, payload as `jsonb`. The server
+  never reads the payload, so new app columns/tables need no server change (new table names
+  still go in `SyncProtocol.TABLES`).
+- **Same semantics as `FakeServer`:** last-write-wins on `updatedAt` (ties go to the incoming
+  write); every accepted write gets `nextval('record_version_seq')`; an older write is acked with
+  the current version so the client stops re-pushing and picks up the winner on its next pull.
+- **Pull cursor = last version seen.** To keep that safe, a user's pushes are serialized with
+  `pg_advisory_xact_lock(hashtextextended(user_id))`, so one user's versions commit in order and a
+  pull can't advance past a lower version that commits later. Different users never block each other.
+- **Validation:** table must be in `SyncProtocol.TABLES` (404), record table must match the URL,
+  ids 1–128 chars, at most `MAX_BATCH` records per push, `limit` 1–`MAX_BATCH`, numeric cursor.
+  Request body size is capped at the proxy (Caddy, Milestone 25).
+- **Dev auth** (`LIFTLY_DEV_AUTH=true` + `X-Liftly-Dev-User` header) stands in for sign-in until
+  Milestone 21; with it off, every sync call is 401. The server logs a warning when it's on.
+- **Logging:** method, path, status only; never bodies (workout data) or auth headers.
+- **No Docker on the dev Mac**, so local runs and tests use zonky embedded PostgreSQL 18 (real
+  Postgres binaries, same major version as the `postgres:18` image): `./gradlew :server:runDev`.
+  `Dockerfile` + `server/docker-compose.yml` are written but not yet run; they get exercised when
+  Docker is installed or at deploy (Milestone 25).
+- **The Docker image contains only the built distribution** (`installDist`), built on the host,
+  because any Gradle build in this repo needs the Android SDK. Runs as a non-root user;
+  `eclipse-temurin:21-jre` is multi-arch for the Ampere (arm64) VM.

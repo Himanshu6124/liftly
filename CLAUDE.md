@@ -20,7 +20,7 @@ pre-filled "Batch Log Sheet". Read `README.md` (setup, architecture, sync) and `
 
 ```bash
 ./gradlew ktlintFormat
-./gradlew ktlintCheck detekt desktopTest testAndroidHostTest iosSimulatorArm64Test :androidApp:assembleDebug --continue
+./gradlew ktlintCheck detekt desktopTest testAndroidHostTest iosSimulatorArm64Test :androidApp:assembleDebug :server:check --continue
 xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -sdk iphonesimulator \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -derivedDataPath build/ios -configuration Debug build -quiet
 ```
@@ -44,7 +44,8 @@ ktlint file-name rule (file with one class must be named after it), JVM-only API
   in-memory DB), `core/protocol` (sync/auth wire DTOs shared with the backend), `core/datastore` (settings), `core/platform` (Haptics, Notifier, UrlLauncher,
   ShareService per platform), `core/designsystem` (theme, `LineChart`, `MuscleDiagram`,
   `EmptyState`, `NumberStepper`, …), `feature/*` (home, workout, exercises, routines, history,
-  settings), `composeApp` (App shell, nav, Koin), `androidApp`, `iosApp`.
+  settings), `composeApp` (App shell, nav, Koin), `androidApp`, `iosApp`, `server` (Ktor +
+  PostgreSQL sync backend, JVM only; may depend on `core/protocol` only; `./gradlew :server:runDev`).
 - Convention plugins in `build-logic`: `liftly.kmp.library`, `liftly.kmp.compose`,
   `liftly.kmp.feature`, `liftly.room`. Compose stability config: `config/compose-stability.conf`.
 - **Offline-first sync:** UUID ids, `SyncMeta` (updatedAt, deletedAt tombstone, syncStatus,

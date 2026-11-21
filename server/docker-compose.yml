@@ -1,0 +1,32 @@
+# Local stack with Docker: PostgreSQL + the server on :8080 with dev auth.
+#   ./gradlew :server:installDist && docker compose -f server/docker-compose.yml up --build
+# Without Docker, use ./gradlew :server:runDev instead. Production compose comes with deploy/ (M25).
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: liftly
+      POSTGRES_USER: liftly
+      POSTGRES_PASSWORD: liftly-local-only
+    volumes:
+      - db-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U liftly -d liftly"]
+      interval: 5s
+      retries: 10
+
+  server:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: jdbc:postgresql://db:5432/liftly
+      DATABASE_USER: liftly
+      DATABASE_PASSWORD: liftly-local-only
+      LIFTLY_DEV_AUTH: "true"
+    ports:
+      - "8080:8080"
+
+volumes:
+  db-data:

@@ -24,6 +24,14 @@ glance = "1.2.0"
 detekt = "1.23.8"
 ktlint-plugin = "14.2.0"
 ktlintCli = "1.8.0"
+# Backend (server/)
+ktor = "3.6.1"
+flyway = "13.13.0"
+hikari = "7.1.0"
+postgresql = "42.7.14"
+logback = "1.6.8"
+embedded-postgres = "2.2.2"
+embedded-postgres-binaries = "18.7.0"
 
 android-compileSdk = "37"
 android-minSdk = "26"
@@ -84,10 +92,29 @@ compose-compiler-gradlePlugin = { module = "org.jetbrains.kotlin:compose-compile
 ksp-gradlePlugin = { module = "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin", version.ref = "ksp" }
 room-gradlePlugin = { module = "androidx.room:room-gradle-plugin", version.ref = "room" }
 
+# Backend (server/)
+ktor-bom = { module = "io.ktor:ktor-bom", version.ref = "ktor" }
+ktor-server-core = { module = "io.ktor:ktor-server-core" }
+ktor-server-netty = { module = "io.ktor:ktor-server-netty" }
+ktor-server-content-negotiation = { module = "io.ktor:ktor-server-content-negotiation" }
+ktor-server-status-pages = { module = "io.ktor:ktor-server-status-pages" }
+ktor-server-call-logging = { module = "io.ktor:ktor-server-call-logging" }
+ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json" }
+ktor-server-test-host = { module = "io.ktor:ktor-server-test-host" }
+ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation" }
+flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
+flyway-postgresql = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
+hikari = { module = "com.zaxxer:HikariCP", version.ref = "hikari" }
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+embedded-postgres = { module = "io.zonky.test:embedded-postgres", version.ref = "embedded-postgres" }
+embedded-postgres-binaries-bom = { module = "io.zonky.test.postgres:embedded-postgres-binaries-bom", version.ref = "embedded-postgres-binaries" }
+
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-kmp-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "compose-multiplatform" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

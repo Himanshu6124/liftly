@@ -109,6 +109,10 @@ is ready for a backend from version 1:
   server changes by cursor, and resolves conflicts with last-write-wins. It is covered by
   tests against an in-memory fake server.
 
+**Backend:** `server/` is a Ktor + PostgreSQL implementation of the sync API (run it locally
+with `./gradlew :server:runDev`; see [`server/README.md`](server/README.md)). It ships only its
+own code and `core/protocol`, never app modules.
+
 **To connect a backend:**
 
 1. Implement `RemoteSyncDataSource` (two methods: `push(table, records)` and
