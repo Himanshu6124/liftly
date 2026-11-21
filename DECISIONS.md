@@ -432,3 +432,14 @@ Clean modern); the owner picked **Calibrated plates** and asked for a floating i
   device; the simulator works without it.
 - Widget text is English for now, like the ongoing notification.
 - Desktop has no widgets (`NoHomeWidgets`).
+
+## App icon
+
+- **A loaded barbell in competition-plate colors** (red 25, blue 20, yellow 15 per side) on the
+  graphite ground: the "Calibrated plates" palette, readable at small sizes.
+- **One source:** `tools/icon/render_icon.swift` draws it with Core Graphics (no extra tools needed)
+  and writes the iOS 1024 px icon (opaque, single-size asset catalog) and the Android
+  adaptive-icon foreground + monochrome (themed icon) vectors, scaled into the 66 dp safe zone.
+  Build and run it with `xcrun swiftc tools/icon/render_icon.swift -o /tmp/render_icon && /tmp/render_icon`
+  from the repo root (the `swift` interpreter crashes on it).
+- Desktop keeps the default window icon for now.
