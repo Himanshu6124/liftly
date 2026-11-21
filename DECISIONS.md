@@ -283,3 +283,18 @@ backend later with minimal change.
   for alarm/calendar apps). A foreground-service countdown is Phase 3 (ongoing notification).
 - **Schema v2** via Room auto-migration (two nullable columns). Verified on a v1 database with
   data: version 2, all rows kept.
+
+## Milestone 13 (Phase 2): plate calculator and warm-ups
+
+- **Settings → Barbell:** bar weight and the plates you own, kept separately for kg and lb (like
+  the weight increment). Plates are per side and assumed to come in pairs.
+- **Plate calculator** shows under the weight field for barbell exercises in the log sheet
+  ("Per side: 25 + 15 + 1.25"), live as you type. It uses an exact search (dynamic programming on
+  the plates' common step), not greedy: with 15 kg and 10 kg plates, 20 kg per side is 10 + 10,
+  which greedy misses. If the exact weight can't be made it shows the closest load below.
+- **Warm-ups:** "Warm-ups 40 · 60 · 80 %" fills 3 sets (10 / 5 / 3 reps) in one tap, replacing
+  any existing warm-ups; "Add warm-up set" still adds them one at a time. On a barbell the
+  weights snap to loads your plates can make (nearest, ties lower, never below the bar);
+  otherwise to the weight increment. Sets that collapse to the same weight are merged.
+- Only exercises with equipment = Barbell get the plate maths; EZ bar, Smith machine and trap bar
+  have different bar weights and are left for later.

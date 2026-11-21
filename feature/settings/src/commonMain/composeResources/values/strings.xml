@@ -25,4 +25,8 @@
     <string name="settings_weekly_goal_hint">Workouts per week, for the goal ring and streak on Home</string>
     <string name="settings_goal_down">Lower weekly goal</string>
     <string name="settings_goal_up">Raise weekly goal</string>
+    <string name="settings_barbell">Barbell</string>
+    <string name="settings_bar_weight">Bar weight</string>
+    <string name="settings_plates">Plates you have</string>
+    <string name="settings_plates_hint">Used by the plate calculator and to round warm-up sets</string>
 </resources>

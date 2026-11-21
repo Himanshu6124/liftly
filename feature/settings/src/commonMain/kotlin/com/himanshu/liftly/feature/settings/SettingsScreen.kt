@@ -41,6 +41,8 @@ import com.himanshu.liftly.feature.settings.resources.settings_appearance
 import com.himanshu.liftly.feature.settings.resources.settings_attribution
 import com.himanshu.liftly.feature.settings.resources.settings_auto_open
 import com.himanshu.liftly.feature.settings.resources.settings_auto_open_hint
+import com.himanshu.liftly.feature.settings.resources.settings_bar_weight
+import com.himanshu.liftly.feature.settings.resources.settings_barbell
 import com.himanshu.liftly.feature.settings.resources.settings_default_sets
 import com.himanshu.liftly.feature.settings.resources.settings_default_sets_hint
 import com.himanshu.liftly.feature.settings.resources.settings_dynamic_color
@@ -49,6 +51,8 @@ import com.himanshu.liftly.feature.settings.resources.settings_goal_up
 import com.himanshu.liftly.feature.settings.resources.settings_increment
 import com.himanshu.liftly.feature.settings.resources.settings_kg
 import com.himanshu.liftly.feature.settings.resources.settings_lb
+import com.himanshu.liftly.feature.settings.resources.settings_plates
+import com.himanshu.liftly.feature.settings.resources.settings_plates_hint
 import com.himanshu.liftly.feature.settings.resources.settings_sets_down
 import com.himanshu.liftly.feature.settings.resources.settings_sets_up
 import com.himanshu.liftly.feature.settings.resources.settings_storage
@@ -83,6 +87,10 @@ class SettingsViewModel(private val repository: SettingsRepository) : ViewModel(
         val LB_STEPS = listOf(2.5, 5.0, 10.0)
         const val MAX_DEFAULT_SETS = 10
         const val MAX_WEEKLY_GOAL = 7
+        val BARS_KG = listOf(10.0, 15.0, 20.0, 25.0)
+        val BARS_LB = listOf(15.0, 25.0, 35.0, 45.0)
+        val PLATES_KG = listOf(25.0, 20.0, 15.0, 10.0, 5.0, 2.5, 2.0, 1.25, 1.0, 0.5)
+        val PLATES_LB = listOf(55.0, 45.0, 35.0, 25.0, 10.0, 5.0, 2.5, 1.25)
         const val APP_VERSION = "1.0.0"
     }
 }
@@ -185,6 +193,9 @@ fun SettingsContent(s: UserSettings, update: ((UserSettings) -> UserSettings) ->
         )
 
         HorizontalDivider()
+        BarbellSettings(s, update)
+
+        HorizontalDivider()
         SectionHeader(stringResource(Res.string.settings_appearance))
         Column(Modifier.padding(horizontal = spacing.md)) {
             Segmented(
@@ -237,6 +248,45 @@ private fun SwitchRow(title: String, subtitle: String?, checked: Boolean, onChan
             subtitle?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
         Switch(checked = checked, onCheckedChange = onChange)
+    }
+}
+
+/** Bar weight and owned plates for the current unit (plate calculator + warm-up rounding). */
+@Composable
+private fun BarbellSettings(s: UserSettings, update: ((UserSettings) -> UserSettings) -> Unit) {
+    val spacing = LiftlyTheme.spacing
+    val kg = s.weightUnit == WeightUnit.KG
+    SectionHeader(stringResource(Res.string.settings_barbell))
+    Column(Modifier.padding(horizontal = spacing.md), verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
+        Text(stringResource(Res.string.settings_bar_weight), style = MaterialTheme.typography.bodyLarge)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
+            (if (kg) SettingsViewModel.BARS_KG else SettingsViewModel.BARS_LB).forEach { bar ->
+                FilterChip(
+                    selected = s.barWeight(s.weightUnit) == bar,
+                    onClick = { update { if (kg) it.copy(barWeightKg = bar) else it.copy(barWeightLb = bar) } },
+                    label = { Text("${formatStep(bar)} ${s.weightUnit.symbol}") },
+                )
+            }
+        }
+        Text(stringResource(Res.string.settings_plates), style = MaterialTheme.typography.bodyLarge)
+        Text(
+            stringResource(Res.string.settings_plates_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
+            val owned = s.plates(s.weightUnit)
+            (if (kg) SettingsViewModel.PLATES_KG else SettingsViewModel.PLATES_LB).forEach { plate ->
+                FilterChip(
+                    selected = plate in owned,
+                    onClick = {
+                        val next = (if (plate in owned) owned - plate else owned + plate).sortedDescending()
+                        update { if (kg) it.copy(platesKg = next) else it.copy(platesLb = next) }
+                    },
+                    label = { Text(formatStep(plate)) },
+                )
+            }
+        }
     }
 }
 

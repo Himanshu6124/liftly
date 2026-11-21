@@ -36,6 +36,10 @@ class DataStoreSettingsRepository(private val store: DataStore<Preferences>) : S
             dynamicColor = p[Keys.DYNAMIC_COLOR] ?: defaults.dynamicColor,
             openNextExerciseAutomatically = p[Keys.AUTO_OPEN_NEXT] ?: defaults.openNextExerciseAutomatically,
             weeklyGoal = p[Keys.WEEKLY_GOAL] ?: defaults.weeklyGoal,
+            barWeightKg = p[Keys.BAR_KG] ?: defaults.barWeightKg,
+            barWeightLb = p[Keys.BAR_LB] ?: defaults.barWeightLb,
+            platesKg = p[Keys.PLATES_KG]?.let(::parsePlates) ?: defaults.platesKg,
+            platesLb = p[Keys.PLATES_LB]?.let(::parsePlates) ?: defaults.platesLb,
         )
     }
 
@@ -50,6 +54,10 @@ class DataStoreSettingsRepository(private val store: DataStore<Preferences>) : S
             p[Keys.DYNAMIC_COLOR] = next.dynamicColor
             p[Keys.AUTO_OPEN_NEXT] = next.openNextExerciseAutomatically
             p[Keys.WEEKLY_GOAL] = next.weeklyGoal
+            p[Keys.BAR_KG] = next.barWeightKg
+            p[Keys.BAR_LB] = next.barWeightLb
+            p[Keys.PLATES_KG] = next.platesKg.joinToString(",")
+            p[Keys.PLATES_LB] = next.platesLb.joinToString(",")
         }
     }
 
@@ -68,9 +76,16 @@ class DataStoreSettingsRepository(private val store: DataStore<Preferences>) : S
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
         val AUTO_OPEN_NEXT = booleanPreferencesKey("open_next_automatically")
         val WEEKLY_GOAL = intPreferencesKey("weekly_goal")
+        val BAR_KG = doublePreferencesKey("bar_weight_kg")
+        val BAR_LB = doublePreferencesKey("bar_weight_lb")
+        val PLATES_KG = stringPreferencesKey("plates_kg")
+        val PLATES_LB = stringPreferencesKey("plates_lb")
         val SEED_VERSION = intPreferencesKey("seed_version")
     }
 }
+
+/** "25.0,20.0" → plates; an empty string is a valid "no plates" choice. */
+private fun parsePlates(value: String): List<Double> = value.split(',').mapNotNull { it.trim().toDoubleOrNull() }
 
 const val SETTINGS_FILE = "liftly.preferences_pb"
 

@@ -108,4 +108,13 @@ data class UserSettings(
     val openNextExerciseAutomatically: Boolean = false,
     /** Workouts per week the user aims for (Home goal ring and weekly streak). */
     val weeklyGoal: Int = 3,
-)
+    /** Empty barbell weight, per unit (each unit keeps its own, like the increment). */
+    val barWeightKg: Double = 20.0,
+    val barWeightLb: Double = 45.0,
+    /** Plates the user owns (per side, available in pairs). */
+    val platesKg: List<Double> = listOf(25.0, 20.0, 15.0, 10.0, 5.0, 2.5, 1.25),
+    val platesLb: List<Double> = listOf(45.0, 35.0, 25.0, 10.0, 5.0, 2.5),
+) {
+    fun barWeight(unit: WeightUnit): Double = if (unit == WeightUnit.KG) barWeightKg else barWeightLb
+    fun plates(unit: WeightUnit): List<Double> = if (unit == WeightUnit.KG) platesKg else platesLb
+}

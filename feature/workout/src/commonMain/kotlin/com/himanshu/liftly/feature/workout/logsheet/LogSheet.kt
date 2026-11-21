@@ -2,6 +2,7 @@ package com.himanshu.liftly.feature.workout.logsheet
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -29,6 +30,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -55,13 +57,17 @@ import com.himanshu.liftly.core.domain.model.InputMode
 import com.himanshu.liftly.core.domain.model.LogSnapshot
 import com.himanshu.liftly.core.domain.model.SetType
 import com.himanshu.liftly.core.domain.model.TrackingType
+import com.himanshu.liftly.core.domain.model.WeightUnit
 import com.himanshu.liftly.core.domain.repository.SettingsRepository
 import com.himanshu.liftly.core.domain.repository.WorkoutRepository
 import com.himanshu.liftly.core.domain.usecase.GetLogSheetPrefillUseCase
 import com.himanshu.liftly.core.domain.usecase.LogExerciseSetsUseCase
 import com.himanshu.liftly.core.domain.usecase.ParseRepInputUseCase
 import com.himanshu.liftly.core.domain.usecase.PrHit
+import com.himanshu.liftly.core.domain.util.PlateCalculator
+import com.himanshu.liftly.core.domain.util.SetFormatter
 import com.himanshu.liftly.core.domain.util.SetFormatter.symbol
+import com.himanshu.liftly.core.domain.util.Units
 import com.himanshu.liftly.core.platform.Haptics
 import com.himanshu.liftly.feature.workout.resources.Res
 import com.himanshu.liftly.feature.workout.resources.days_ago
@@ -80,10 +86,14 @@ import com.himanshu.liftly.feature.workout.resources.log_error_weight_invalid
 import com.himanshu.liftly.feature.workout.resources.log_error_weight_range
 import com.himanshu.liftly.feature.workout.resources.log_first_time
 import com.himanshu.liftly.feature.workout.resources.log_form
+import com.himanshu.liftly.feature.workout.resources.log_generate_warmups
 import com.himanshu.liftly.feature.workout.resources.log_last_when
 import com.himanshu.liftly.feature.workout.resources.log_less
 import com.himanshu.liftly.feature.workout.resources.log_more
 import com.himanshu.liftly.feature.workout.resources.log_note
+import com.himanshu.liftly.feature.workout.resources.log_plates_bar_only
+import com.himanshu.liftly.feature.workout.resources.log_plates_closest
+import com.himanshu.liftly.feature.workout.resources.log_plates_per_side
 import com.himanshu.liftly.feature.workout.resources.log_remove_set
 import com.himanshu.liftly.feature.workout.resources.log_reps
 import com.himanshu.liftly.feature.workout.resources.log_reps_hint
@@ -226,6 +236,7 @@ private fun UniformInputs(holder: LogSheetState, state: LogSheetUiState, firstFi
                 Text("+", style = MaterialTheme.typography.headlineSmall)
             }
         }
+        state.loadout?.let { PlateHint(it, state.unit) }
     }
     SetCountRow(holder, state)
     OutlinedTextField(
@@ -390,9 +401,14 @@ private fun MoreSection(holder: LogSheetState, state: LogSheetUiState) {
                     showWeight = state.showsWeight,
                 )
             }
-            FilledTonalButton(onClick = holder::addWarmup) {
-                Icon(Icons.Filled.Add, contentDescription = null)
-                Text(stringResource(Res.string.log_add_warmup), Modifier.padding(start = spacing.sm))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(spacing.sm), verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
+                FilledTonalButton(onClick = holder::addWarmup) {
+                    Icon(Icons.Filled.Add, contentDescription = null)
+                    Text(stringResource(Res.string.log_add_warmup), Modifier.padding(start = spacing.sm))
+                }
+                if (state.showsWeight) {
+                    OutlinedButton(onClick = holder::generateWarmups) { Text(stringResource(Res.string.log_generate_warmups)) }
+                }
             }
         }
         if (state.inputMode != InputMode.PER_SET) {
@@ -411,6 +427,27 @@ private fun MoreSection(holder: LogSheetState, state: LogSheetUiState) {
             lineLimits = TextFieldLineLimits.MultiLine(minHeightInLines = 1, maxHeightInLines = 4),
             modifier = Modifier.fillMaxWidth(),
         )
+    }
+}
+
+/** "Per side: 25 + 15 + 1.25" under the weight; says so when the plates can't make the exact weight. */
+@Composable
+private fun PlateHint(loadout: PlateCalculator.Loadout, unit: WeightUnit) {
+    val plates = loadout.perSide.joinToString(" + ") { SetFormatter.number(Units.displayToKg(it, unit), unit) }
+    val main = if (loadout.perSide.isEmpty()) {
+        stringResource(Res.string.log_plates_bar_only, SetFormatter.weight(Units.displayToKg(loadout.total, unit), unit))
+    } else {
+        stringResource(Res.string.log_plates_per_side, plates)
+    }
+    Column {
+        Text(main, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (!loadout.exact) {
+            Text(
+                stringResource(Res.string.log_plates_closest, SetFormatter.weight(Units.displayToKg(loadout.total, unit), unit)),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.tertiary,
+            )
+        }
     }
 }
 

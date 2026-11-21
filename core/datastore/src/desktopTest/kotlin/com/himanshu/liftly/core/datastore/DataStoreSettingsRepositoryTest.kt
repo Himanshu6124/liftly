@@ -24,5 +24,12 @@ class DataStoreSettingsRepositoryTest {
         assertEquals(ThemeMode.DARK, s.themeMode)
         assertEquals(4, s.defaultSetCount)
         assertEquals(3, repo.seedVersion())
+
+        repo.update { it.copy(barWeightKg = 15.0, platesKg = listOf(20.0, 1.25), platesLb = emptyList()) }
+        with(repo.settings.first()) {
+            assertEquals(15.0, barWeightKg)
+            assertEquals(listOf(20.0, 1.25), platesKg)
+            assertEquals(emptyList(), platesLb, "no plates is kept, not reset to the defaults")
+        }
     }
 }

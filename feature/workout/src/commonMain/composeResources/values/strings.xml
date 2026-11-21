@@ -118,4 +118,8 @@
     <string name="rest_stop">Stop</string>
     <string name="rest_notification_title">Rest is over</string>
     <string name="rest_notification_body">Time for your next set.</string>
+    <string name="log_plates_per_side">Per side: %1$s</string>
+    <string name="log_plates_bar_only">Just the bar (%1$s)</string>
+    <string name="log_plates_closest">Closest you can load: %1$s</string>
+    <string name="log_generate_warmups">Warm-ups 40 · 60 · 80 %</string>
 </resources>

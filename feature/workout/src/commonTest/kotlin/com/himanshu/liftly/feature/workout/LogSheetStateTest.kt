@@ -74,6 +74,28 @@ class LogSheetStateTest {
     }
 
     @Test
+    fun barbellShowsHowToLoadTheBar() = runTest(UnconfinedTestDispatcher()) {
+        val h = holder(benchWithHistory) // 77.5 kg, default bar 20 kg + standard plates
+        assertEquals(listOf(25.0, 2.5, 1.25), h.state.loadout?.perSide)
+        h.onWeightChanged("101")
+        assertEquals(100.0, h.state.loadout?.total)
+        assertFalse(h.state.loadout!!.exact)
+        h.onWeightChanged("")
+        assertEquals(null, h.state.loadout)
+    }
+
+    @Test
+    fun generateWarmupsRampsToTheWorkingWeightOnLoadablePlates() = runTest(UnconfinedTestDispatcher()) {
+        val h = holder(benchWithHistory, UserSettings(platesKg = listOf(20.0, 10.0, 5.0))) // 10 kg jumps
+        h.onWeightChanged("100")
+        h.generateWarmups()
+        assertEquals(listOf("40", "60", "80"), h.warmups.map { it.weight.text.toString() })
+        assertEquals(listOf("10", "5", "3"), h.warmups.map { it.reps.text.toString() })
+        h.generateWarmups() // replaces, never duplicates
+        assertEquals(3, h.warmups.size)
+    }
+
+    @Test
     fun typingRepsUpdatesSetCount() = runTest(UnconfinedTestDispatcher()) {
         val h = holder(benchWithHistory)
         h.onRepsChanged("10x5")

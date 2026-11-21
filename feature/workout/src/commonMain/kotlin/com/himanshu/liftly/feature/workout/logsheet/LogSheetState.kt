@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.himanshu.liftly.core.domain.model.DraftSet
+import com.himanshu.liftly.core.domain.model.Equipment
 import com.himanshu.liftly.core.domain.model.InputMode
 import com.himanshu.liftly.core.domain.model.LogSnapshot
 import com.himanshu.liftly.core.domain.model.SetType
@@ -22,8 +23,10 @@ import com.himanshu.liftly.core.domain.usecase.ParseDurationInputUseCase
 import com.himanshu.liftly.core.domain.usecase.ParseRepInputUseCase
 import com.himanshu.liftly.core.domain.usecase.PrHit
 import com.himanshu.liftly.core.domain.usecase.SetValidation
+import com.himanshu.liftly.core.domain.util.PlateCalculator
 import com.himanshu.liftly.core.domain.util.SetFormatter
 import com.himanshu.liftly.core.domain.util.Units
+import com.himanshu.liftly.core.domain.util.WarmupGenerator
 import com.himanshu.liftly.core.domain.util.toDraftSets
 import com.himanshu.liftly.core.platform.Haptics
 import kotlinx.coroutines.CoroutineScope
@@ -56,6 +59,10 @@ data class LogSheetUiState(
     val otherError: LogSheetError? = null,
     val hasSets: Boolean = false,
     val isSaving: Boolean = false,
+    /** Bar + plates (display unit) when the exercise uses a barbell; drives the plate hint and warm-up rounding. */
+    val barbell: WarmupGenerator.Barbell? = null,
+    /** How to load the bar for the uniform weight; null when not a barbell or no weight entered. */
+    val loadout: PlateCalculator.Loadout? = null,
 ) {
     val showsWeight: Boolean get() = trackingType == TrackingType.WEIGHT_REPS
     val canSave: Boolean get() = !isLoading && !isSaving && hasSets && weightError == null && repsError == null && otherError == null
@@ -125,7 +132,15 @@ class LogSheetState(
 
                 else -> if (base.inputMode == InputMode.PER_SET) rows.size else parsedReps(reps)?.size
             }
-            val s = base.copy(weightText = weightField.text.toString(), repsText = reps, setCount = count ?: base.setCount)
+            val weightText = weightField.text.toString()
+            val s = base.copy(
+                weightText = weightText,
+                repsText = reps,
+                setCount = count ?: base.setCount,
+                loadout = base.barbell?.takeIf { base.inputMode == InputMode.UNIFORM }?.let { bar ->
+                    parseNumber(weightText)?.takeIf { it > 0 }?.let { PlateCalculator.loadout(it, bar.bar, bar.plates) }
+                },
+            )
             return s.copy(
                 weightError = weightError(s),
                 repsError = repsError(s),
@@ -162,6 +177,8 @@ class LogSheetState(
             // Per-set mode only makes sense with a weight to vary.
             inputMode = if (data.exercise.trackingType == TrackingType.WEIGHT_REPS) p.inputMode else InputMode.UNIFORM,
             setCount = working.size,
+            barbell = WarmupGenerator.Barbell(userSettings.barWeight(unit), userSettings.plates(unit))
+                .takeIf { data.exercise.equipment == Equipment.BARBELL },
         )
     }
 
@@ -268,12 +285,26 @@ class LogSheetState(
     /** Warm-up suggestion: 50 % of the working weight, 10 reps, then the next one heavier. */
     fun addWarmup() {
         val s = state
-        val working = weightKg(s.weightText, s.unit) ?: perSetWorking(s).mapNotNull { it.weightKg }.maxOrNull()
-        val fraction = WARMUP_STEPS.getOrElse(warmups.size) { WARMUP_STEPS.last() }
-        val kg = working?.let { Units.displayToKg(Units.roundToIncrement(Units.kgToDisplay(it, s.unit) * fraction, s.increment), s.unit) }
-        warmups += row(DraftSet(weightKg = kg, reps = WARMUP_REPS.getOrElse(warmups.size) { 3 }, setType = SetType.WARMUP), s.unit)
+        val (fraction, reps) = WarmupGenerator.STEPS.getOrElse(warmups.size) { WarmupGenerator.STEPS.last() }
+        val kg = workingDisplay(s)?.let { Units.displayToKg(WarmupGenerator.weight(it * fraction, s.increment, s.barbell), s.unit) }
+        warmups += row(DraftSet(weightKg = kg, reps = reps, setType = SetType.WARMUP), s.unit)
         showMore = true
     }
+
+    /** Replaces the warm-ups with a 40 / 60 / 80 % ramp to the working weight (plate-loadable on a barbell). */
+    fun generateWarmups() {
+        val s = state
+        val working = workingDisplay(s) ?: return
+        warmups.clear()
+        WarmupGenerator.generate(working, s.increment, s.barbell).forEach { (w, reps) ->
+            warmups += row(DraftSet(weightKg = Units.displayToKg(w, s.unit), reps = reps, setType = SetType.WARMUP), s.unit)
+        }
+        showMore = true
+    }
+
+    /** Top working weight in the display unit (uniform field, or heaviest per-set row). */
+    private fun workingDisplay(s: LogSheetUiState): Double? =
+        (weightKg(s.weightText, s.unit) ?: perSetWorking(s).mapNotNull { it.weightKg }.maxOrNull())?.let { Units.kgToDisplay(it, s.unit) }
 
     fun removeWarmup(row: SetRowState) {
         warmups.remove(row)
@@ -423,8 +454,6 @@ class LogSheetState(
     }
 
     private companion object {
-        val WARMUP_STEPS = listOf(0.4, 0.6, 0.8)
-        val WARMUP_REPS = listOf(10, 5, 3)
         val RPE_RANGE = 1.0..10.0
     }
 }
