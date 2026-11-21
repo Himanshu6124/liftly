@@ -54,6 +54,8 @@ internal fun RestTimerButton(
             val description = stringResource(Res.string.rest_menu_description)
             ExtendedFloatingActionButton(
                 onClick = { menuOpen = true },
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                contentColor = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.heightIn(min = 48.dp).semantics { contentDescription = description },
                 text = { Text(stringResource(Res.string.rest_button)) },
                 icon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null) },
@@ -90,7 +92,8 @@ internal fun RestTimerButton(
             val description = stringResource(Res.string.rest_running_description, left)
             ExtendedFloatingActionButton(
                 onClick = { menuOpen = true },
-                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                containerColor = MaterialTheme.colorScheme.secondary,
+                contentColor = MaterialTheme.colorScheme.onSecondary,
                 modifier = Modifier.heightIn(min = 48.dp).semantics { contentDescription = description },
                 text = { Text(left, style = MaterialTheme.typography.titleMedium) },
                 icon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null) },

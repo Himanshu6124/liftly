@@ -14,7 +14,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -23,14 +22,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.himanshu.liftly.core.designsystem.component.LiftlyCard
 import com.himanshu.liftly.core.designsystem.component.MuscleDiagram
 import com.himanshu.liftly.core.designsystem.component.label
 import com.himanshu.liftly.core.designsystem.theme.LiftlyTheme
+import com.himanshu.liftly.core.designsystem.theme.PlateColors
 import com.himanshu.liftly.feature.history.resources.Res
 import com.himanshu.liftly.feature.history.resources.muscles_bar
 import com.himanshu.liftly.feature.history.resources.muscles_diagram
@@ -48,13 +50,13 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 internal fun MuscleWeekCard(week: MuscleWeekUi, onShowWeek: (delta: Int) -> Unit, modifier: Modifier = Modifier) {
     val spacing = LiftlyTheme.spacing
-    ElevatedCard(modifier.fillMaxWidth()) {
+    LiftlyCard(modifier.fillMaxWidth()) {
         Column(Modifier.padding(spacing.md), verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(
                         stringResource(Res.string.muscles_title),
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleLarge,
                         modifier = Modifier.semantics {
                             heading()
                         },
@@ -82,7 +84,9 @@ internal fun MuscleWeekCard(week: MuscleWeekUi, onShowWeek: (delta: Int) -> Unit
                 contentDescription = stringResource(Res.string.muscles_diagram),
                 modifier = Modifier.height(180.dp).align(Alignment.CenterHorizontally),
             )
-            week.sets.forEach { (muscle, sets) -> MuscleBar(muscle.label(), sets, max) }
+            week.sets.forEachIndexed { i, (muscle, sets) ->
+                MuscleBar(muscle.label(), sets, max, PlateColors.Series[i % PlateColors.Series.size])
+            }
             Text(
                 stringResource(Res.string.muscles_hint),
                 style = MaterialTheme.typography.labelSmall,
@@ -93,7 +97,7 @@ internal fun MuscleWeekCard(week: MuscleWeekUi, onShowWeek: (delta: Int) -> Unit
 }
 
 @Composable
-private fun MuscleBar(label: String, sets: Double, max: Double) {
+private fun MuscleBar(label: String, sets: Double, max: Double, color: Color) {
     val spacing = LiftlyTheme.spacing
     val value = formatSets(sets)
     val description = stringResource(Res.string.muscles_bar, label, value)
@@ -109,7 +113,7 @@ private fun MuscleBar(label: String, sets: Double, max: Double) {
                     .fillMaxHeight()
                     .fillMaxWidth((sets / max).toFloat())
                     .clip(RoundedCornerShape(6.dp))
-                    .background(MaterialTheme.colorScheme.primary),
+                    .background(color),
             )
         }
         Text(value, style = MaterialTheme.typography.labelLarge, modifier = Modifier.width(32.dp))

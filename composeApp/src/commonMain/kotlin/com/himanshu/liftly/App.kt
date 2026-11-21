@@ -1,7 +1,10 @@
 package com.himanshu.liftly
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -11,12 +14,15 @@ import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffo
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -26,6 +32,10 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.himanshu.liftly.core.designsystem.component.FloatingTabBar
+import com.himanshu.liftly.core.designsystem.component.FloatingTabBarHeight
+import com.himanshu.liftly.core.designsystem.component.LocalFloatingBarInset
+import com.himanshu.liftly.core.designsystem.component.TabItem
 import com.himanshu.liftly.core.designsystem.theme.LiftlyTheme
 import com.himanshu.liftly.feature.exercises.navigation.ExerciseDetailRoute
 import com.himanshu.liftly.feature.exercises.navigation.exerciseDetailScreen
@@ -74,7 +84,11 @@ private fun LiftlyNavShell(hasWorkoutInProgress: suspend () -> Boolean) {
     val current = backStack?.destination
     val showNavigation = current == null || TopLevelDestination.entries.any { current.isOn(it) }
 
-    // Bottom bar on compact, navigation rail on medium, drawer on expanded widths.
+    // Floating tab bar on compact, navigation rail on medium, drawer on expanded widths.
+    val adaptiveType = NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(currentWindowAdaptiveInfoV2())
+    val floatingBar = showNavigation && adaptiveType == NavigationSuiteType.NavigationBar
+    val selectedTab = TopLevelDestination.entries.indexOfFirst { current?.isOn(it) == true }
+    val tabItems = TopLevelDestination.entries.map { TabItem(it.outlinedIcon, it.icon, stringResource(it.label)) }
     NavigationSuiteScaffold(
         navigationSuiteItems = {
             TopLevelDestination.entries.forEach { dest ->
@@ -86,39 +100,50 @@ private fun LiftlyNavShell(hasWorkoutInProgress: suspend () -> Boolean) {
                 )
             }
         },
-        layoutType = if (showNavigation) {
-            NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(currentWindowAdaptiveInfoV2())
-        } else {
-            NavigationSuiteType.None
-        },
+        layoutType = if (showNavigation && !floatingBar) adaptiveType else NavigationSuiteType.None,
     ) {
+        val barInset = if (floatingBar) {
+            FloatingTabBarHeight + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+        } else {
+            0.dp
+        }
         Box(Modifier.fillMaxSize()) {
-            NavHost(navController = navController, startDestination = HomeRoute) {
-                val openWorkout = { navController.navigate(WorkoutRoute) { launchSingleTop = true } }
-                val editRoutine = { id: String? -> navController.navigate(RoutineEditorRoute(id)) }
-                homeScreen(onOpenActiveWorkout = openWorkout, onEditRoutine = editRoutine)
-                routinesScreen(onOpenWorkout = openWorkout, onEditRoutine = editRoutine)
-                routineEditorScreen(onDone = {
-                    navController.popBackStack()
-                }, onOpenGuide = { navController.navigate(ExerciseDetailRoute(it)) })
-                exercisesScreen(onOpenExercise = { navController.navigate(ExerciseDetailRoute(it)) })
-                exerciseDetailScreen(onBack = { navController.popBackStack() })
-                historyScreen(onOpenWorkout = { navController.navigate(WorkoutDetailRoute(it)) })
-                workoutDetailScreen(onBack = {
-                    navController.popBackStack()
-                }, onOpenGuide = { navController.navigate(ExerciseDetailRoute(it)) })
-                settingsScreen()
-                workoutScreen(
-                    onClose = { finishedId ->
-                        if (finishedId != null) {
-                            navController.navigate(WorkoutSummaryRoute(finishedId)) { popUpTo(HomeRoute) }
-                        } else {
-                            navController.popBackStack(HomeRoute, inclusive = false)
-                        }
-                    },
-                    onOpenGuide = { navController.navigate(ExerciseDetailRoute(it)) },
+            CompositionLocalProvider(LocalFloatingBarInset provides barInset) {
+                NavHost(navController = navController, startDestination = HomeRoute) {
+                    val openWorkout = { navController.navigate(WorkoutRoute) { launchSingleTop = true } }
+                    val editRoutine = { id: String? -> navController.navigate(RoutineEditorRoute(id)) }
+                    homeScreen(onOpenActiveWorkout = openWorkout, onEditRoutine = editRoutine)
+                    routinesScreen(onOpenWorkout = openWorkout, onEditRoutine = editRoutine)
+                    routineEditorScreen(onDone = {
+                        navController.popBackStack()
+                    }, onOpenGuide = { navController.navigate(ExerciseDetailRoute(it)) })
+                    exercisesScreen(onOpenExercise = { navController.navigate(ExerciseDetailRoute(it)) })
+                    exerciseDetailScreen(onBack = { navController.popBackStack() })
+                    historyScreen(onOpenWorkout = { navController.navigate(WorkoutDetailRoute(it)) })
+                    workoutDetailScreen(onBack = {
+                        navController.popBackStack()
+                    }, onOpenGuide = { navController.navigate(ExerciseDetailRoute(it)) })
+                    settingsScreen()
+                    workoutScreen(
+                        onClose = { finishedId ->
+                            if (finishedId != null) {
+                                navController.navigate(WorkoutSummaryRoute(finishedId)) { popUpTo(HomeRoute) }
+                            } else {
+                                navController.popBackStack(HomeRoute, inclusive = false)
+                            }
+                        },
+                        onOpenGuide = { navController.navigate(ExerciseDetailRoute(it)) },
+                    )
+                    workoutSummaryScreen(onDone = { navController.popBackStack(HomeRoute, inclusive = false) })
+                }
+            }
+            if (floatingBar) {
+                FloatingTabBar(
+                    items = tabItems,
+                    selectedIndex = selectedTab.coerceAtLeast(0),
+                    onSelect = { navController.navigateToTopLevel(TopLevelDestination.entries[it]) },
+                    modifier = Modifier.align(Alignment.BottomCenter),
                 )
-                workoutSummaryScreen(onDone = { navController.popBackStack(HomeRoute, inclusive = false) })
             }
         }
     }

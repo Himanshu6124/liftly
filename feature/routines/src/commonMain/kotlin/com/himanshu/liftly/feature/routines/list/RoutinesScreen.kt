@@ -19,7 +19,6 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
@@ -43,6 +42,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.himanshu.liftly.core.designsystem.component.EmptyState
+import com.himanshu.liftly.core.designsystem.component.LiftlyCard
+import com.himanshu.liftly.core.designsystem.component.floatingBarAwareInsets
 import com.himanshu.liftly.core.designsystem.theme.LiftlyTheme
 import com.himanshu.liftly.feature.routines.resources.Res
 import com.himanshu.liftly.feature.routines.resources.routines_delete
@@ -107,10 +108,13 @@ fun RoutinesContent(
 
     Scaffold(
         modifier = Modifier.statusBarsPadding(),
+        contentWindowInsets = floatingBarAwareInsets(),
         snackbarHost = { SnackbarHost(snackbar) },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = { onEditRoutine(null) },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
                 text = { Text(stringResource(Res.string.routines_new)) },
             )
@@ -166,7 +170,7 @@ fun RoutineCard(
 ) {
     val spacing = LiftlyTheme.spacing
     var menu by remember { mutableStateOf(false) }
-    ElevatedCard(onClick = onClick, modifier = modifier.fillMaxWidth()) {
+    LiftlyCard(onClick = onClick, modifier = modifier.fillMaxWidth()) {
         Row(
             Modifier.padding(spacing.md),
             verticalAlignment = Alignment.CenterVertically,

@@ -71,7 +71,12 @@ class ActiveWorkoutViewModel(
         combine(workouts.observeActiveWorkout(), settings.settings, lastSets) { active, s, last ->
             userSettings = s
             if (active != null) loadMissingHints(active.workout.id, active.exercises.map { it.exercise.id }, last)
-            active?.toUiState(_state.value, s.weightUnit, last)
+            active?.toUiState(
+                _state.value,
+                s.weightUnit,
+                last,
+                barbell = Barbell(s.barWeight(s.weightUnit), s.plates(s.weightUnit)),
+            )
         }
             // While finishing/discarding, the workout disappearing is expected: the Closed effect navigates.
             .onEach { ui -> _state.update { s -> ui ?: if (s.isClosing) s else s.copy(isLoading = false, workoutId = null) } }

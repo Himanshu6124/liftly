@@ -13,11 +13,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -26,12 +24,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.himanshu.liftly.core.designsystem.component.HeroCardDefaults
+import com.himanshu.liftly.core.designsystem.component.LiftlyCard
+import com.himanshu.liftly.core.designsystem.component.LocalFloatingBarInset
 import com.himanshu.liftly.core.designsystem.component.SectionHeader
 import com.himanshu.liftly.core.designsystem.component.workoutDisplayName
+import com.himanshu.liftly.core.designsystem.theme.LiftlyColors
 import com.himanshu.liftly.core.designsystem.theme.LiftlyTheme
+import com.himanshu.liftly.core.domain.util.DateLabels
 import com.himanshu.liftly.core.domain.util.SetFormatter
 import com.himanshu.liftly.feature.home.resources.Res
 import com.himanshu.liftly.feature.home.resources.home_greeting
@@ -53,8 +58,6 @@ import com.himanshu.liftly.feature.home.resources.home_sync_syncing
 import com.himanshu.liftly.feature.home.resources.home_your_routines
 import com.himanshu.liftly.feature.routines.list.RoutineCard
 import com.himanshu.liftly.feature.routines.list.RoutineRow
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -86,13 +89,26 @@ fun HomeContent(
     val spacing = LiftlyTheme.spacing
     LazyColumn(
         modifier = modifier.fillMaxSize().statusBarsPadding(),
-        contentPadding = PaddingValues(spacing.md),
+        contentPadding = PaddingValues(
+            start = spacing.md,
+            end = spacing.md,
+            top = spacing.md,
+            bottom = spacing.md + LocalFloatingBarInset.current,
+        ),
         verticalArrangement = Arrangement.spacedBy(spacing.md),
     ) {
         item(key = "greeting") {
-            Column(verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
-                Text(stringResource(Res.string.home_greeting), style = MaterialTheme.typography.headlineMedium)
-                AssistChip(onClick = {}, label = { Text(state.syncLabel.text()) })
+            Column(Modifier.padding(top = spacing.sm), verticalArrangement = Arrangement.spacedBy(spacing.xs)) {
+                Text(
+                    state.syncLabel.text().uppercase(),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    stringResource(Res.string.home_greeting),
+                    style = MaterialTheme.typography.displaySmall,
+                    modifier = Modifier.semantics { heading() },
+                )
             }
         }
         // One big primary action: resume if something is running, else the next routine.
@@ -146,17 +162,19 @@ fun HomeContent(
 @Composable
 private fun NextRoutineCard(routine: RoutineRow, onStart: () -> Unit) {
     val spacing = LiftlyTheme.spacing
-    Card(
+    LiftlyCard(
         onClick = onStart,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+        containerColor = HeroCardDefaults.containerColor,
+        contentColor = HeroCardDefaults.contentColor,
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(Modifier.padding(spacing.md), verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
-            Text(stringResource(Res.string.home_next_up).uppercase(), style = MaterialTheme.typography.labelMedium)
-            Text(routine.name, style = MaterialTheme.typography.headlineSmall)
+            HeroEyebrow(stringResource(Res.string.home_next_up))
+            Text(routine.name, style = MaterialTheme.typography.headlineMedium)
             Text(
                 stringResource(Res.string.home_routine_exercises, routine.exerciseCount, routine.exerciseNames),
                 style = MaterialTheme.typography.bodyMedium,
+                color = LocalContentColor.current.copy(alpha = 0.72f),
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -171,14 +189,15 @@ private fun NextRoutineCard(routine: RoutineRow, onStart: () -> Unit) {
 @Composable
 private fun ResumeCard(banner: InProgressBanner, onClick: () -> Unit) {
     val spacing = LiftlyTheme.spacing
-    Card(
+    LiftlyCard(
         onClick = onClick,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+        containerColor = HeroCardDefaults.containerColor,
+        contentColor = HeroCardDefaults.contentColor,
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(Modifier.padding(spacing.md), verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
-            Text(stringResource(Res.string.home_in_progress).uppercase(), style = MaterialTheme.typography.labelMedium)
-            Text(workoutDisplayName(banner.name, banner.startedAt), style = MaterialTheme.typography.headlineSmall)
+            HeroEyebrow(stringResource(Res.string.home_in_progress))
+            Text(workoutDisplayName(banner.name, banner.startedAt), style = MaterialTheme.typography.headlineMedium)
             Text(
                 stringResource(Res.string.home_in_progress_detail, banner.loggedCount, banner.exerciseCount),
                 style = MaterialTheme.typography.bodyMedium,
@@ -194,14 +213,18 @@ private fun ResumeCard(banner: InProgressBanner, onClick: () -> Unit) {
 @Composable
 private fun LastWorkout(last: LastWorkoutCard, state: HomeUiState) {
     val spacing = LiftlyTheme.spacing
-    Card(modifier = Modifier.fillMaxWidth()) {
+    LiftlyCard(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(spacing.md), verticalArrangement = Arrangement.spacedBy(spacing.xs)) {
-            Text(stringResource(Res.string.home_last_workout).uppercase(), style = MaterialTheme.typography.labelMedium)
+            Text(
+                stringResource(Res.string.home_last_workout).uppercase(),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             Text(workoutDisplayName(last.name, last.startedAt), style = MaterialTheme.typography.titleMedium)
             Text(
                 stringResource(
                     Res.string.home_last_workout_detail,
-                    last.startedAt.toLocalDateTime(TimeZone.currentSystemDefault()).date.toString(),
+                    DateLabels.short(last.startedAt),
                     last.loggedCount,
                     last.exerciseCount,
                     SetFormatter.weight(last.volumeKg, state.unit),
@@ -211,6 +234,12 @@ private fun LastWorkout(last: LastWorkoutCard, state: HomeUiState) {
             )
         }
     }
+}
+
+/** Plate-yellow uppercase label on a hero card. */
+@Composable
+private fun HeroEyebrow(text: String) {
+    Text(text.uppercase(), style = MaterialTheme.typography.labelMedium, color = LiftlyColors.Pr)
 }
 
 @Composable

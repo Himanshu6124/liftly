@@ -9,9 +9,11 @@ import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.himanshu.liftly.core.domain.model.ThemeMode
 
 @Immutable
@@ -34,23 +36,37 @@ expect val supportsDynamicColor: Boolean
 @Composable
 internal expect fun platformDynamicColorScheme(dark: Boolean): ColorScheme?
 
+/** System faces, heavier and tighter at the top; tabular figures everywhere so kg and reps line up. */
 private val LiftlyTypography: Typography
     @Composable get() {
         val base = Typography()
-        return base.copy(
-            displaySmall = base.displaySmall.copy(fontWeight = FontWeight.Bold),
-            headlineMedium = base.headlineMedium.copy(fontWeight = FontWeight.Bold),
-            headlineSmall = base.headlineSmall.copy(fontWeight = FontWeight.SemiBold),
-            titleLarge = base.titleLarge.copy(fontWeight = FontWeight.SemiBold),
-            titleMedium = base.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-            labelLarge = base.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+        fun TextStyle.tuned(weight: FontWeight, tracking: Double = 0.0) =
+            copy(fontWeight = weight, letterSpacing = tracking.sp, fontFeatureSettings = "tnum")
+        return Typography(
+            displayLarge = base.displayLarge.tuned(FontWeight.ExtraBold, -1.0),
+            displayMedium = base.displayMedium.tuned(FontWeight.ExtraBold, -1.0),
+            displaySmall = base.displaySmall.tuned(FontWeight.ExtraBold, -0.75),
+            headlineLarge = base.headlineLarge.tuned(FontWeight.ExtraBold, -0.75),
+            headlineMedium = base.headlineMedium.tuned(FontWeight.ExtraBold, -0.6),
+            headlineSmall = base.headlineSmall.tuned(FontWeight.Bold, -0.4),
+            titleLarge = base.titleLarge.tuned(FontWeight.Bold, -0.3),
+            titleMedium = base.titleMedium.tuned(FontWeight.SemiBold, -0.1),
+            titleSmall = base.titleSmall.tuned(FontWeight.SemiBold),
+            bodyLarge = base.bodyLarge.tuned(FontWeight.Normal, 0.0),
+            bodyMedium = base.bodyMedium.tuned(FontWeight.Normal, 0.0),
+            bodySmall = base.bodySmall.tuned(FontWeight.Normal, 0.1),
+            labelLarge = base.labelLarge.tuned(FontWeight.SemiBold, 0.1),
+            labelMedium = base.labelMedium.tuned(FontWeight.SemiBold, 0.3),
+            labelSmall = base.labelSmall.tuned(FontWeight.SemiBold, 0.3),
         )
     }
 
 private val LiftlyShapes = Shapes(
-    small = RoundedCornerShape(8.dp),
-    medium = RoundedCornerShape(16.dp),
+    extraSmall = RoundedCornerShape(8.dp),
+    small = RoundedCornerShape(12.dp),
+    medium = RoundedCornerShape(20.dp),
     large = RoundedCornerShape(24.dp),
+    extraLarge = RoundedCornerShape(28.dp),
 )
 
 @Composable

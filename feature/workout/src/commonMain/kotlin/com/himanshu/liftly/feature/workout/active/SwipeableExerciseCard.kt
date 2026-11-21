@@ -21,6 +21,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.himanshu.liftly.core.designsystem.theme.LiftlyColors
 import com.himanshu.liftly.core.domain.model.ExerciseStatus
@@ -63,9 +64,13 @@ internal fun SwipeableExerciseCard(
         modifier = modifier,
         backgroundContent = {
             val toLog = state.dismissDirection == SwipeToDismissBoxValue.StartToEnd
-            val color = if (toLog) LiftlyColors.Success else MaterialTheme.colorScheme.surfaceVariant
+            val color = when (state.dismissDirection) {
+                SwipeToDismissBoxValue.StartToEnd -> LiftlyColors.Success
+                SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.surfaceVariant
+                SwipeToDismissBoxValue.Settled -> Color.Transparent
+            }
             Row(
-                Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)).background(color).padding(horizontal = 20.dp),
+                Modifier.fillMaxSize().clip(RoundedCornerShape(20.dp)).background(color).padding(horizontal = 20.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = if (toLog) Arrangement.Start else Arrangement.End,
             ) {

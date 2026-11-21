@@ -18,9 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -47,10 +45,14 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.himanshu.liftly.core.designsystem.component.ChartPoint
 import com.himanshu.liftly.core.designsystem.component.EmptyState
+import com.himanshu.liftly.core.designsystem.component.LiftlyCard
+import com.himanshu.liftly.core.designsystem.component.LiftlyChip
 import com.himanshu.liftly.core.designsystem.component.LineChart
 import com.himanshu.liftly.core.designsystem.component.SectionHeader
+import com.himanshu.liftly.core.designsystem.component.floatingBarAwareInsets
 import com.himanshu.liftly.core.designsystem.theme.LiftlyTheme
 import com.himanshu.liftly.core.domain.model.MeasurementType
+import com.himanshu.liftly.core.domain.util.DateLabels
 import com.himanshu.liftly.core.domain.util.Measurements
 import com.himanshu.liftly.feature.history.resources.Res
 import com.himanshu.liftly.feature.history.resources.body_arms
@@ -75,8 +77,6 @@ import com.himanshu.liftly.feature.history.resources.body_value
 import com.himanshu.liftly.feature.history.resources.body_waist
 import com.himanshu.liftly.feature.history.resources.body_weight
 import com.himanshu.liftly.feature.history.resources.history_undo
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
@@ -101,10 +101,13 @@ fun BodyScreen(viewModel: BodyViewModel = koinViewModel()) {
     val typeLabel = stringResource(state.type.label())
 
     Scaffold(
+        contentWindowInsets = floatingBarAwareInsets(),
         snackbarHost = { SnackbarHost(snackbar) },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = { logging = true },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
                 text = { Text(stringResource(Res.string.body_log, typeLabel.lowercase())) },
             )
@@ -138,7 +141,7 @@ private fun TypePicker(state: BodyUiState, onSelect: (MeasurementType) -> Unit) 
         horizontalArrangement = Arrangement.spacedBy(spacing.sm),
     ) {
         ordered.forEach { t ->
-            FilterChip(selected = t == state.type, onClick = { onSelect(t) }, label = { Text(stringResource(t.label())) })
+            LiftlyChip(selected = t == state.type, onClick = { onSelect(t) }, label = { Text(stringResource(t.label())) })
         }
     }
 }
@@ -152,7 +155,7 @@ private fun BodyContent(state: BodyUiState, typeLabel: String, onDelete: (String
         verticalArrangement = Arrangement.spacedBy(spacing.sm),
     ) {
         item(key = "chart") {
-            ElevatedCard(Modifier.fillMaxWidth()) {
+            LiftlyCard(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(spacing.md), verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
                     val latest = state.latest ?: return@Column
                     Text(fmt(latest.value), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
@@ -246,7 +249,7 @@ private fun LogDialog(typeLabel: String, symbol: String, onDismiss: () -> Unit, 
     )
 }
 
-private fun Instant.date() = toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+private fun Instant.date() = DateLabels.short(this)
 
 private fun MeasurementType.label(): StringResource = when (this) {
     MeasurementType.BODY_WEIGHT -> Res.string.body_weight

@@ -23,7 +23,6 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -31,6 +30,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -41,6 +41,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.himanshu.liftly.core.designsystem.component.EmptyState
 import com.himanshu.liftly.core.designsystem.component.ExerciseThumbnail
+import com.himanshu.liftly.core.designsystem.component.LiftlyChip
+import com.himanshu.liftly.core.designsystem.component.LocalFloatingBarInset
+import com.himanshu.liftly.core.designsystem.component.SearchFieldDefaults
 import com.himanshu.liftly.core.designsystem.component.SectionHeader
 import com.himanshu.liftly.core.designsystem.component.label
 import com.himanshu.liftly.core.designsystem.theme.LiftlyTheme
@@ -91,7 +94,7 @@ fun ExerciseLibraryContent(
     val listState = rememberLazyListState()
 
     Column(modifier.fillMaxSize().statusBarsPadding()) {
-        OutlinedTextField(
+        TextField(
             value = query,
             onValueChange = { onIntent(ExerciseLibraryIntent.QueryChanged(it)) },
             placeholder = { Text(stringResource(Res.string.exercises_search_hint)) },
@@ -104,7 +107,8 @@ fun ExerciseLibraryContent(
                 }
             },
             singleLine = true,
-            shape = RoundedCornerShape(28.dp),
+            shape = SearchFieldDefaults.shape,
+            colors = SearchFieldDefaults.colors(),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(onSearch = { focus.clearFocus() }),
             modifier = Modifier.fillMaxWidth().padding(horizontal = spacing.md, vertical = spacing.sm),
@@ -122,7 +126,11 @@ fun ExerciseLibraryContent(
             return@Column
         }
 
-        LazyColumn(state = listState, contentPadding = PaddingValues(bottom = spacing.lg), modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            state = listState,
+            contentPadding = PaddingValues(bottom = spacing.lg + LocalFloatingBarInset.current),
+            modifier = Modifier.fillMaxSize(),
+        ) {
             state.sections.forEach { section ->
                 stickyHeader(key = "header-${section.key}", contentType = "header") {
                     val title = when (section.kind) {
@@ -152,7 +160,7 @@ private fun FilterRow(state: ExerciseLibraryUiState, onIntent: (ExerciseLibraryI
         horizontalArrangement = Arrangement.spacedBy(spacing.sm),
     ) {
         items(MuscleGroup.entries, key = { "g-${it.name}" }) { group ->
-            FilterChip(
+            LiftlyChip(
                 selected = state.muscleGroup == group,
                 onClick = { onIntent(ExerciseLibraryIntent.MuscleGroupToggled(group)) },
                 label = { Text(group.label()) },
@@ -161,7 +169,7 @@ private fun FilterRow(state: ExerciseLibraryUiState, onIntent: (ExerciseLibraryI
         // Fixed height: a fillMaxHeight divider inside a LazyRow stretches the whole row once it's visible.
         item(key = "divider") { VerticalDivider(Modifier.padding(vertical = spacing.sm).height(32.dp)) }
         items(Equipment.entries, key = { "e-${it.name}" }) { equipment ->
-            FilterChip(
+            LiftlyChip(
                 selected = state.equipment == equipment,
                 onClick = { onIntent(ExerciseLibraryIntent.EquipmentToggled(equipment)) },
                 label = { Text(equipment.label()) },

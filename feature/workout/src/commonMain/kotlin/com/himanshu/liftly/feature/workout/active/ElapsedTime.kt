@@ -33,8 +33,8 @@ internal fun ElapsedTime(startedAt: Instant, modifier: Modifier = Modifier) {
     val description = stringResource(Res.string.elapsed_description, text)
     Text(
         text,
-        style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        style = MaterialTheme.typography.titleMedium,
+        color = MaterialTheme.colorScheme.primary,
         modifier = modifier.semantics { contentDescription = description },
     )
 }

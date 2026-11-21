@@ -11,13 +11,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -26,11 +21,15 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.himanshu.liftly.core.designsystem.component.ChartPoint
+import com.himanshu.liftly.core.designsystem.component.LiftlyCard
+import com.himanshu.liftly.core.designsystem.component.LiftlyChip
 import com.himanshu.liftly.core.designsystem.component.LineChart
+import com.himanshu.liftly.core.designsystem.component.PillTabs
 import com.himanshu.liftly.core.designsystem.component.SectionHeader
 import com.himanshu.liftly.core.designsystem.component.workoutDisplayName
 import com.himanshu.liftly.core.designsystem.theme.LiftlyTheme
 import com.himanshu.liftly.core.domain.model.WeightUnit
+import com.himanshu.liftly.core.domain.util.DateLabels
 import com.himanshu.liftly.core.domain.util.ProgressMetric
 import com.himanshu.liftly.core.domain.util.ProgressRange
 import com.himanshu.liftly.core.domain.util.SetFormatter
@@ -53,8 +52,6 @@ import com.himanshu.liftly.feature.exercises.resources.progress_reps_value
 import com.himanshu.liftly.feature.exercises.resources.progress_sessions
 import com.himanshu.liftly.feature.exercises.resources.progress_total_reps
 import com.himanshu.liftly.feature.exercises.resources.progress_volume
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import kotlin.time.Instant
@@ -84,7 +81,7 @@ private fun ProgressCard(progress: ProgressUi, unit: WeightUnit, onIntent: (Exer
         if (progress.metrics.size > 1) {
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
                 progress.metrics.forEach { m ->
-                    FilterChip(
+                    LiftlyChip(
                         selected = m == metric,
                         onClick = { onIntent(ExerciseDetailIntent.MetricSelected(m)) },
                         label = { Text(stringResource(m.label())) },
@@ -92,7 +89,7 @@ private fun ProgressCard(progress: ProgressUi, unit: WeightUnit, onIntent: (Exer
                 }
             }
         }
-        ElevatedCard(Modifier.fillMaxWidth()) {
+        LiftlyCard(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(spacing.md), verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
                 val repsTemplate = stringResource(Res.string.progress_reps_value, VALUE)
                 val distanceTemplate = stringResource(Res.string.progress_distance_value, VALUE)
@@ -149,19 +146,13 @@ private fun ProgressCard(progress: ProgressUi, unit: WeightUnit, onIntent: (Exer
 
 @Composable
 private fun RangeSelector(range: ProgressRange, onIntent: (ExerciseDetailIntent) -> Unit) {
-    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-        ProgressRange.entries.forEachIndexed { i, r ->
-            val label = stringResource(r.label())
-            val description = stringResource(Res.string.progress_range_label, label)
-            SegmentedButton(
-                selected = r == range,
-                onClick = { onIntent(ExerciseDetailIntent.RangeSelected(r)) },
-                shape = SegmentedButtonDefaults.itemShape(i, ProgressRange.entries.size),
-                icon = {},
-                modifier = Modifier.semantics { contentDescription = description },
-            ) { Text(label) }
-        }
-    }
+    val labels = ProgressRange.entries.map { stringResource(it.label()) }
+    PillTabs(
+        options = labels,
+        selectedIndex = range.ordinal,
+        onSelect = { onIntent(ExerciseDetailIntent.RangeSelected(ProgressRange.entries[it])) },
+        descriptions = labels.map { stringResource(Res.string.progress_range_label, it) },
+    )
 }
 
 @Composable
@@ -174,7 +165,7 @@ private fun Hint(text: String) {
     )
 }
 
-private fun Instant.date() = toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+private fun Instant.date() = DateLabels.short(this)
 
 private fun ProgressMetric.label(): StringResource = when (this) {
     ProgressMetric.EST_1RM -> Res.string.progress_est_1rm

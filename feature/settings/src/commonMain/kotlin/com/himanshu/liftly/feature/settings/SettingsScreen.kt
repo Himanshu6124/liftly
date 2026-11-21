@@ -11,30 +11,33 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
+import com.himanshu.liftly.core.designsystem.component.LiftlyChip
+import com.himanshu.liftly.core.designsystem.component.LocalFloatingBarInset
 import com.himanshu.liftly.core.designsystem.component.NumberStepper
+import com.himanshu.liftly.core.designsystem.component.PillTabs
 import com.himanshu.liftly.core.designsystem.component.SectionHeader
 import com.himanshu.liftly.core.designsystem.theme.LiftlyTheme
+import com.himanshu.liftly.core.designsystem.theme.PlateColors
 import com.himanshu.liftly.core.designsystem.theme.supportsDynamicColor
 import com.himanshu.liftly.core.domain.model.ThemeMode
 import com.himanshu.liftly.core.domain.model.UserSettings
 import com.himanshu.liftly.core.domain.model.WeightUnit
 import com.himanshu.liftly.core.domain.repository.SettingsRepository
 import com.himanshu.liftly.core.domain.util.SetFormatter.symbol
+import com.himanshu.liftly.core.domain.util.Units
 import com.himanshu.liftly.feature.settings.resources.Res
 import com.himanshu.liftly.feature.settings.resources.settings_about
 import com.himanshu.liftly.feature.settings.resources.settings_appearance
@@ -59,6 +62,7 @@ import com.himanshu.liftly.feature.settings.resources.settings_storage
 import com.himanshu.liftly.feature.settings.resources.settings_theme_dark
 import com.himanshu.liftly.feature.settings.resources.settings_theme_light
 import com.himanshu.liftly.feature.settings.resources.settings_theme_system
+import com.himanshu.liftly.feature.settings.resources.settings_title
 import com.himanshu.liftly.feature.settings.resources.settings_units
 import com.himanshu.liftly.feature.settings.resources.settings_version
 import com.himanshu.liftly.feature.settings.resources.settings_weekly_goal
@@ -106,9 +110,15 @@ fun SettingsScreen(viewModel: SettingsViewModel = koinViewModel()) {
 fun SettingsContent(s: UserSettings, update: ((UserSettings) -> UserSettings) -> Unit) {
     val spacing = LiftlyTheme.spacing
     Column(
-        Modifier.fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState()).padding(vertical = spacing.md),
+        Modifier.fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState())
+            .padding(top = spacing.md, bottom = spacing.md + LocalFloatingBarInset.current),
         verticalArrangement = Arrangement.spacedBy(spacing.sm),
     ) {
+        Text(
+            stringResource(Res.string.settings_title),
+            style = MaterialTheme.typography.displaySmall,
+            modifier = Modifier.padding(horizontal = spacing.md).semantics { heading() },
+        )
         SectionHeader(stringResource(Res.string.settings_units))
         Column(Modifier.padding(horizontal = spacing.md), verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
             Segmented(
@@ -124,7 +134,7 @@ fun SettingsContent(s: UserSettings, update: ((UserSettings) -> UserSettings) ->
             val current = if (s.weightUnit == WeightUnit.KG) s.weightIncrementKg else s.weightIncrementLb
             FlowRow(horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
                 steps.forEach { step ->
-                    FilterChip(
+                    LiftlyChip(
                         selected = current == step,
                         onClick = {
                             update {
@@ -228,15 +238,11 @@ fun SettingsContent(s: UserSettings, update: ((UserSettings) -> UserSettings) ->
 
 @Composable
 private fun <T> Segmented(options: List<Pair<T, String>>, selected: T, onSelect: (T) -> Unit) {
-    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-        options.forEachIndexed { i, (value, label) ->
-            SegmentedButton(
-                selected = value == selected,
-                onClick = { onSelect(value) },
-                shape = SegmentedButtonDefaults.itemShape(i, options.size),
-            ) { Text(label) }
-        }
-    }
+    PillTabs(
+        options = options.map { it.second },
+        selectedIndex = options.indexOfFirst { it.first == selected }.coerceAtLeast(0),
+        onSelect = { onSelect(options[it].first) },
+    )
 }
 
 @Composable
@@ -261,7 +267,7 @@ private fun BarbellSettings(s: UserSettings, update: ((UserSettings) -> UserSett
         Text(stringResource(Res.string.settings_bar_weight), style = MaterialTheme.typography.bodyLarge)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
             (if (kg) SettingsViewModel.BARS_KG else SettingsViewModel.BARS_LB).forEach { bar ->
-                FilterChip(
+                LiftlyChip(
                     selected = s.barWeight(s.weightUnit) == bar,
                     onClick = { update { if (kg) it.copy(barWeightKg = bar) else it.copy(barWeightLb = bar) } },
                     label = { Text("${formatStep(bar)} ${s.weightUnit.symbol}") },
@@ -277,13 +283,14 @@ private fun BarbellSettings(s: UserSettings, update: ((UserSettings) -> UserSett
         FlowRow(horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
             val owned = s.plates(s.weightUnit)
             (if (kg) SettingsViewModel.PLATES_KG else SettingsViewModel.PLATES_LB).forEach { plate ->
-                FilterChip(
+                LiftlyChip(
                     selected = plate in owned,
                     onClick = {
                         val next = (if (plate in owned) owned - plate else owned + plate).sortedDescending()
                         update { if (kg) it.copy(platesKg = next) else it.copy(platesLb = next) }
                     },
                     label = { Text(formatStep(plate)) },
+                    selectedColor = PlateColors.forPlate(if (kg) plate else plate * Units.KG_PER_LB),
                 )
             }
         }

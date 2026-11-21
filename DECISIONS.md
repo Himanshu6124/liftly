@@ -327,3 +327,35 @@ backend later with minimal change.
   registered in `SyncTables`, so a backend picks it up with no extra work.
 - **Schema v3** via Room auto-migration (new table). Verified on the simulator's v2 database with
   data: everything kept.
+
+## Visual refresh ("Calibrated plates")
+
+The owner found the UI dated. Three directions were mocked (Whiteboard, Calibrated plates,
+Clean modern); the owner picked **Calibrated plates** and asked for a floating iOS-style tab bar.
+
+- **Palette:** competition plate colors are the data language: red 25 / blue 20 / yellow 15 /
+  green 10 / white 5 (`PlateColors`). Plate red is the action color, blue the secondary, green
+  "done", yellow PRs. Grounds are cool grey (light) and graphite (dark); cards are flat tonal
+  surfaces with no shadow. Dynamic color on Android 12+ still replaces the scheme when enabled;
+  `PlateColors` stay fixed because they mean real plates.
+- **Type:** system faces (no bundled font), heavier and tighter at display/headline sizes, and
+  tabular figures (`tnum`) in every style so kg, reps and timers line up and don't jitter.
+- **Shapes:** 12 / 20 / 24 / 28 dp; segmented controls and chips at 12–14 dp.
+- **Floating tab bar** (`FloatingTabBar`) on compact widths only: a pill above the home
+  indicator with a sliding indicator and outlined → filled icons. Rail and drawer layouts are
+  unchanged. Top-level screens add `LocalFloatingBarInset` (lists) or use
+  `floatingBarAwareInsets()` (Scaffolds with a FAB/snackbar) so nothing hides behind it. Tabs
+  are a `selectableGroup` with `Role.Tab`, so screen readers announce position and state.
+- **Plates on screen:** barbell cards in a workout show the per-side plate stack for the top
+  working weight (logged, or last time when pending), and the log sheet draws it next to
+  "Per side: 25 + 15". The stack has a spoken label on the card and is hidden from screen
+  readers in the sheet, where the text already says it. Settings shows owned plates in their
+  colors, with a check mark so selection never depends on color alone.
+- **Home:** one graphite hero card ("Next up" / "In progress") with a yellow eyebrow; the
+  weekly goal ring became a row of plates that load as you train (`WeekPlates`).
+- **Shared components:** `LiftlyCard` (flat, springs to 97 % while pressed), `PillTabs`
+  (segmented control with a sliding thumb, replaces tab rows and segmented buttons),
+  `LiftlyChip`, `SearchFieldDefaults` (filled search), `PlateStack`, `WeekPlates`. The status
+  check springs in when an exercise is logged.
+- **Dates** in lists read "Sat, 21 Nov" (year only when it isn't this year) via `DateLabels`
+  instead of ISO dates.

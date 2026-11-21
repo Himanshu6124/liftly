@@ -19,9 +19,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -51,6 +51,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.himanshu.liftly.core.designsystem.component.NumberStepper
+import com.himanshu.liftly.core.designsystem.component.PlateStack
 import com.himanshu.liftly.core.designsystem.component.RepeatingIconButton
 import com.himanshu.liftly.core.designsystem.theme.LiftlyTheme
 import com.himanshu.liftly.core.domain.model.InputMode
@@ -202,7 +203,7 @@ private fun Header(state: LogSheetUiState, onFormGuide: () -> Unit) {
         AssistChip(
             onClick = onFormGuide,
             label = { Text(stringResource(Res.string.log_form)) },
-            leadingIcon = { Icon(Icons.Filled.Info, contentDescription = null) },
+            leadingIcon = { Icon(Icons.Outlined.Info, contentDescription = null) },
         )
     }
     Text(
@@ -439,8 +440,14 @@ private fun PlateHint(loadout: PlateCalculator.Loadout, unit: WeightUnit) {
     } else {
         stringResource(Res.string.log_plates_per_side, plates)
     }
-    Column {
-        Text(main, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Column(verticalArrangement = Arrangement.spacedBy(LiftlyTheme.spacing.xs)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(LiftlyTheme.spacing.sm)) {
+            if (loadout.perSide.isNotEmpty()) {
+                // Text below says the same, so the drawing is hidden from screen readers.
+                PlateStack(loadout.perSide.map { Units.displayToKg(it, unit) }, description = "", height = 26.dp)
+            }
+            Text(main, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
         if (!loadout.exact) {
             Text(
                 stringResource(Res.string.log_plates_closest, SetFormatter.weight(Units.displayToKg(loadout.total, unit), unit)),

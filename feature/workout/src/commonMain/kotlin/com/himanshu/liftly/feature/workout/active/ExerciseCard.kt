@@ -1,18 +1,18 @@
 package com.himanshu.liftly.feature.workout.active
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -25,12 +25,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.himanshu.liftly.core.designsystem.component.ExerciseThumbnail
+import com.himanshu.liftly.core.designsystem.component.LiftlyCard
+import com.himanshu.liftly.core.designsystem.component.PlateStack
 import com.himanshu.liftly.core.designsystem.component.PrBadge
 import com.himanshu.liftly.core.designsystem.component.StatusIcon
 import com.himanshu.liftly.core.designsystem.component.label
@@ -42,6 +46,7 @@ import com.himanshu.liftly.feature.workout.resources.card_last
 import com.himanshu.liftly.feature.workout.resources.card_move_down
 import com.himanshu.liftly.feature.workout.resources.card_move_up
 import com.himanshu.liftly.feature.workout.resources.card_options
+import com.himanshu.liftly.feature.workout.resources.card_plates
 import com.himanshu.liftly.feature.workout.resources.card_pr
 import com.himanshu.liftly.feature.workout.resources.card_quick_log
 import com.himanshu.liftly.feature.workout.resources.card_remove
@@ -86,14 +91,19 @@ internal fun ExerciseCard(
     }
 
     val logLabel = stringResource(Res.string.card_quick_log)
-    ElevatedCard(
+    val lift by animateFloatAsState(if (isDragging) DRAG_SCALE else 1f, label = "dragLift")
+    LiftlyCard(
         onClick = onClick,
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = if (isDragging) 8.dp else 1.dp),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = if (highlighted) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
-        ),
+        containerColor = if (highlighted) MaterialTheme.colorScheme.primaryContainer else Color.Unspecified,
         modifier = modifier
             .fillMaxWidth()
+            .graphicsLayer {
+                scaleX = lift
+                scaleY = lift
+                shadowElevation = if (isDragging) DRAG_SHADOW_DP * density else 0f
+                shape = RoundedCornerShape(CARD_RADIUS_DP.dp)
+                clip = false
+            }
             // Screen-reader users get the swipe/menu actions directly on the card.
             .semantics {
                 customActions = listOf(
@@ -129,29 +139,14 @@ internal fun ExerciseCard(
                     )
                     if (card.hasPr) PrBadge(stringResource(Res.string.card_pr))
                 }
-                val logged = card.status == ExerciseStatus.LOGGED
-                Text(
-                    when {
-                        logged && card.summary != null -> card.summary
-
-                        card.status == ExerciseStatus.PENDING && card.lastHint != null -> stringResource(
-                            Res.string.card_last,
-                            card.lastHint,
-                        )
-
-                        card.status == ExerciseStatus.PENDING ->
-                            stringResource(Res.string.card_subtitle, card.primaryMuscle.label(), card.equipment.label())
-
-                        else -> statusLabel
-                    },
-                    style = if (logged) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.bodySmall,
-                    color = if (logged) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                CardDetails(card, statusLabel)
             }
             IconButton(onClick = onFormGuide) {
-                Icon(Icons.Filled.Info, contentDescription = stringResource(Res.string.card_form, card.name))
+                Icon(
+                    Icons.Outlined.Info,
+                    contentDescription = stringResource(Res.string.card_form, card.name),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
             CardMenu(card, skipLabel, removeLabel, skipAction, onIntent)
         }
@@ -195,3 +190,41 @@ private fun CardMenu(
         }
     }
 }
+
+/** Second line (last time / logged summary / muscle) and, for barbell work, the plate stack. */
+@Composable
+private fun CardDetails(card: ExerciseCardUi, statusLabel: String) {
+    val spacing = LiftlyTheme.spacing
+    val logged = card.status == ExerciseStatus.LOGGED
+    Text(
+        when {
+            logged && card.summary != null -> card.summary
+
+            card.status == ExerciseStatus.PENDING && card.lastHint != null -> stringResource(
+                Res.string.card_last,
+                card.lastHint,
+            )
+
+            card.status == ExerciseStatus.PENDING ->
+                stringResource(Res.string.card_subtitle, card.primaryMuscle.label(), card.equipment.label())
+
+            else -> statusLabel
+        },
+        style = if (logged) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.bodySmall,
+        color = if (logged) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+    )
+    if (card.platesPerSideKg != null && card.platesText != null) {
+        PlateStack(
+            perSideKg = card.platesPerSideKg,
+            description = stringResource(Res.string.card_plates, card.platesText),
+            height = 24.dp,
+            modifier = Modifier.padding(top = spacing.xs),
+        )
+    }
+}
+
+private const val DRAG_SCALE = 1.03f
+private const val DRAG_SHADOW_DP = 12f
+private const val CARD_RADIUS_DP = 20

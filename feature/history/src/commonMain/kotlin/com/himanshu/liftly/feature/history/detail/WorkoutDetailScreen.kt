@@ -15,7 +15,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,6 +34,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.himanshu.liftly.core.designsystem.component.ExerciseThumbnail
+import com.himanshu.liftly.core.designsystem.component.LiftlyCard
 import com.himanshu.liftly.core.designsystem.component.PrBadge
 import com.himanshu.liftly.core.designsystem.component.workoutDisplayName
 import com.himanshu.liftly.core.designsystem.theme.LiftlyTheme
@@ -154,7 +154,7 @@ fun WorkoutDetailScreen(
 @Composable
 private fun ExerciseBlock(e: ActiveWorkoutExercise, unit: WeightUnit, onClick: () -> Unit) {
     val spacing = LiftlyTheme.spacing
-    ElevatedCard(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+    LiftlyCard(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(spacing.md), verticalArrangement = Arrangement.spacedBy(spacing.xs)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
                 ExerciseThumbnail(e.exercise.imagePaths, contentDescription = null, size = 40.dp)

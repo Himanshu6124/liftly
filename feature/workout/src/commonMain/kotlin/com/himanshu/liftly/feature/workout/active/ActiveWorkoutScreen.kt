@@ -185,6 +185,8 @@ fun ActiveWorkoutContent(
                     RestTimerButton(state.restEndsAt, state.restSuggestion, state.restRemembered, onIntent)
                     ExtendedFloatingActionButton(
                         onClick = { showPicker = true },
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
                         icon = { Icon(Icons.Filled.Add, contentDescription = null) },
                         text = { Text(stringResource(Res.string.workout_add_exercise)) },
                     )

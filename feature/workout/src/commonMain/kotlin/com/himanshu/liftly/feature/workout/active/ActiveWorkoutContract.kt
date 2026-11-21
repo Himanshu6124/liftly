@@ -6,9 +6,12 @@ import com.himanshu.liftly.core.domain.model.DraftSet
 import com.himanshu.liftly.core.domain.model.Equipment
 import com.himanshu.liftly.core.domain.model.ExerciseStatus
 import com.himanshu.liftly.core.domain.model.Muscle
+import com.himanshu.liftly.core.domain.model.SetType
 import com.himanshu.liftly.core.domain.model.WeightUnit
+import com.himanshu.liftly.core.domain.util.PlateCalculator
 import com.himanshu.liftly.core.domain.util.SetFormatter
 import com.himanshu.liftly.core.domain.util.Supersets
+import com.himanshu.liftly.core.domain.util.Units
 import com.himanshu.liftly.core.domain.util.toDraftSets
 import com.himanshu.liftly.feature.workout.rest.RestTimer
 import kotlinx.collections.immutable.ImmutableList
@@ -40,6 +43,10 @@ data class ExerciseCardUi(
     val supersetEnd: Boolean = false,
     /** Not the last card, so "Superset with next" makes sense. */
     val canLinkNext: Boolean = false,
+    /** Barbell only: plates per side (kg, heaviest first) for the top working weight, logged or last time. */
+    val platesPerSideKg: ImmutableList<Double>? = null,
+    /** The same plates in the display unit, for the spoken label ("25 + 15"). */
+    val platesText: String? = null,
 )
 
 @Immutable
@@ -138,6 +145,7 @@ internal fun ActiveWorkout.toUiState(
     lastSets: Map<String, List<DraftSet>>,
     // Normalized when read: a partner removed (with Undo pending) simply shows as ungrouped.
     supersets: List<Int?> = Supersets.normalize(exercises.map { it.workoutExercise.supersetGroup }),
+    barbell: Barbell? = null,
 ) = previous.copy(
     isLoading = false,
     workoutId = workout.id,
@@ -163,6 +171,24 @@ internal fun ActiveWorkout.toUiState(
             supersetStart = group != null && supersets.getOrNull(i - 1) != group,
             supersetEnd = group != null && supersets.getOrNull(i + 1) != group,
             canLinkNext = i < exercises.lastIndex,
+        ).withPlates(
+            sets = if (e.workoutExercise.status == ExerciseStatus.LOGGED) e.sets.toDraftSets() else lastSets[e.exercise.id],
+            barbell = barbell?.takeIf { e.exercise.equipment == Equipment.BARBELL },
+            unit = unit,
         )
     }.toImmutableList(),
 )
+
+/** Empty bar + the plates the user owns, both in the display unit. */
+internal data class Barbell(val bar: Double, val plates: List<Double>)
+
+private fun ExerciseCardUi.withPlates(sets: List<DraftSet>?, barbell: Barbell?, unit: WeightUnit): ExerciseCardUi {
+    if (barbell == null || sets == null) return this
+    val topKg = sets.filter { it.setType != SetType.WARMUP }.mapNotNull { it.weightKg }.maxOrNull() ?: return this
+    val loadout = PlateCalculator.loadout(Units.kgToDisplay(topKg, unit), barbell.bar, barbell.plates)
+    if (loadout.perSide.isEmpty()) return this
+    return copy(
+        platesPerSideKg = loadout.perSide.map { Units.displayToKg(it, unit) }.toImmutableList(),
+        platesText = loadout.perSide.joinToString(" + ") { SetFormatter.number(Units.displayToKg(it, unit), unit) },
+    )
+}

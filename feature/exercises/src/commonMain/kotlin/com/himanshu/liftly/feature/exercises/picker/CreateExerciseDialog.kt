@@ -9,7 +9,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -20,6 +19,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.himanshu.liftly.core.designsystem.component.LiftlyChip
 import com.himanshu.liftly.core.designsystem.component.label
 import com.himanshu.liftly.core.designsystem.theme.LiftlyTheme
 import com.himanshu.liftly.core.domain.model.Equipment
@@ -65,7 +65,7 @@ internal fun CreateExerciseDialog(
                 Label(stringResource(Res.string.picker_create_muscle))
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(spacing.xs)) {
                     Muscle.entries.forEach { m ->
-                        FilterChip(selected = draft.primaryMuscle == m, onClick = {
+                        LiftlyChip(selected = draft.primaryMuscle == m, onClick = {
                             draft = draft.copy(primaryMuscle = m)
                         }, label = { Text(m.label()) })
                     }
@@ -73,7 +73,7 @@ internal fun CreateExerciseDialog(
                 Label(stringResource(Res.string.picker_create_equipment))
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(spacing.xs)) {
                     Equipment.entries.forEach { e ->
-                        FilterChip(selected = draft.equipment == e, onClick = {
+                        LiftlyChip(selected = draft.equipment == e, onClick = {
                             draft = draft.copy(equipment = e)
                         }, label = { Text(e.label()) })
                     }
@@ -81,7 +81,7 @@ internal fun CreateExerciseDialog(
                 Label(stringResource(Res.string.picker_create_tracking))
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(spacing.xs)) {
                     TrackingType.entries.forEach { t ->
-                        FilterChip(selected = draft.trackingType == t, onClick = {
+                        LiftlyChip(selected = draft.trackingType == t, onClick = {
                             draft = draft.copy(trackingType = t)
                         }, label = { Text(t.label()) })
                     }

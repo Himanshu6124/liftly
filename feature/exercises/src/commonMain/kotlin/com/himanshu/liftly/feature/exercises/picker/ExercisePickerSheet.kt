@@ -25,7 +25,6 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -34,6 +33,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -47,6 +47,8 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.himanshu.liftly.core.designsystem.component.LiftlyChip
+import com.himanshu.liftly.core.designsystem.component.SearchFieldDefaults
 import com.himanshu.liftly.core.designsystem.component.SectionHeader
 import com.himanshu.liftly.core.designsystem.component.label
 import com.himanshu.liftly.core.designsystem.theme.LiftlyTheme
@@ -145,7 +147,7 @@ fun ExercisePickerContent(
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.padding(horizontal = spacing.md),
         )
-        OutlinedTextField(
+        TextField(
             value = query,
             onValueChange = { onIntent(ExercisePickerIntent.QueryChanged(it)) },
             placeholder = { Text(stringResource(Res.string.exercises_search_hint)) },
@@ -158,7 +160,8 @@ fun ExercisePickerContent(
                 }
             },
             singleLine = true,
-            shape = RoundedCornerShape(28.dp),
+            shape = SearchFieldDefaults.shape,
+            colors = SearchFieldDefaults.colors(),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(onSearch = { focus.clearFocus() }),
             modifier = Modifier.fillMaxWidth().padding(horizontal = spacing.md, vertical = spacing.sm),
@@ -233,14 +236,14 @@ private fun PickerFilters(group: MuscleGroup?, equipment: Equipment?, onIntent: 
     val spacing = LiftlyTheme.spacing
     LazyRow(contentPadding = PaddingValues(horizontal = spacing.md), horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
         items(MuscleGroup.entries, key = { "g-${it.name}" }) { g ->
-            FilterChip(selected = group == g, onClick = {
+            LiftlyChip(selected = group == g, onClick = {
                 onIntent(ExercisePickerIntent.MuscleGroupToggled(g))
             }, label = { Text(g.label()) })
         }
         // Fixed height: a fillMaxHeight divider inside a LazyRow stretches the whole row once it's visible.
         item(key = "divider") { VerticalDivider(Modifier.padding(vertical = spacing.sm).height(32.dp)) }
         items(Equipment.entries, key = { "e-${it.name}" }) { e ->
-            FilterChip(selected = equipment == e, onClick = {
+            LiftlyChip(selected = equipment == e, onClick = {
                 onIntent(ExercisePickerIntent.EquipmentToggled(e))
             }, label = { Text(e.label()) })
         }

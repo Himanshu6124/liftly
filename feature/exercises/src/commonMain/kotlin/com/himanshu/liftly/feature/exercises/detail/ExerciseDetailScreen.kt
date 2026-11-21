@@ -23,16 +23,13 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AssistChip
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -45,13 +42,16 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.himanshu.liftly.core.designsystem.component.EmptyState
 import com.himanshu.liftly.core.designsystem.component.ExerciseDemo
+import com.himanshu.liftly.core.designsystem.component.LiftlyCard
 import com.himanshu.liftly.core.designsystem.component.MuscleDiagram
+import com.himanshu.liftly.core.designsystem.component.PillTabs
 import com.himanshu.liftly.core.designsystem.component.label
 import com.himanshu.liftly.core.designsystem.component.muscleIntensity
 import com.himanshu.liftly.core.designsystem.theme.LiftlyColors
 import com.himanshu.liftly.core.designsystem.theme.LiftlyTheme
 import com.himanshu.liftly.core.domain.model.PrType
 import com.himanshu.liftly.core.domain.model.WeightUnit
+import com.himanshu.liftly.core.domain.util.DateLabels
 import com.himanshu.liftly.core.domain.util.SetFormatter
 import com.himanshu.liftly.feature.exercises.resources.Res
 import com.himanshu.liftly.feature.exercises.resources.detail_back
@@ -80,8 +80,6 @@ import com.himanshu.liftly.feature.exercises.resources.record_max_reps
 import com.himanshu.liftly.feature.exercises.resources.record_max_volume
 import com.himanshu.liftly.feature.exercises.resources.record_max_weight
 import com.himanshu.liftly.feature.exercises.resources.record_reps_value
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -144,15 +142,12 @@ fun ExerciseDetailContent(
                 exercise == null -> Unit
 
                 else -> {
-                    PrimaryTabRow(selectedTabIndex = state.tab.ordinal) {
-                        DetailTab.entries.forEach { tab ->
-                            Tab(
-                                selected = state.tab == tab,
-                                onClick = { onIntent(ExerciseDetailIntent.TabSelected(tab)) },
-                                text = { Text(stringResource(tab.title())) },
-                            )
-                        }
-                    }
+                    PillTabs(
+                        options = DetailTab.entries.map { stringResource(it.title()) },
+                        selectedIndex = state.tab.ordinal,
+                        onSelect = { onIntent(ExerciseDetailIntent.TabSelected(DetailTab.entries[it])) },
+                        modifier = Modifier.padding(horizontal = LiftlyTheme.spacing.md, vertical = LiftlyTheme.spacing.sm),
+                    )
                     when (state.tab) {
                         DetailTab.FORM -> FormTab(exercise, state.noteDraft, onIntent)
 
@@ -188,12 +183,12 @@ private fun RecordsTab(records: List<RecordUi>, unit: WeightUnit) {
     LazyColumn(contentPadding = PaddingValues(spacing.md), verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
         items(records.size, key = { records[it].type.name }) { i ->
             val r = records[i]
-            ElevatedCard(Modifier.fillMaxWidth()) {
+            LiftlyCard(Modifier.fillMaxWidth()) {
                 Row(Modifier.padding(spacing.md), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text(stringResource(r.type.title()), style = MaterialTheme.typography.titleSmall)
                         Text(
-                            r.achievedAt.toLocalDateTime(TimeZone.currentSystemDefault()).date.toString(),
+                            DateLabels.short(r.achievedAt),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

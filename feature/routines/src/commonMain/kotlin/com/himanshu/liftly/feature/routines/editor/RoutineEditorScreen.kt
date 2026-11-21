@@ -19,7 +19,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Button
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -39,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import com.himanshu.liftly.core.designsystem.component.ExerciseThumbnail
+import com.himanshu.liftly.core.designsystem.component.LiftlyCard
 import com.himanshu.liftly.core.designsystem.theme.LiftlyTheme
 import com.himanshu.liftly.core.domain.util.SetFormatter.symbol
 import com.himanshu.liftly.feature.exercises.picker.ExercisePickerSheet
@@ -144,7 +144,7 @@ fun RoutineEditorScreen(
 @Composable
 private fun EditorRow(item: EditorItem, unit: String, onRemove: () -> Unit, onMove: (Int) -> Unit) {
     val spacing = LiftlyTheme.spacing
-    ElevatedCard(Modifier.fillMaxWidth()) {
+    LiftlyCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(spacing.sm), verticalArrangement = Arrangement.spacedBy(spacing.xs)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
                 ExerciseThumbnail(item.imagePaths, contentDescription = null)

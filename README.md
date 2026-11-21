@@ -73,7 +73,7 @@ Composable ──Intent──▶ ViewModel ──▶ UseCase ──▶ Repositor
 | `core/data` | Room database, DAOs, sync engine, repository implementations |
 | `core/datastore` | `SettingsRepository` on DataStore Preferences |
 | `core/platform` | `Haptics`, `Notifier`, `UrlLauncher`, `ShareService` per platform |
-| `core/designsystem` | Theme (light/dark/dynamic), spacing, shared components (thumbnail, demo, muscle diagram) |
+| `core/designsystem` | "Calibrated plates" theme (light/dark/dynamic, plate colors), floating tab bar, cards, segmented tabs, chips, plate stack, charts, muscle diagram |
 | `core/resources` | Bundled exercise seed JSON + images (Compose resources) |
 | `feature/*` | One module per feature: screen, ViewModel, navigation entry, strings |
 
@@ -81,7 +81,7 @@ Conventions: each screen has a stateful `XxxScreen` (gets the ViewModel from Koi
 stateless `XxxContent`. ViewModels expose `state: StateFlow`, `effects: Flow` and
 `onIntent(...)`. Weight is stored in kg; timestamps as epoch millis.
 
-Adaptive layout: bottom bar on phones, navigation rail on medium widths, drawer on expanded
+Adaptive layout: floating tab bar on phones, navigation rail on medium widths, drawer on expanded
 widths; the exercise library becomes list + detail side by side on expanded widths.
 
 Accessibility: every icon button has a label, list/section titles are headings, swipe and

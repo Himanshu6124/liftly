@@ -14,15 +14,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,12 +32,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.himanshu.liftly.core.designsystem.component.EmptyState
+import com.himanshu.liftly.core.designsystem.component.LiftlyCard
+import com.himanshu.liftly.core.designsystem.component.PillTabs
 import com.himanshu.liftly.core.designsystem.component.PrBadge
 import com.himanshu.liftly.core.designsystem.component.SectionHeader
+import com.himanshu.liftly.core.designsystem.component.floatingBarAwareInsets
 import com.himanshu.liftly.core.designsystem.component.workoutDisplayName
 import com.himanshu.liftly.core.designsystem.theme.LiftlyTheme
 import com.himanshu.liftly.core.domain.model.WeightUnit
 import com.himanshu.liftly.core.domain.model.WorkoutHistoryItem
+import com.himanshu.liftly.core.domain.util.DateLabels
 import com.himanshu.liftly.core.domain.util.RelativeWeek
 import com.himanshu.liftly.core.domain.util.SetFormatter
 import com.himanshu.liftly.core.domain.util.WeekGroup
@@ -58,8 +59,6 @@ import com.himanshu.liftly.feature.history.resources.history_week_of
 import com.himanshu.liftly.feature.history.resources.tab_body
 import com.himanshu.liftly.feature.history.resources.tab_workouts
 import com.himanshu.liftly.feature.workout.active.formatElapsed
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -69,11 +68,12 @@ import org.koin.compose.viewmodel.koinViewModel
 fun HistoryScreen(onOpenWorkout: (String) -> Unit) {
     var tab by rememberSaveable { mutableStateOf(0) }
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
-        PrimaryTabRow(selectedTabIndex = tab) {
-            listOf(Res.string.tab_workouts, Res.string.tab_body).forEachIndexed { i, label ->
-                Tab(selected = tab == i, onClick = { tab = i }, text = { Text(stringResource(label)) })
-            }
-        }
+        PillTabs(
+            options = listOf(stringResource(Res.string.tab_workouts), stringResource(Res.string.tab_body)),
+            selectedIndex = tab,
+            onSelect = { tab = it },
+            modifier = Modifier.padding(horizontal = LiftlyTheme.spacing.md, vertical = LiftlyTheme.spacing.sm),
+        )
         if (tab == 0) WorkoutsTab(onOpenWorkout) else BodyScreen()
     }
 }
@@ -106,7 +106,7 @@ fun HistoryContent(
     onShowWeek: (delta: Int) -> Unit,
 ) {
     val spacing = LiftlyTheme.spacing
-    Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { padding ->
+    Scaffold(contentWindowInsets = floatingBarAwareInsets(), snackbarHost = { SnackbarHost(snackbar) }) { padding ->
         if (!state.isLoading && state.weeks.isEmpty()) {
             EmptyState(
                 icon = Icons.Filled.DateRange,
@@ -147,14 +147,14 @@ private fun WeekGroup.title(): String = when (relative) {
 private fun HistoryRow(item: WorkoutHistoryItem, unit: WeightUnit, onClick: () -> Unit) {
     val spacing = LiftlyTheme.spacing
     val w = item.workout
-    ElevatedCard(onClick = onClick, modifier = Modifier.fillMaxWidth().padding(horizontal = spacing.md)) {
+    LiftlyCard(onClick = onClick, modifier = Modifier.fillMaxWidth().padding(horizontal = spacing.md)) {
         Row(Modifier.padding(spacing.md), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(workoutDisplayName(w.name, w.startedAt), style = MaterialTheme.typography.titleMedium)
                 Text(
                     stringResource(
                         Res.string.history_row_detail,
-                        w.startedAt.toLocalDateTime(TimeZone.currentSystemDefault()).date.toString(),
+                        DateLabels.short(w.startedAt),
                         w.endedAt?.let { formatElapsed(it - w.startedAt) } ?: "–",
                         item.exerciseCount,
                         SetFormatter.weight(item.volumeKg, unit),
