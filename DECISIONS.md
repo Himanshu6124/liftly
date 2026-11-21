@@ -644,3 +644,34 @@ Clean modern); the owner picked **Calibrated plates** and asked for a floating i
   `LiftlySignInWithApple`); `YES` uses `iosAppSignInWithApple.entitlements` and shows it. Turn it
   on with a paid team, which App Store distribution needs anyway; the App Store rule "offer Apple
   when you offer Google" then holds for release builds.
+
+## Milestone 25 (backend): production on Oracle Cloud
+
+- **Deployed to the owner's existing `oracle-vm`** (1 GB x86 Micro, Ubuntu 24.04), which already
+  runs another app (nginx + certbot + a Java service on :8080). The planned Docker + Caddy stack
+  didn't fit: Caddy would fight nginx for 80/443 and Docker costs RAM the VM doesn't have. So:
+  PostgreSQL 16 from Ubuntu (32 MB shared buffers, 20 connections, localhost), the server as
+  `liftly.service` (systemd, heap 160 MB, SerialGC, sandboxed with `ProtectSystem=strict`),
+  listening on `127.0.0.1:8090` only, behind the **existing nginx** with its own server block and a
+  certbot certificate. Nothing of the other app was changed; nginx is always `nginx -t`'d before a
+  graceful reload.
+- **Address:** `https://liftly-api.duckdns.org` (own DuckDNS subdomain, Let's Encrypt, HTTP → HTTPS
+  redirect). Release app builds use it; debug builds keep the local dev server (Android:
+  `FLAG_DEBUGGABLE`, iOS: `Platform.isDebugBinary`, desktop: `-Dliftly.devServer=true`).
+- **Server config added:** `HOST` (bind address) and `DATABASE_POOL_SIZE` (4 in production).
+- **Secrets are generated on the VM** (`openssl rand`) into `/etc/liftly/liftly.env`
+  (root:liftly 0640); the database password is fed to psql on stdin so it never appears in `ps`.
+  Nothing secret is in the repo or was printed during setup.
+- **nginx in front:** `client_max_body_size 2m` (413 above), `/auth/` limited to 30 requests/min
+  per IP with a burst of 10 (429), and `X-Forwarded-For` **overwritten** with the client address,
+  so the server's own per-IP auth limit can't be dodged with a spoofed header.
+- **Shipping:** `./deploy/deploy.sh` builds `installDist` locally (the repo's Gradle build needs
+  the Android SDK), copies only the server distribution with tar over SSH (macOS's openrsync
+  doesn't interoperate with the server's rsync), keeps the previous release for rollback, restarts
+  and waits for `/health`. Flyway migrates on start.
+- **Backups:** nightly `pg_dump` at 03:30 to `/var/backups/liftly`, 14 days. Off-machine copies
+  (OCI Object Storage) are still to do.
+- **Verified from the internet:** health, redirect, certificate, 401 without a token, invalid
+  Apple token rejected, spoofed `X-Forwarded-For` ignored, port 8090 unreachable, 3 MB body → 413,
+  rapid auth requests → 429. Memory after deploy: ~377 MB still available.
+- The Docker files in `server/` stay for bigger machines.

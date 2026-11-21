@@ -31,7 +31,7 @@ import kotlin.time.Duration.Companion.minutes
 
 fun main() {
     val config = ServerConfig.fromEnv()
-    start(config, Database.connect(config.databaseUrl, config.databaseUser, config.databasePassword), wait = true)
+    start(config, Database.connect(config.databaseUrl, config.databaseUser, config.databasePassword, config.databasePoolSize), wait = true)
 }
 
 fun start(config: ServerConfig, ds: DataSource, wait: Boolean) {
@@ -44,7 +44,7 @@ fun start(config: ServerConfig, ds: DataSource, wait: Boolean) {
             Provider.GOOGLE to IdTokenVerifier.google(config.googleAudiences),
         ),
     )
-    embeddedServer(Netty, port = config.port, host = "0.0.0.0") {
+    embeddedServer(Netty, port = config.port, host = config.host) {
         liftlyModule(ds, auth, config.devAuth)
     }.start(wait = wait)
 }

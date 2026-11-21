@@ -1,5 +1,7 @@
 # Liftly server
 
+Production: `https://liftly-api.duckdns.org` (see [`deploy/README.md`](../deploy/README.md)).
+
 Ktor + PostgreSQL backend for sync. The app stays offline-first; this only stores and serves
 changes. Wire format: `core/protocol`. Design notes: `DECISIONS.md` (Milestone 20).
 
@@ -54,8 +56,10 @@ curl -s localhost:8080/sync/routines/pull -H 'X-Liftly-Dev-User: me'
 | Variable | Default | |
 |---|---|---|
 | `PORT` | `8080` | |
+| `HOST` | `0.0.0.0` | `127.0.0.1` behind a reverse proxy on the same machine |
 | `DATABASE_URL` | required | e.g. `jdbc:postgresql://db:5432/liftly` |
 | `DATABASE_USER`, `DATABASE_PASSWORD` | required | |
+| `DATABASE_POOL_SIZE` | `10` | Keep small on small machines (production: 4) |
 | `JWT_SECRET` | required | 32+ random characters, e.g. `openssl rand -base64 48` |
 | `APPLE_AUDIENCES` | `com.himanshu.liftly` | Comma-separated; empty disables Apple sign-in |
 | `GOOGLE_AUDIENCES` | empty (off) | Comma-separated Google OAuth client ids: the Web client id (Android) and the iOS client id |

@@ -111,7 +111,9 @@ is ready for a backend from version 1:
   tests against an in-memory fake server.
 
 **Backend:** `server/` is a Ktor + PostgreSQL implementation of the sync API (run it locally
-with `./gradlew :server:runDev`; see [`server/README.md`](server/README.md)). It ships only its
+with `./gradlew :server:runDev`; see [`server/README.md`](server/README.md)). Production runs at
+`https://liftly-api.duckdns.org` on an Oracle Cloud VM; ship with `./deploy/deploy.sh`
+([`deploy/README.md`](deploy/README.md)). Release app builds use it, debug builds the local dev server. It ships only its
 own code and `core/protocol`, never app modules.
 
 **Sync is on while signed in** (Settings → Account, optional):

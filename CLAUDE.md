@@ -52,6 +52,8 @@ ktlint file-name rule (file with one class must be named after it), JVM-only API
 - **Offline-first sync:** UUID ids, `SyncMeta` (updatedAt, deletedAt tombstone, syncStatus,
   serverVersion) on every table; new tables must be registered in `SyncTables` and `SyncProtocol.TABLES`. Sync runs
   while signed in: `AccountSyncController` + `HttpSyncDataSource` against `server/` (see README).
+  Production server: `oracle-vm` (1 GB, shared with another app; don't touch its nginx site or
+  `chat.service`), deployed with `./deploy/deploy.sh`; secrets only in `/etc/liftly/liftly.env` there.
 - Room schema is at **v3** with exported schemas in `core/data/schemas`; add columns/tables via
   `AutoMigration` and verify on the simulator's existing database.
 - Weights stored in kg, lengths in cm, times as epoch millis; converted only for display.

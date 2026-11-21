@@ -7,13 +7,13 @@ import javax.sql.DataSource
 
 object Database {
     /** Connection pool, with the schema migrated to the latest version (`resources/db/migration`). */
-    fun connect(url: String, user: String, password: String): HikariDataSource {
+    fun connect(url: String, user: String, password: String, poolSize: Int): HikariDataSource {
         val ds = HikariDataSource(
             HikariConfig().apply {
                 jdbcUrl = url
                 username = user
                 this.password = password
-                maximumPoolSize = POOL_SIZE
+                maximumPoolSize = poolSize
             },
         )
         migrate(ds)
@@ -23,6 +23,4 @@ object Database {
     fun migrate(ds: DataSource) {
         Flyway.configure().dataSource(ds).load().migrate()
     }
-
-    private const val POOL_SIZE = 10
 }

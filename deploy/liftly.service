@@ -1,0 +1,27 @@
+# /etc/systemd/system/liftly.service — the Liftly sync server (see deploy/README.md).
+[Unit]
+Description=Liftly sync server
+After=network-online.target postgresql.service
+Wants=network-online.target
+Requires=postgresql.service
+
+[Service]
+User=liftly
+Group=liftly
+WorkingDirectory=/opt/liftly
+# Secrets and settings (JWT_SECRET, DATABASE_*, GOOGLE_AUDIENCES...): root:liftly 0640, never in git.
+EnvironmentFile=/etc/liftly/liftly.env
+# Small heap for a 1 GB machine shared with other services; SerialGC has the lowest overhead.
+Environment="JAVA_OPTS=-Xms64m -Xmx160m -XX:MaxMetaspaceSize=96m -XX:+UseSerialGC -Xss512k"
+ExecStart=/opt/liftly/current/bin/server
+Restart=on-failure
+RestartSec=5
+# Hardening: the server only needs its own files and the network.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/liftly
+
+[Install]
+WantedBy=multi-user.target

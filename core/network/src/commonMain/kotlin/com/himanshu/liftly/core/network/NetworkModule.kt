@@ -12,7 +12,7 @@ import kotlin.time.Clock
 
 /** Server access: session, sync transport, and the [SyncController] the repositories call after writes. */
 val networkModule = module {
-    single { ApiConfig(devServerUrl) }
+    single { ApiConfig(defaultServerUrl()) }
     single { liftlyHttpClient(get()) }
     single { AuthApi(get()) }
     single { AuthSession(get(), get(), get(), now = { Clock.System.now().toEpochMilliseconds() }) } bind AuthRepository::class
