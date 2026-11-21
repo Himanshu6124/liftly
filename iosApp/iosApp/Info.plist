@@ -12,6 +12,10 @@
 	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>LiftlySignInWithApple</key>
+	<string>$(SIGN_IN_WITH_APPLE)</string>
+	<key>LiftlyGoogleClientID</key>
+	<string>$(GOOGLE_IOS_CLIENT_ID)</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<!-- Plain HTTP only to the local dev server (localhost); everything else needs HTTPS. -->

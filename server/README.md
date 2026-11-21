@@ -58,7 +58,7 @@ curl -s localhost:8080/sync/routines/pull -H 'X-Liftly-Dev-User: me'
 | `DATABASE_USER`, `DATABASE_PASSWORD` | required | |
 | `JWT_SECRET` | required | 32+ random characters, e.g. `openssl rand -base64 48` |
 | `APPLE_AUDIENCES` | `com.himanshu.liftly` | Comma-separated; empty disables Apple sign-in |
-| `GOOGLE_AUDIENCES` | empty (off) | Comma-separated Google OAuth client ids |
+| `GOOGLE_AUDIENCES` | empty (off) | Comma-separated Google OAuth client ids: the Web client id (Android) and the iOS client id |
 | `LIFTLY_DEV_AUTH` | off | `true` trusts `X-Liftly-Dev-User`. **Never in production.** |
 
 The server expects to sit behind a reverse proxy (Caddy) and trusts `X-Forwarded-For` for rate

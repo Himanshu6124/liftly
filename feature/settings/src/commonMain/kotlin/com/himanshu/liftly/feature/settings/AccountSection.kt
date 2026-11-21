@@ -109,7 +109,7 @@ private fun SignedOut(state: AuthState.SignedOut, ui: AccountUi, actions: Accoun
                     modifier = Modifier.weight(1f).height(BUTTON_HEIGHT),
                 ) { Text(stringResource(Res.string.account_google)) }
             }
-            if (ui.busy) CircularProgressIndicator(Modifier.padding(start = LiftlyTheme.spacing.sm).size(24.dp))
+            if (ui.signingInWith == provider) CircularProgressIndicator(Modifier.padding(start = LiftlyTheme.spacing.sm).size(24.dp))
         }
     }
 }

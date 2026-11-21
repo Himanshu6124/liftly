@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		1CA13C927C1B791C1DDF11F4 /* HomeWidgetBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = F244E8691C6DD4B899C0D8EB /* HomeWidgetBridge.swift */; };
+		45D35ADCC8A2E10854620D0C /* GoogleSignIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C7AD9E91C362A1C9E44509D /* GoogleSignIn.swift */; };
 		B23142E25FB42328A22BBE57 /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 342CC5DCACD9E63815BBB970 /* KeychainStore.swift */; };
 		D91A8730077D1906142BAE50 /* AppleSignIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07EAC3B5890A57881CF21CA5 /* AppleSignIn.swift */; };
 		1D13B893DDF2B7C31D3A0D6F /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3E225AFA5D2EA66BBE1C248 /* AppDelegate.swift */; };
@@ -72,6 +73,7 @@
 		EC4A83CCD7A5D6DD24162665 /* WorkoutActivityAttributes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutActivityAttributes.swift; sourceTree = "<group>"; };
 		07EAC3B5890A57881CF21CA5 /* AppleSignIn.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppleSignIn.swift; sourceTree = "<group>"; };
 		342CC5DCACD9E63815BBB970 /* KeychainStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KeychainStore.swift; sourceTree = "<group>"; };
+		8C7AD9E91C362A1C9E44509D /* GoogleSignIn.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoogleSignIn.swift; sourceTree = "<group>"; };
 		F244E8691C6DD4B899C0D8EB /* HomeWidgetBridge.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HomeWidgetBridge.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -144,6 +146,7 @@
 				569FDA588AE5BCE86A296048 /* LiveActivityIndicator.swift */,
 				C3E225AFA5D2EA66BBE1C248 /* AppDelegate.swift */,
 				F244E8691C6DD4B899C0D8EB /* HomeWidgetBridge.swift */,
+				8C7AD9E91C362A1C9E44509D /* GoogleSignIn.swift */,
 				342CC5DCACD9E63815BBB970 /* KeychainStore.swift */,
 				07EAC3B5890A57881CF21CA5 /* AppleSignIn.swift */,
 				2CEE340D356E20ADC32E2C68 /* Assets.xcassets */,
@@ -312,6 +315,7 @@
 				1D13B893DDF2B7C31D3A0D6F /* AppDelegate.swift in Sources */,
 				683C4C74D424CC33E6FE4F55 /* WidgetShared.swift in Sources */,
 				1CA13C927C1B791C1DDF11F4 /* HomeWidgetBridge.swift in Sources */,
+				45D35ADCC8A2E10854620D0C /* GoogleSignIn.swift in Sources */,
 				B23142E25FB42328A22BBE57 /* KeychainStore.swift in Sources */,
 				D91A8730077D1906142BAE50 /* AppleSignIn.swift in Sources */,
 			);
@@ -400,7 +404,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = iosApp/iosApp.entitlements;
+				CODE_SIGN_ENTITLEMENTS = "$(LIFTLY_APP_ENTITLEMENTS_$(SIGN_IN_WITH_APPLE))";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -437,7 +441,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = iosApp/iosApp.entitlements;
+				CODE_SIGN_ENTITLEMENTS = "$(LIFTLY_APP_ENTITLEMENTS_$(SIGN_IN_WITH_APPLE))";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;

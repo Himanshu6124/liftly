@@ -7,10 +7,10 @@ import UIKit
 /// through `AppleSignInBridgeHolder`. Each request carries a fresh nonce: Apple puts its SHA-256
 /// in the ID token and our server checks it against the raw value, so a token can't be replayed.
 final class AppleSignIn: NSObject, AppleSignInBridge {
-    private var pending: (callback: AppleSignInCallback, rawNonce: String)?
+    private var pending: (callback: SignInCallback, rawNonce: String)?
     private var controller: ASAuthorizationController?
 
-    func signIn(callback: AppleSignInCallback) {
+    func signIn(callback: SignInCallback) {
         DispatchQueue.main.async { self.start(callback) }
     }
 
@@ -20,7 +20,7 @@ final class AppleSignIn: NSObject, AppleSignInBridge {
         return button
     }
 
-    private func start(_ callback: AppleSignInCallback) {
+    private func start(_ callback: SignInCallback) {
         guard pending == nil else {
             callback.onFailure(cancelled: false, message: "Sign-in already in progress")
             return
@@ -37,7 +37,7 @@ final class AppleSignIn: NSObject, AppleSignInBridge {
         controller.performRequests()
     }
 
-    private func finish() -> (callback: AppleSignInCallback, rawNonce: String)? {
+    private func finish() -> (callback: SignInCallback, rawNonce: String)? {
         defer {
             pending = nil
             controller = nil

@@ -9,6 +9,7 @@ import com.himanshu.liftly.core.domain.auth.AuthState
 import com.himanshu.liftly.core.domain.sync.SyncController
 import com.himanshu.liftly.core.domain.sync.SyncState
 import com.himanshu.liftly.core.domain.util.AppScope
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,8 +29,10 @@ class AccountViewModelTest {
         override val state = MutableStateFlow<AuthState>(AuthState.SignedOut())
         override val providers = listOf(AuthProvider.APPLE)
         var failWith: AuthError? = null
+        var gate: CompletableDeferred<Unit>? = null
 
         override suspend fun signIn(provider: AuthProvider) {
+            gate?.await()
             failWith?.let { throw AuthException(it) }
             state.value = AuthState.SignedIn("u1", "a@b.c")
         }
@@ -91,6 +94,23 @@ class AccountViewModelTest {
             auth.failWith = null
             vm.signIn(AuthProvider.APPLE)
             assertNull(expectMostRecentItem().error, "cleared on the next attempt")
+        }
+    }
+
+    @Test
+    fun progressShowsOnlyForTheProviderBeingSignedIn() = runTest(UnconfinedTestDispatcher()) {
+        val vm = AccountViewModel(auth, sync, AppScope(this))
+        vm.ui.test {
+            awaitItem()
+            auth.gate = CompletableDeferred()
+            vm.signIn(AuthProvider.GOOGLE)
+            val during = expectMostRecentItem()
+            assertEquals(AuthProvider.GOOGLE, during.signingInWith)
+            assertEquals(true, during.busy)
+            auth.gate!!.complete(Unit)
+            val after = expectMostRecentItem()
+            assertNull(after.signingInWith)
+            assertEquals(false, after.busy)
         }
     }
 }

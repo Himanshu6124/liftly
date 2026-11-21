@@ -5,10 +5,10 @@ import platform.UIKit.UIView
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-/** Result callback for [AppleSignInBridge]; exactly one method is called once. */
-interface AppleSignInCallback {
-    /** [rawNonce] is the value whose SHA-256 went into the Apple request (the token's `nonce`). */
-    fun onSuccess(idToken: String, rawNonce: String)
+/** Result callback for the Swift sign-in bridges; exactly one method is called, once. */
+interface SignInCallback {
+    /** Apple: [rawNonce] is the value whose SHA-256 went into the request (the token's `nonce`). Google: null. */
+    fun onSuccess(idToken: String, rawNonce: String?)
     fun onFailure(cancelled: Boolean, message: String?)
 }
 
@@ -17,7 +17,7 @@ interface AppleSignInCallback {
  * registers it at startup: `AppleSignInBridgeHolder.shared.delegate = AppleSignIn()`.
  */
 interface AppleSignInBridge {
-    fun signIn(callback: AppleSignInCallback)
+    fun signIn(callback: SignInCallback)
 
     /** The system "Sign in with Apple" button (required look); [onTap] runs on the main thread. */
     fun makeButton(dark: Boolean, onTap: () -> Unit): UIView
@@ -25,6 +25,19 @@ interface AppleSignInBridge {
 
 object AppleSignInBridgeHolder {
     var delegate: AppleSignInBridge? = null
+}
+
+/**
+ * Google sign-in on iOS (`GoogleSignIn.swift`: OAuth with PKCE in an `ASWebAuthenticationSession`).
+ * [isConfigured] is false until an iOS OAuth client id is set (`GOOGLE_IOS_CLIENT_ID`).
+ */
+interface GoogleSignInBridge {
+    val isConfigured: Boolean
+    fun signIn(callback: SignInCallback)
+}
+
+object GoogleSignInBridgeHolder {
+    var delegate: GoogleSignInBridge? = null
 }
 
 /**
@@ -44,17 +57,24 @@ object SecureStoreHolder : SecureStore {
 }
 
 internal class IosNativeSignIn : NativeSignIn {
+    // Apple first: App Store rules want it at least as prominent as other providers.
     override val providers: List<SignInProvider>
-        get() = if (AppleSignInBridgeHolder.delegate != null) listOf(SignInProvider.APPLE) else emptyList()
+        get() = listOfNotNull(
+            SignInProvider.APPLE.takeIf { AppleSignInBridgeHolder.delegate != null },
+            SignInProvider.GOOGLE.takeIf { GoogleSignInBridgeHolder.delegate?.isConfigured == true },
+        )
 
     override suspend fun signIn(provider: SignInProvider): SignInCredential {
-        val bridge = AppleSignInBridgeHolder.delegate
-        require(provider == SignInProvider.APPLE && bridge != null) { "$provider sign-in is not available on iOS" }
+        val start: ((SignInCallback) -> Unit)? = when (provider) {
+            SignInProvider.APPLE -> AppleSignInBridgeHolder.delegate?.let { it::signIn }
+            SignInProvider.GOOGLE -> GoogleSignInBridgeHolder.delegate?.takeIf { it.isConfigured }?.let { it::signIn }
+        }
+        requireNotNull(start) { "$provider sign-in is not available" }
         return suspendCancellableCoroutine { cont ->
-            bridge.signIn(
-                object : AppleSignInCallback {
-                    override fun onSuccess(idToken: String, rawNonce: String) {
-                        cont.resume(SignInCredential(SignInProvider.APPLE, idToken, rawNonce))
+            start(
+                object : SignInCallback {
+                    override fun onSuccess(idToken: String, rawNonce: String?) {
+                        cont.resume(SignInCredential(provider, idToken, rawNonce))
                     }
 
                     override fun onFailure(cancelled: Boolean, message: String?) {

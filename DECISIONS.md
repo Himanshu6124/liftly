@@ -622,3 +622,25 @@ Clean modern); the owner picked **Calibrated plates** and asked for a floating i
   background launch with no UI can sync too.
 - **Battery:** nothing runs while signed out except a no-op worker; signed in, one run is a few
   small requests. Every 6 hours is plenty for a training log that also syncs on open and on writes.
+
+## Google sign-in on iOS
+
+- **iOS offers both Apple and Google** (Apple first; App Store rules require Sign in with Apple
+  whenever another social login is offered, at least as prominently).
+- **No Google SDK:** `GoogleSignIn.swift` runs the standard OAuth flow for native apps
+  (authorization code + PKCE, RFC 8252) in an `ASWebAuthenticationSession`, which handles the
+  reversed-client-id redirect itself (no URL type in Info.plist), then exchanges the code at
+  Google's token endpoint (iOS clients have no secret) and passes the **ID token** to our server,
+  which verifies it like Android's. Keeps the Xcode project free of Swift packages.
+- **Config:** the iOS OAuth client id goes in `GOOGLE_IOS_CLIENT_ID` (`Configuration/Config.xcconfig`
+  → Info.plist `LiftlyGoogleClientID`); empty hides the button. The server must list it in
+  `GOOGLE_AUDIENCES` too, since the token's audience is the iOS client id.
+- The two iOS bridges share `SignInCallback` (raw nonce only for Apple). While a sign-in runs,
+  only the tapped button shows progress.
+- **Sign in with Apple is a build switch** (`SIGN_IN_WITH_APPLE` in `Config.xcconfig`, default
+  `NO`). Personal (free) Apple developer teams can't create a provisioning profile with the
+  capability, so with it always on the app no longer installed on the owner's iPhone. `NO` signs
+  with `iosApp.entitlements` (no Apple sign-in) and hides the Apple button (Info.plist
+  `LiftlySignInWithApple`); `YES` uses `iosAppSignInWithApple.entitlements` and shows it. Turn it
+  on with a paid team, which App Store distribution needs anyway; the App Store rule "offer Apple
+  when you offer Google" then holds for release builds.

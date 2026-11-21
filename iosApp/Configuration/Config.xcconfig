@@ -1,3 +1,15 @@
 TEAM_ID=
 BUNDLE_ID=com.himanshu.liftly
 APP_NAME=Liftly
+
+// Google sign-in on iOS: the iOS OAuth client id from Google Cloud Console
+// (for example 1234-abcd.apps.googleusercontent.com). Empty hides the Google button. Also add it to
+// the server's GOOGLE_AUDIENCES.
+GOOGLE_IOS_CLIENT_ID=
+
+// Sign in with Apple needs a paid Apple Developer Program team: personal (free) teams can't create
+// a provisioning profile with it, so the app wouldn't install on a device. NO hides the Apple
+// button and leaves the capability out; set YES once the App ID has the capability enabled.
+SIGN_IN_WITH_APPLE=NO
+LIFTLY_APP_ENTITLEMENTS_NO=iosApp/iosApp.entitlements
+LIFTLY_APP_ENTITLEMENTS_YES=iosApp/iosAppSignInWithApple.entitlements

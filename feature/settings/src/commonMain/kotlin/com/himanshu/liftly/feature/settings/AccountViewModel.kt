@@ -25,6 +25,8 @@ data class AccountUi(
     /** Last failure to show; never [AuthError.CANCELLED]. */
     val error: AuthError? = null,
     val sync: SyncState = SyncState.LocalOnly,
+    /** The provider whose sign-in is running, to show progress next to that button only. */
+    val signingInWith: AuthProvider? = null,
 )
 
 /** The optional account at the top of Settings. Calls run in [AppScope] so leaving the tab doesn't cancel them. */
@@ -35,13 +37,21 @@ class AccountViewModel(
 ) : ViewModel() {
     private val busy = MutableStateFlow(false)
     private val error = MutableStateFlow<AuthError?>(null)
+    private val signingInWith = MutableStateFlow<AuthProvider?>(null)
 
-    val ui: StateFlow<AccountUi> = combine(auth.state, busy, error, sync.state) { state, b, e, s ->
-        AccountUi(state, auth.providers, b, e, s)
+    val ui: StateFlow<AccountUi> = combine(auth.state, busy, error, sync.state, signingInWith) { state, b, e, s, p ->
+        AccountUi(state, auth.providers, b, e, s, p)
     }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), AccountUi(auth.state.value, auth.providers))
 
-    fun signIn(provider: AuthProvider) = run { auth.signIn(provider) }
+    fun signIn(provider: AuthProvider) = run {
+        signingInWith.value = provider
+        try {
+            auth.signIn(provider)
+        } finally {
+            signingInWith.value = null
+        }
+    }
 
     fun signOut() = run { auth.signOut() }
 
