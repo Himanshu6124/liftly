@@ -3,6 +3,9 @@ package com.himanshu.liftly.core.domain.usecase
 import com.himanshu.liftly.core.domain.model.DraftSet
 import com.himanshu.liftly.core.domain.model.RoutineWithExercises
 import com.himanshu.liftly.core.domain.model.SetType
+import com.himanshu.liftly.core.domain.repository.RoutineRepository
+import com.himanshu.liftly.core.domain.repository.WorkoutRepository
+import kotlinx.coroutines.flow.first
 
 /**
  * The routine Home offers as the big 1-tap button: the one done longest ago, so routines
@@ -42,5 +45,22 @@ class StartRoutineUseCase(private val startWorkout: StartWorkoutUseCase) {
             exerciseIds = items.map { it.exercise.id },
             supersetGroups = items.map { it.routineExercise.supersetGroup }, // the routine's supersets carry over
         )
+    }
+}
+
+/**
+ * "Start next workout" (app shortcut, Quick Action, widget): resumes the workout in progress, else
+ * starts the next routine in rotation ([NextRoutine]), else an empty workout.
+ */
+class StartNextWorkoutUseCase(
+    private val workouts: WorkoutRepository,
+    private val routines: RoutineRepository,
+    private val startRoutine: StartRoutineUseCase,
+    private val startWorkout: StartWorkoutUseCase,
+) {
+    suspend operator fun invoke(): StartWorkoutUseCase.Result {
+        workouts.getInProgressWorkout()?.let { return StartWorkoutUseCase.Result.Resumed(it.id) }
+        val next = NextRoutine.pick(routines.observeRoutines().first())
+        return if (next != null) startRoutine(next) else startWorkout()
     }
 }

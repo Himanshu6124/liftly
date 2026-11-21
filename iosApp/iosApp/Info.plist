@@ -6,5 +6,27 @@
 	<true/>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.himanshu.liftly</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>liftly</string>
+			</array>
+		</dict>
+	</array>
+	<key>UIApplicationShortcutItems</key>
+	<array>
+		<dict>
+			<key>UIApplicationShortcutItemType</key>
+			<string>liftly://start-next-workout</string>
+			<key>UIApplicationShortcutItemTitle</key>
+			<string>Start next workout</string>
+			<key>UIApplicationShortcutItemIconType</key>
+			<string>UIApplicationShortcutIconTypePlay</string>
+		</dict>
+	</array>
 </dict>
 </plist>

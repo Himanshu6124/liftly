@@ -8,6 +8,7 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.net.Uri
 import android.os.Build
 import android.os.IBinder
 import co.touchlab.kermit.Logger
@@ -69,6 +70,7 @@ internal class AndroidOngoingWorkoutIndicator(private val context: Context) : On
 internal object OngoingWorkoutNotification {
     const val ID = 0x11F7
     private const val CHANNEL_ID = "ongoing_workout"
+    private const val OPEN_WORKOUT_URL = "liftly://workout"
 
     fun build(context: Context, workout: OngoingWorkout): Notification {
         val manager = context.getSystemService(NotificationManager::class.java)
@@ -77,10 +79,9 @@ internal object OngoingWorkoutNotification {
                 setShowBadge(false)
             },
         )
-        val open = context.packageManager.getLaunchIntentForPackage(context.packageName)?.let {
-            it.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
-            PendingIntent.getActivity(context, ID, it, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-        }
+        // Opens the workout screen (handled by the app's DeepLinks), whatever tab the app was on.
+        val openWorkout = Intent(Intent.ACTION_VIEW, Uri.parse(OPEN_WORKOUT_URL)).setPackage(context.packageName)
+        val open = PendingIntent.getActivity(context, ID, openWorkout, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         val resting = workout.restEndsAtMillis
         val progress = "${workout.loggedCount} of ${workout.totalCount} logged"
         val text = workout.nextExercise?.let { "$progress · Next: $it" } ?: progress

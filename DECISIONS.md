@@ -389,3 +389,21 @@ Clean modern); the owner picked **Calibrated plates** and asked for a floating i
   (first iOS with Live Activities); the app stays at 16.0 and guards the code with
   `@available(iOS 16.1, *)`. `WorkoutActivityAttributes` is compiled into both targets. The
   extension uses the same signing team as the app. `NSSupportsLiveActivities` is set.
+
+## Milestone 17 (Phase 3): app shortcut and Quick Action
+
+- **"Start next workout"** (`StartNextWorkoutUseCase`): resume the workout in progress, else start
+  the next routine in rotation (`NextRoutine.pick`), else an empty workout, so the shortcut never
+  dead-ends, even before the first routine exists. Either way it opens the workout screen.
+- **One entry point for links:** `DeepLinks` (composeApp) turns `liftly://start-next-workout` and
+  `liftly://workout` into an `AppAction` and holds it until the app shell consumes it, so a link that
+  arrives before the first frame (cold start) isn't lost. Widgets (M18), the Android ongoing
+  notification and the Live Activity use the same links. The shell consumes them in one long-lived
+  collector: keying an effect on the pending value cancelled the action as soon as it was consumed.
+- **Android:** a static shortcut (`res/xml/shortcuts.xml`) firing a `VIEW liftly://…` intent at
+  `MainActivity` (now `singleTop`, handles `onNewIntent`). Static rather than dynamic: the label never
+  changes, and it works before the app has ever run.
+- **iOS:** a static Quick Action whose type is the link itself (`UIApplicationShortcutItems`), plus the
+  `liftly` URL scheme. With the SwiftUI lifecycle these are delivered to a scene delegate
+  (`AppDelegate.swift`), which forwards them to `DeepLinks`; once a custom scene delegate is set,
+  SwiftUI's `onOpenURL` no longer fires, so URLs are handled there too.

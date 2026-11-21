@@ -138,3 +138,4 @@ installs pick up the change. Favorites, notes and custom exercises are never ove
 9. ✅ Phase 2: exercise progress charts (est. 1RM, best weight, volume; 1M/3M/1Y/All); Home heatmap, weekly goal ring, weekly streak; weekly sets per muscle (bars + body heatmap); rest timer (presets, remembered per exercise, notification + haptic); plate calculator + warm-up generator; supersets; body measurements with charts
 10. Phase 3
     - ✅ M16 ongoing workout: Android foreground-service notification (elapsed / rest countdown, on-time rest alert), iOS Live Activity (lock screen + Dynamic Island)
+    - ✅ M17 "Start next workout": Android app shortcut, iOS Quick Action; `liftly://` deep links (`DeepLinks` in the app shell)

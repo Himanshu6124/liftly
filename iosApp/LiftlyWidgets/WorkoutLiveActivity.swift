@@ -10,6 +10,7 @@ struct WorkoutLiveActivity: Widget {
             LockScreenView(state: context.state)
                 .activityBackgroundTint(LiftlyColors.graphite)
                 .activitySystemActionForegroundColor(.white)
+                .widgetURL(URL(string: "liftly://workout"))
         } dynamicIsland: { context in
             let state = context.state
             return DynamicIsland {
@@ -42,6 +43,7 @@ struct WorkoutLiveActivity: Widget {
                 Image(systemName: state.restEndsAt != nil ? "hourglass" : "dumbbell.fill")
                     .foregroundStyle(LiftlyColors.red)
             }
+            .widgetURL(URL(string: "liftly://workout"))
         }
     }
 }

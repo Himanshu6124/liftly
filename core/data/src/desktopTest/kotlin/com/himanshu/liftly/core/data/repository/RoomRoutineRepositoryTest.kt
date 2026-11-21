@@ -11,6 +11,7 @@ import com.himanshu.liftly.core.domain.model.NewCustomExercise
 import com.himanshu.liftly.core.domain.model.RoutineExerciseDraft
 import com.himanshu.liftly.core.domain.model.TrackingType
 import com.himanshu.liftly.core.domain.usecase.LogExerciseSetsUseCase
+import com.himanshu.liftly.core.domain.usecase.StartNextWorkoutUseCase
 import com.himanshu.liftly.core.domain.usecase.StartRoutineUseCase
 import com.himanshu.liftly.core.domain.usecase.StartWorkoutUseCase
 import com.himanshu.liftly.core.domain.util.IdGenerator
@@ -148,5 +149,26 @@ class RoomRoutineRepositoryTest {
             },
         )
         assertEquals(listOf(null, null, null), routines.observeRoutine(routineId).first()!!.items.map { it.routineExercise.supersetGroup })
+    }
+
+    @Test
+    fun startNextWorkoutResumesThenRotatesThenFallsBackToEmpty() = runTest {
+        val startWorkout = StartWorkoutUseCase(workouts)
+        val startNext = StartNextWorkoutUseCase(workouts, routines, StartRoutineUseCase(startWorkout), startWorkout)
+
+        // No routines: an empty workout; calling again resumes it.
+        val empty = startNext()
+        assertTrue(empty is StartWorkoutUseCase.Result.Started)
+        assertEquals(StartWorkoutUseCase.Result.Resumed(empty.workoutId), startNext())
+        workouts.discard(empty.workoutId)
+
+        val bench = ex("Bench")
+        val push = routines.saveRoutine(null, "Push", null, listOf(RoutineExerciseDraft(null, bench, 3, 8, null)))
+        routines.saveRoutine(null, "Pull", null, listOf(RoutineExerciseDraft(null, bench, 3, 8, null)))
+        val first = startNext()
+        assertEquals(push, workouts.observeActiveWorkout().first()?.workout?.routineId)
+        workouts.finish(first.workoutId)
+        startNext()
+        assertEquals("Pull", workouts.observeActiveWorkout().first()?.workout?.name)
     }
 }

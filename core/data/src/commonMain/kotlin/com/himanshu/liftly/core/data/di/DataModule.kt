@@ -18,6 +18,7 @@ import com.himanshu.liftly.core.domain.sync.SyncController
 import com.himanshu.liftly.core.domain.usecase.GetLogSheetPrefillUseCase
 import com.himanshu.liftly.core.domain.usecase.LogExerciseSetsUseCase
 import com.himanshu.liftly.core.domain.usecase.ParseRepInputUseCase
+import com.himanshu.liftly.core.domain.usecase.StartNextWorkoutUseCase
 import com.himanshu.liftly.core.domain.usecase.StartRoutineUseCase
 import com.himanshu.liftly.core.domain.usecase.StartWorkoutUseCase
 import com.himanshu.liftly.core.domain.util.AppScope
@@ -48,6 +49,7 @@ val dataModule = module {
     single<MeasurementRepository> { RoomMeasurementRepository(get(), get(), get(), get(), get()) }
     factory { StartRoutineUseCase(get()) }
     factory { StartWorkoutUseCase(get()) }
+    factory { StartNextWorkoutUseCase(get(), get(), get(), get()) }
     factory { LogExerciseSetsUseCase(get()) }
     factory { GetLogSheetPrefillUseCase() }
     factory { ParseRepInputUseCase() }

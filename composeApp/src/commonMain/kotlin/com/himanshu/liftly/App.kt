@@ -53,7 +53,10 @@ import com.himanshu.liftly.feature.workout.navigation.WorkoutRoute
 import com.himanshu.liftly.feature.workout.navigation.WorkoutSummaryRoute
 import com.himanshu.liftly.feature.workout.navigation.workoutScreen
 import com.himanshu.liftly.feature.workout.navigation.workoutSummaryScreen
+import com.himanshu.liftly.navigation.AppAction
+import com.himanshu.liftly.navigation.DeepLinks
 import com.himanshu.liftly.navigation.TopLevelDestination
+import kotlinx.coroutines.flow.filterNotNull
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -64,13 +67,13 @@ fun App(viewModel: AppViewModel = koinViewModel()) {
 
     LiftlyTheme(themeMode = loaded.themeMode, dynamicColor = loaded.dynamicColor) {
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-            LiftlyNavShell(hasWorkoutInProgress = viewModel::hasWorkoutInProgress)
+            LiftlyNavShell(hasWorkoutInProgress = viewModel::hasWorkoutInProgress, runAction = viewModel::run)
         }
     }
 }
 
 @Composable
-private fun LiftlyNavShell(hasWorkoutInProgress: suspend () -> Boolean) {
+private fun LiftlyNavShell(hasWorkoutInProgress: suspend () -> Boolean, runAction: suspend (AppAction) -> Boolean) {
     val navController = rememberNavController()
     // Auto-resume once per app launch (saveable: not again after rotation).
     var resumeChecked by rememberSaveable { mutableStateOf(false) }
@@ -78,6 +81,14 @@ private fun LiftlyNavShell(hasWorkoutInProgress: suspend () -> Boolean) {
         if (!resumeChecked) {
             resumeChecked = true
             if (hasWorkoutInProgress()) navController.navigate(WorkoutRoute) { launchSingleTop = true }
+        }
+    }
+    // Shortcuts, Quick Actions, widgets and the Live Activity all arrive through DeepLinks.
+    // One long-lived collector: consuming the link must not cancel the action it started.
+    LaunchedEffect(Unit) {
+        DeepLinks.pending.filterNotNull().collect { action ->
+            DeepLinks.consume(action)
+            if (runAction(action)) navController.navigate(WorkoutRoute) { launchSingleTop = true }
         }
     }
     val backStack by navController.currentBackStackEntryAsState()
