@@ -597,3 +597,28 @@ Clean modern); the owner picked **Calibrated plates** and asked for a floating i
   sign-out keeps data; account switch re-uploads; same account doesn't; seeded-row merge) runs in
   real time because Room does real I/O. `AppSessionAgainstServerTest` runs three phones through the
   real server: two on one account share a routine, the third account sees nothing.
+
+## Milestone 24 (backend): background sync and retries
+
+- **Retry with backoff in `AccountSyncController`:** a failed run schedules its own retry after
+  30 s, doubling each time up to 30 min; any success resets it, and any new run cancels a pending
+  retry. Retries stop by themselves when signed out (a run while signed out is a no-op), including
+  when the server ends the session.
+- **No connectivity monitor.** Backoff already covers "offline at the gym" (it catches up within
+  the next retry once online, or immediately on the next write / foreground), and Android's
+  WorkManager waits for a network itself. A reachability listener per platform wasn't worth it.
+- **`SyncController.syncNow()`** (suspend, returns success) for background tasks; runs and
+  requests share a mutex, so they never overlap. Default implementation just requests a sync, so
+  fakes don't change.
+- **Android:** `SyncWorker` (WorkManager `CoroutineWorker`), unique periodic work every 6 hours
+  with a network constraint, scheduled (KEEP) from `LiftlyApplication`; `Result.retry()` on
+  failure uses WorkManager's own backoff.
+- **iOS:** `BGAppRefreshTask` `com.himanshu.liftly.sync` (Info.plist
+  `BGTaskSchedulerPermittedIdentifiers` + `UIBackgroundModes: fetch`), registered in
+  `AppDelegate.didFinishLaunching`, scheduled when the scene goes to the background and again from
+  each run (earliest 6 hours later; iOS picks the time). The handler calls Kotlin
+  `runBackgroundSync()` on the main thread and completes the task exactly once, whether the sync
+  or the expiration comes first. Koin now starts through `IosStartup.ensureStarted()`, so a
+  background launch with no UI can sync too.
+- **Battery:** nothing runs while signed out except a no-op worker; signed in, one run is a few
+  small requests. Every 6 hours is plenty for a training log that also syncs on open and on writes.

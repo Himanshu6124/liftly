@@ -78,6 +78,7 @@ class AccountSyncControllerTest {
         TimeProvider { Instant.fromEpochMilliseconds(++runs) },
         scope,
         debounceMillis = 10,
+        retryBaseMillis = 50,
     )
 
     private fun routine(id: String, name: String, updatedAt: Long) =
@@ -185,5 +186,31 @@ class AccountSyncControllerTest {
         assertEquals(listOf("new instructions"), local.instructions)
         assertEquals(true, local.isFavorite)
         assertEquals("Elbows in", local.userNote)
+    }
+
+    @Test
+    fun failedSyncRetriesByItselfWithBackoff() = runBlocking {
+        val sync = controller()
+        routines.upsertAll(listOf(routine("r1", "Push", 10)))
+        server.failNext = 2 // offline for the first run and the first retry
+        val first = sync.awaitRun { auth.state.value = AuthState.SignedIn("alice", null) }
+        assertIs<SyncState.Failed>(first)
+        // No more requests: the backoff retries (50 ms, then 100 ms) bring it through.
+        withTimeout(10_000) { sync.state.first { it is SyncState.Synced } }
+        assertEquals(SyncStatus.SYNCED, routines.getByIdsIncludingDeleted(listOf("r1")).single().sync.syncStatus)
+    }
+
+    @Test
+    fun syncNowWaitsForTheResult() = runBlocking {
+        val sync = controller()
+        assertTrue(sync.syncNow(), "signed out: nothing to do")
+        assertEquals(0, server.pushCalls)
+        sync.awaitRun { auth.state.value = AuthState.SignedIn("alice", null) }
+        routines.upsertAll(listOf(routine("r1", "Push", 10)))
+        assertTrue(sync.syncNow())
+        assertEquals(SyncStatus.SYNCED, routines.getByIdsIncludingDeleted(listOf("r1")).single().sync.syncStatus)
+        server.failNext = 1
+        routines.upsertAll(listOf(routine("r2", "Pull", 11)))
+        assertEquals(false, sync.syncNow())
     }
 }

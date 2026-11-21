@@ -48,8 +48,10 @@ kotlin {
 dependencies {
     implementation(projects.composeApp)
     implementation(projects.core.platform) // notification permission hook, widget snapshot
+    implementation(projects.core.domain) // SyncController for the background SyncWorker
     implementation(libs.androidx.activity.compose)
     implementation(libs.glance.appwidget) // home-screen widget
+    implementation(libs.androidx.work.runtime) // periodic background sync
     implementation(project.dependencies.platform(libs.koin.bom))
     implementation(libs.koin.android)
 }

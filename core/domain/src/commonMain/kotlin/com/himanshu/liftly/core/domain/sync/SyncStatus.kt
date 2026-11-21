@@ -21,4 +21,13 @@ interface SyncController {
 
     /** Fire-and-forget request; debounced and executed when online. Safe to call after every write. */
     fun requestSync()
+
+    /**
+     * Syncs now and waits for the result (background tasks: Android WorkManager, iOS app refresh).
+     * True when there was nothing to do or it succeeded.
+     */
+    suspend fun syncNow(): Boolean {
+        requestSync()
+        return true
+    }
 }

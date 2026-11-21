@@ -17,5 +17,6 @@ class LiftlyApplication : Application() {
             // The Glance widget lives in this module, so its bridge is bound here.
             modules(module { single<HomeWidgetBridge> { AndroidHomeWidgetBridge(this@LiftlyApplication) } })
         }
+        SyncWorker.schedule(this)
     }
 }

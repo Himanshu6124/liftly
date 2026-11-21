@@ -122,6 +122,8 @@ own code and `core/protocol`, never app modules.
 - Signing out keeps this device's data. If a **different** account signs in later, the local data
   is uploaded to it as new (`SyncSql.bindAccount`); the same account just continues.
 - Library exercises sync only the user's changes (favorite, note, archived, rest time).
+- A failed run retries by itself (30 s, doubling to 30 min). In the background: WorkManager on
+  Android and `BGAppRefreshTask` on iOS, about every 6 hours (iOS decides the exact time).
 
 Details and trade-offs are in [`DECISIONS.md`](DECISIONS.md).
 

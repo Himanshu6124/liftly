@@ -10,7 +10,18 @@ class FakeServer : RemoteSyncDataSource {
     val rows = mutableMapOf<Pair<String, String>, SyncRecord>()
     var pushCalls = 0
 
+    /** The next this many calls fail as if offline. */
+    var failNext = 0
+
+    private fun maybeFail() {
+        if (failNext > 0) {
+            failNext--
+            error("offline")
+        }
+    }
+
     override suspend fun push(table: String, records: List<SyncRecord>): List<PushAck> {
+        maybeFail()
         pushCalls++
         return records.map { r ->
             val key = table to r.id
@@ -23,6 +34,7 @@ class FakeServer : RemoteSyncDataSource {
     }
 
     override suspend fun pull(table: String, cursor: String?, limit: Int): PullPage {
+        maybeFail()
         val since = cursor?.toLong() ?: 0L
         val page = rows.values
             .filter { it.table == table && (it.serverVersion ?: 0) > since }
