@@ -2,6 +2,7 @@ package com.himanshu.liftly.core.data.sync
 
 import com.himanshu.liftly.core.data.db.AppDatabase
 import com.himanshu.liftly.core.data.db.dao.SyncDao
+import com.himanshu.liftly.core.data.db.entity.BodyMeasurementEntity
 import com.himanshu.liftly.core.data.db.entity.ExerciseEntity
 import com.himanshu.liftly.core.data.db.entity.PersonalRecordEntity
 import com.himanshu.liftly.core.data.db.entity.RoutineEntity
@@ -66,5 +67,6 @@ class SyncTables(db: AppDatabase) {
         TableSync("workout_exercises", db.workoutExerciseDao(), WorkoutExerciseEntity.serializer()) { e, m -> e.copy(sync = m) },
         TableSync("workout_sets", db.workoutSetDao(), WorkoutSetEntity.serializer()) { e, m -> e.copy(sync = m) },
         TableSync("personal_records", db.personalRecordDao(), PersonalRecordEntity.serializer()) { e, m -> e.copy(sync = m) },
+        TableSync("body_measurements", db.bodyMeasurementDao(), BodyMeasurementEntity.serializer()) { e, m -> e.copy(sync = m) },
     )
 }

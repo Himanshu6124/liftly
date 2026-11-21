@@ -314,3 +314,16 @@ backend later with minimal change.
 - **Routines:** starting a routine keeps its supersets; "Save as routine" keeps the workout's.
   The routine editor doesn't edit supersets yet: it keeps them, and drops any that a reorder
   splits apart. No schema change: the `supersetGroup` columns existed since v1.
+
+## Milestone 15 (Phase 2): body measurements
+
+- **Where:** History has two tabs, Workouts | Body, instead of a 6th navigation item (the bottom
+  bar stays at five). Body has a type picker (types you use come first), the latest value with
+  the change since the first entry, the shared `LineChart`, and the entries with delete + Undo.
+- **Types:** body weight, body fat %, waist, chest, hips, arms, thighs, neck.
+- **Units:** stored as kg / cm / %; shown in kg + cm or lb + in following the weight-unit setting
+  (one metric/imperial switch). Entries outside a plausible range are rejected to catch typos.
+- **Sync:** new `body_measurements` table with the same `SyncMeta` as every other table and
+  registered in `SyncTables`, so a backend picks it up with no extra work.
+- **Schema v3** via Room auto-migration (new table). Verified on the simulator's v2 database with
+  data: everything kept.

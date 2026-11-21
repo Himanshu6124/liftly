@@ -16,16 +16,21 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -39,6 +44,7 @@ import com.himanshu.liftly.core.domain.model.WorkoutHistoryItem
 import com.himanshu.liftly.core.domain.util.RelativeWeek
 import com.himanshu.liftly.core.domain.util.SetFormatter
 import com.himanshu.liftly.core.domain.util.WeekGroup
+import com.himanshu.liftly.feature.history.body.BodyScreen
 import com.himanshu.liftly.feature.history.resources.Res
 import com.himanshu.liftly.feature.history.resources.history_deleted
 import com.himanshu.liftly.feature.history.resources.history_empty_message
@@ -49,6 +55,8 @@ import com.himanshu.liftly.feature.history.resources.history_row_detail
 import com.himanshu.liftly.feature.history.resources.history_this_week
 import com.himanshu.liftly.feature.history.resources.history_undo
 import com.himanshu.liftly.feature.history.resources.history_week_of
+import com.himanshu.liftly.feature.history.resources.tab_body
+import com.himanshu.liftly.feature.history.resources.tab_workouts
 import com.himanshu.liftly.feature.workout.active.formatElapsed
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -56,8 +64,22 @@ import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
+/** History: past workouts, and body measurements in a second tab. */
 @Composable
-fun HistoryScreen(onOpenWorkout: (String) -> Unit, viewModel: HistoryViewModel = koinViewModel()) {
+fun HistoryScreen(onOpenWorkout: (String) -> Unit) {
+    var tab by rememberSaveable { mutableStateOf(0) }
+    Column(Modifier.fillMaxSize().statusBarsPadding()) {
+        PrimaryTabRow(selectedTabIndex = tab) {
+            listOf(Res.string.tab_workouts, Res.string.tab_body).forEachIndexed { i, label ->
+                Tab(selected = tab == i, onClick = { tab = i }, text = { Text(stringResource(label)) })
+            }
+        }
+        if (tab == 0) WorkoutsTab(onOpenWorkout) else BodyScreen()
+    }
+}
+
+@Composable
+private fun WorkoutsTab(onOpenWorkout: (String) -> Unit, viewModel: HistoryViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val pending by viewModel.pendingUndo.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
@@ -84,7 +106,7 @@ fun HistoryContent(
     onShowWeek: (delta: Int) -> Unit,
 ) {
     val spacing = LiftlyTheme.spacing
-    Scaffold(modifier = Modifier.statusBarsPadding(), snackbarHost = { SnackbarHost(snackbar) }) { padding ->
+    Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { padding ->
         if (!state.isLoading && state.weeks.isEmpty()) {
             EmptyState(
                 icon = Icons.Filled.DateRange,

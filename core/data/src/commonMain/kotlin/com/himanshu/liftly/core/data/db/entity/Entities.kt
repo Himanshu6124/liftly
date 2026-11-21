@@ -9,6 +9,7 @@ import com.himanshu.liftly.core.domain.model.Difficulty
 import com.himanshu.liftly.core.domain.model.Equipment
 import com.himanshu.liftly.core.domain.model.ExerciseStatus
 import com.himanshu.liftly.core.domain.model.InputMode
+import com.himanshu.liftly.core.domain.model.MeasurementType
 import com.himanshu.liftly.core.domain.model.Mechanic
 import com.himanshu.liftly.core.domain.model.Muscle
 import com.himanshu.liftly.core.domain.model.PrType
@@ -149,6 +150,17 @@ data class PersonalRecordEntity(
     val value: Double,
     val workoutSetId: String,
     val achievedAt: Long,
+    @Embedded override val sync: SyncMeta,
+) : SyncableEntity
+
+/** Body measurement (schema v3). [value] in kg, cm or %, per [MeasurementType.kind]. */
+@Serializable
+@Entity(tableName = "body_measurements", indices = [Index("type", "measuredAt")])
+data class BodyMeasurementEntity(
+    @PrimaryKey override val id: String,
+    val type: MeasurementType,
+    val value: Double,
+    val measuredAt: Long,
     @Embedded override val sync: SyncMeta,
 ) : SyncableEntity
 

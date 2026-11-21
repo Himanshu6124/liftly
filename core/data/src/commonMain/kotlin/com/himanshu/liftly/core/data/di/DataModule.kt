@@ -2,6 +2,7 @@ package com.himanshu.liftly.core.data.di
 
 import com.himanshu.liftly.core.data.db.AppDatabase
 import com.himanshu.liftly.core.data.repository.RoomExerciseRepository
+import com.himanshu.liftly.core.data.repository.RoomMeasurementRepository
 import com.himanshu.liftly.core.data.repository.RoomRoutineRepository
 import com.himanshu.liftly.core.data.repository.RoomWorkoutRepository
 import com.himanshu.liftly.core.data.seed.RoomExerciseSeeder
@@ -10,6 +11,7 @@ import com.himanshu.liftly.core.data.sync.SyncSql
 import com.himanshu.liftly.core.data.sync.SyncTables
 import com.himanshu.liftly.core.domain.repository.ExerciseRepository
 import com.himanshu.liftly.core.domain.repository.ExerciseSeeder
+import com.himanshu.liftly.core.domain.repository.MeasurementRepository
 import com.himanshu.liftly.core.domain.repository.RoutineRepository
 import com.himanshu.liftly.core.domain.repository.WorkoutRepository
 import com.himanshu.liftly.core.domain.sync.SyncController
@@ -43,6 +45,7 @@ val dataModule = module {
     single<ExerciseRepository> { RoomExerciseRepository(get(), get(), get(), get()) }
     single<WorkoutRepository> { RoomWorkoutRepository(get(), get(), get(), get(), get()) }
     single<RoutineRepository> { RoomRoutineRepository(get(), get(), get(), get(), get()) }
+    single<MeasurementRepository> { RoomMeasurementRepository(get(), get(), get(), get(), get()) }
     factory { StartRoutineUseCase(get()) }
     factory { StartWorkoutUseCase(get()) }
     factory { LogExerciseSetsUseCase(get()) }

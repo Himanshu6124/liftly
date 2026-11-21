@@ -7,6 +7,7 @@ import androidx.room.RoomDatabase
 import androidx.room.RoomDatabaseConstructor
 import androidx.room.TypeConverters
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import com.himanshu.liftly.core.data.db.dao.BodyMeasurementDao
 import com.himanshu.liftly.core.data.db.dao.ExerciseDao
 import com.himanshu.liftly.core.data.db.dao.PersonalRecordDao
 import com.himanshu.liftly.core.data.db.dao.RoutineDao
@@ -15,6 +16,7 @@ import com.himanshu.liftly.core.data.db.dao.SyncCursorDao
 import com.himanshu.liftly.core.data.db.dao.WorkoutDao
 import com.himanshu.liftly.core.data.db.dao.WorkoutExerciseDao
 import com.himanshu.liftly.core.data.db.dao.WorkoutSetDao
+import com.himanshu.liftly.core.data.db.entity.BodyMeasurementEntity
 import com.himanshu.liftly.core.data.db.entity.ExerciseEntity
 import com.himanshu.liftly.core.data.db.entity.PersonalRecordEntity
 import com.himanshu.liftly.core.data.db.entity.RoutineEntity
@@ -36,12 +38,15 @@ import kotlinx.coroutines.IO
         WorkoutSetEntity::class,
         PersonalRecordEntity::class,
         SyncCursorEntity::class,
+        BodyMeasurementEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
     autoMigrations = [
         // v2: exercises.restSeconds, workouts.restEndsAt (rest timer).
         AutoMigration(from = 1, to = 2),
+        // v3: body_measurements table.
+        AutoMigration(from = 2, to = 3),
     ],
 )
 @TypeConverters(Converters::class)
@@ -55,6 +60,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun workoutSetDao(): WorkoutSetDao
     abstract fun personalRecordDao(): PersonalRecordDao
     abstract fun syncCursorDao(): SyncCursorDao
+    abstract fun bodyMeasurementDao(): BodyMeasurementDao
 
     companion object {
         const val NAME = "liftly.db"

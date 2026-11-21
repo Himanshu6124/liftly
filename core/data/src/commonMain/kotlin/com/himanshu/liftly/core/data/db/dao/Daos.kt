@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Upsert
+import com.himanshu.liftly.core.data.db.entity.BodyMeasurementEntity
 import com.himanshu.liftly.core.data.db.entity.ExerciseEntity
 import com.himanshu.liftly.core.data.db.entity.ExerciseSetCountRow
 import com.himanshu.liftly.core.data.db.entity.PersonalRecordEntity
@@ -17,6 +18,7 @@ import com.himanshu.liftly.core.data.db.entity.WorkoutExerciseEntity
 import com.himanshu.liftly.core.data.db.entity.WorkoutExerciseWithExercise
 import com.himanshu.liftly.core.data.db.entity.WorkoutSetEntity
 import com.himanshu.liftly.core.data.db.entity.WorkoutWithStats
+import com.himanshu.liftly.core.domain.model.MeasurementType
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -297,4 +299,22 @@ interface SyncCursorDao {
 
     @Upsert
     suspend fun put(entity: SyncCursorEntity)
+}
+
+@Dao
+interface BodyMeasurementDao : SyncDao<BodyMeasurementEntity> {
+    @Query("SELECT * FROM body_measurements WHERE syncStatus = 'PENDING'")
+    override suspend fun pendingSync(): List<BodyMeasurementEntity>
+
+    @Query("SELECT * FROM body_measurements WHERE id IN (:ids)")
+    override suspend fun getByIdsIncludingDeleted(ids: List<String>): List<BodyMeasurementEntity>
+
+    @Query("SELECT * FROM body_measurements WHERE type = :type AND deletedAt IS NULL ORDER BY measuredAt")
+    fun observe(type: MeasurementType): Flow<List<BodyMeasurementEntity>>
+
+    @Query("SELECT DISTINCT type FROM body_measurements WHERE deletedAt IS NULL")
+    fun observeUsedTypes(): Flow<List<MeasurementType>>
+
+    @Query("SELECT * FROM body_measurements WHERE id = :id AND deletedAt IS NULL")
+    suspend fun getById(id: String): BodyMeasurementEntity?
 }

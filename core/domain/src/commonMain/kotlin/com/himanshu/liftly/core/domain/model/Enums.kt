@@ -55,3 +55,18 @@ enum class WeightUnit { KG, LB }
 
 @Serializable
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
+
+/** What a measurement's value means; values are stored in kg, cm or %. */
+enum class MeasureKind { WEIGHT, LENGTH, PERCENT }
+
+@Serializable
+enum class MeasurementType(val kind: MeasureKind) {
+    BODY_WEIGHT(MeasureKind.WEIGHT),
+    BODY_FAT(MeasureKind.PERCENT),
+    WAIST(MeasureKind.LENGTH),
+    CHEST(MeasureKind.LENGTH),
+    HIPS(MeasureKind.LENGTH),
+    ARMS(MeasureKind.LENGTH),
+    THIGHS(MeasureKind.LENGTH),
+    NECK(MeasureKind.LENGTH),
+}

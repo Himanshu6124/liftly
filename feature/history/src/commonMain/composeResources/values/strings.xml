@@ -28,4 +28,27 @@
     <string name="muscles_hint">Primary muscle 1 set, secondary ½</string>
     <string name="muscles_diagram">Muscles trained, darker = more sets</string>
     <string name="muscles_bar">%1$s: %2$s sets</string>
+    <string name="tab_workouts">Workouts</string>
+    <string name="tab_body">Body</string>
+    <string name="body_weight">Body weight</string>
+    <string name="body_fat">Body fat</string>
+    <string name="body_waist">Waist</string>
+    <string name="body_chest">Chest</string>
+    <string name="body_hips">Hips</string>
+    <string name="body_arms">Arms</string>
+    <string name="body_thighs">Thighs</string>
+    <string name="body_neck">Neck</string>
+    <string name="body_log">Log %1$s</string>
+    <string name="body_value">Value</string>
+    <string name="body_invalid">Enter a realistic number</string>
+    <string name="body_save">Save</string>
+    <string name="body_cancel">Cancel</string>
+    <string name="body_empty_title">No %1$s entries yet</string>
+    <string name="body_empty_message">Log it now and then to see the trend here.</string>
+    <string name="body_change">%1$s since %2$s</string>
+    <string name="body_one_entry">Log another entry to see a trend.</string>
+    <string name="body_chart_description">%1$s over %2$d entries: %3$s on %4$s, latest %5$s on %6$s</string>
+    <string name="body_entries">Entries</string>
+    <string name="body_delete">Delete entry from %1$s</string>
+    <string name="body_deleted">Entry deleted</string>
 </resources>
