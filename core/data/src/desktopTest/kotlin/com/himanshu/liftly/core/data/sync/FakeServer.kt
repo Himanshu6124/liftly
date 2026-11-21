@@ -1,5 +1,9 @@
 package com.himanshu.liftly.core.data.sync
 
+import com.himanshu.liftly.core.protocol.PullPage
+import com.himanshu.liftly.core.protocol.PushAck
+import com.himanshu.liftly.core.protocol.SyncRecord
+
 /** In-memory backend with last-write-wins and a global version counter, mimicking a real server. */
 class FakeServer : RemoteSyncDataSource {
     private var version = 0L

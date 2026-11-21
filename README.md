@@ -76,6 +76,7 @@ Composable ──Intent──▶ ViewModel ──▶ UseCase ──▶ Repositor
 | `build-logic` | Convention plugins: `liftly.kmp.library`, `liftly.kmp.compose`, `liftly.kmp.feature`, `liftly.room` |
 | `core/domain` | Pure Kotlin models, repository interfaces, use cases |
 | `core/data` | Room database, DAOs, sync engine, repository implementations |
+| `core/protocol` | Sync and auth wire format (JSON DTOs, table names, limits), shared with the backend |
 | `core/datastore` | `SettingsRepository` on DataStore Preferences |
 | `core/platform` | `Haptics`, `Notifier`, `UrlLauncher`, `ShareService`, `OngoingWorkoutIndicator` per platform |
 | `core/designsystem` | "Calibrated plates" theme (light/dark/dynamic, plate colors), floating tab bar, cards, segmented tabs, chips, plate stack, charts, muscle diagram |
@@ -101,6 +102,9 @@ is ready for a backend from version 1:
 - Client-generated **UUID ids**, so records created offline never collide on a server.
 - Every table has `updatedAt`, `deletedAt` (tombstone), `syncStatus`, `serverVersion`.
   Every local write is marked `PENDING`.
+- The wire format (`SyncRecord`, `PushAck`, `PullPage`, auth DTOs, `SyncProtocol.TABLES`) lives in
+  `core/protocol`, free of Room and Compose so the backend can depend on it too. Field names are
+  pinned by `SyncProtocolTest`: renaming one breaks installed apps.
 - A generic **sync engine** (`core/data/sync/SyncEngine.kt`) pushes pending rows, pulls
   server changes by cursor, and resolves conflicts with last-write-wins. It is covered by
   tests against an in-memory fake server.

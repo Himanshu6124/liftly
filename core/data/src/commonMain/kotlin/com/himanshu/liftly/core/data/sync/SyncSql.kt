@@ -5,6 +5,7 @@ import androidx.room.useWriterConnection
 import androidx.sqlite.SQLiteStatement
 import com.himanshu.liftly.core.data.db.AppDatabase
 import com.himanshu.liftly.core.data.db.entity.SyncStatus
+import com.himanshu.liftly.core.protocol.PushAck
 
 /**
  * Table-agnostic bookkeeping statements. Table names come only from [SyncTables]

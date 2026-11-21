@@ -7,6 +7,8 @@ import com.himanshu.liftly.core.data.db.AppDatabase
 import com.himanshu.liftly.core.data.db.entity.SyncCursorEntity
 import com.himanshu.liftly.core.data.db.entity.SyncStatus
 import com.himanshu.liftly.core.data.db.entity.SyncableEntity
+import com.himanshu.liftly.core.protocol.SyncProtocol
+import com.himanshu.liftly.core.protocol.SyncRecord
 import kotlin.coroutines.cancellation.CancellationException
 
 /**
@@ -21,7 +23,7 @@ class SyncEngine(
     private val remote: RemoteSyncDataSource,
     private val tables: SyncTables,
     private val sql: SyncSql,
-    private val pageSize: Int = 500,
+    private val pageSize: Int = SyncProtocol.MAX_BATCH,
 ) {
     private val log = Logger.withTag("SyncEngine")
 

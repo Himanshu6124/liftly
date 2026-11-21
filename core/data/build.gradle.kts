@@ -7,6 +7,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(projects.core.domain)
+            api(projects.core.protocol)
         }
         androidMain.dependencies {
             implementation(libs.koin.android)

@@ -13,6 +13,8 @@ import com.himanshu.liftly.core.data.db.entity.SyncableEntity
 import com.himanshu.liftly.core.data.db.entity.WorkoutEntity
 import com.himanshu.liftly.core.data.db.entity.WorkoutExerciseEntity
 import com.himanshu.liftly.core.data.db.entity.WorkoutSetEntity
+import com.himanshu.liftly.core.protocol.SyncProtocol
+import com.himanshu.liftly.core.protocol.SyncRecord
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -57,16 +59,16 @@ class TableSync<E : SyncableEntity>(
     }
 }
 
-/** Tables in dependency order: parents are pushed and pulled before children (FK safety). */
+/** Tables in [SyncProtocol.TABLES] order: parents are pushed and pulled before children (FK safety). */
 class SyncTables(db: AppDatabase) {
     val all: List<TableSync<*>> = listOf(
-        TableSync("exercises", db.exerciseDao(), ExerciseEntity.serializer()) { e, m -> e.copy(sync = m) },
-        TableSync("routines", db.routineDao(), RoutineEntity.serializer()) { e, m -> e.copy(sync = m) },
-        TableSync("routine_exercises", db.routineExerciseDao(), RoutineExerciseEntity.serializer()) { e, m -> e.copy(sync = m) },
-        TableSync("workouts", db.workoutDao(), WorkoutEntity.serializer()) { e, m -> e.copy(sync = m) },
-        TableSync("workout_exercises", db.workoutExerciseDao(), WorkoutExerciseEntity.serializer()) { e, m -> e.copy(sync = m) },
-        TableSync("workout_sets", db.workoutSetDao(), WorkoutSetEntity.serializer()) { e, m -> e.copy(sync = m) },
-        TableSync("personal_records", db.personalRecordDao(), PersonalRecordEntity.serializer()) { e, m -> e.copy(sync = m) },
-        TableSync("body_measurements", db.bodyMeasurementDao(), BodyMeasurementEntity.serializer()) { e, m -> e.copy(sync = m) },
+        TableSync(SyncProtocol.EXERCISES, db.exerciseDao(), ExerciseEntity.serializer()) { e, m -> e.copy(sync = m) },
+        TableSync(SyncProtocol.ROUTINES, db.routineDao(), RoutineEntity.serializer()) { e, m -> e.copy(sync = m) },
+        TableSync(SyncProtocol.ROUTINE_EXERCISES, db.routineExerciseDao(), RoutineExerciseEntity.serializer()) { e, m -> e.copy(sync = m) },
+        TableSync(SyncProtocol.WORKOUTS, db.workoutDao(), WorkoutEntity.serializer()) { e, m -> e.copy(sync = m) },
+        TableSync(SyncProtocol.WORKOUT_EXERCISES, db.workoutExerciseDao(), WorkoutExerciseEntity.serializer()) { e, m -> e.copy(sync = m) },
+        TableSync(SyncProtocol.WORKOUT_SETS, db.workoutSetDao(), WorkoutSetEntity.serializer()) { e, m -> e.copy(sync = m) },
+        TableSync(SyncProtocol.PERSONAL_RECORDS, db.personalRecordDao(), PersonalRecordEntity.serializer()) { e, m -> e.copy(sync = m) },
+        TableSync(SyncProtocol.BODY_MEASUREMENTS, db.bodyMeasurementDao(), BodyMeasurementEntity.serializer()) { e, m -> e.copy(sync = m) },
     )
 }

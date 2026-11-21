@@ -443,3 +443,19 @@ Clean modern); the owner picked **Calibrated plates** and asked for a floating i
   Build and run it with `xcrun swiftc tools/icon/render_icon.swift -o /tmp/render_icon && /tmp/render_icon`
   from the repo root (the `swift` interpreter crashes on it).
 - Desktop keeps the default window icon for now.
+
+## Milestone 19 (backend): shared sync protocol module
+
+- **Plan:** backend on Oracle Cloud (Ktor + PostgreSQL + Caddy in Docker on an Always Free A1 VM),
+  app stays offline-first, sign-in optional. Milestones 19–26: protocol module, server, server
+  auth, app network + sign-in, sync on, background sync, OCI deploy, store compliance.
+- **`core/protocol`** holds the wire format: `SyncRecord`, `PushAck`, `PullPage`, auth DTOs
+  (`SignInRequest`, `RefreshRequest`, `AuthTokens`, `Account`, `ApiError`) and
+  `SyncProtocol.TABLES` / `MAX_BATCH`. It depends only on kotlinx-serialization (via the base
+  convention), so the JVM server can use it without Room. Named `protocol`, not `sync-protocol`,
+  because it covers auth too.
+- `RemoteSyncDataSource` stays in `core/data`: it's the app's port; the server only needs the DTOs.
+- **Wire format is pinned** by golden-JSON tests (`SyncProtocolTest`); a test in `SyncEngineTest`
+  checks `SyncTables` matches `SyncProtocol.TABLES`, since the server will reject unknown tables.
+- One refresh token per sign-in, single-use (rotated on refresh); access token expiry is sent as
+  epoch millis so the app can refresh before it expires.

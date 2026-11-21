@@ -7,6 +7,7 @@ import com.himanshu.liftly.core.data.db.entity.RoutineEntity
 import com.himanshu.liftly.core.data.db.entity.SyncMeta
 import com.himanshu.liftly.core.data.db.entity.SyncStatus
 import com.himanshu.liftly.core.data.db.entity.touch
+import com.himanshu.liftly.core.protocol.SyncProtocol
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonPrimitive
@@ -32,6 +33,12 @@ class SyncEngineTest {
 
     private fun routine(id: String, name: String, updatedAt: Long) =
         RoutineEntity(id, name, null, 0, null, createdAt = 1, sync = SyncMeta.dirty(updatedAt))
+
+    @Test
+    fun everySyncedTableIsInTheProtocolInTheSameOrder() {
+        // The server only accepts SyncProtocol.TABLES: a table registered here but missing there would never sync.
+        assertEquals(SyncProtocol.TABLES, tables.all.map { it.name })
+    }
 
     @Test
     fun localChangesArePushedAndMarkedSynced() = runTest {

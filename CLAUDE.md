@@ -41,14 +41,14 @@ ktlint file-name rule (file with one class must be named after it), JVM-only API
   ViewModels expose `state: StateFlow`, `effects: Flow`, `onIntent(...)`.
 - Modules: `core/domain` (pure Kotlin models, repository interfaces, use cases, utils with unit
   tests), `core/data` (Room KMP, DAOs, sync engine, repositories; tests in `desktopTest` with an
-  in-memory DB), `core/datastore` (settings), `core/platform` (Haptics, Notifier, UrlLauncher,
+  in-memory DB), `core/protocol` (sync/auth wire DTOs shared with the backend), `core/datastore` (settings), `core/platform` (Haptics, Notifier, UrlLauncher,
   ShareService per platform), `core/designsystem` (theme, `LineChart`, `MuscleDiagram`,
   `EmptyState`, `NumberStepper`, …), `feature/*` (home, workout, exercises, routines, history,
   settings), `composeApp` (App shell, nav, Koin), `androidApp`, `iosApp`.
 - Convention plugins in `build-logic`: `liftly.kmp.library`, `liftly.kmp.compose`,
   `liftly.kmp.feature`, `liftly.room`. Compose stability config: `config/compose-stability.conf`.
 - **Offline-first sync:** UUID ids, `SyncMeta` (updatedAt, deletedAt tombstone, syncStatus,
-  serverVersion) on every table; new tables must be registered in `SyncTables`. Backend =
+  serverVersion) on every table; new tables must be registered in `SyncTables` and `SyncProtocol.TABLES`. Backend =
   implement `RemoteSyncDataSource` and swap in `BackgroundSyncController` (see README).
 - Room schema is at **v3** with exported schemas in `core/data/schemas`; add columns/tables via
   `AutoMigration` and verify on the simulator's existing database.
