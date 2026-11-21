@@ -359,3 +359,33 @@ Clean modern); the owner picked **Calibrated plates** and asked for a floating i
   check springs in when an exercise is logged.
 - **Dates** in lists read "Sat, 21 Nov" (year only when it isn't this year) via `DateLabels`
   instead of ISO dates.
+
+## Milestone 16 (Phase 3): ongoing workout notification and Live Activity
+
+- **One interface, one publisher.** `OngoingWorkoutIndicator` (`show(OngoingWorkout)` / `end()`) lives
+  in `core/platform`; `OngoingWorkoutPublisher` (`feature/workout`) observes the active workout in
+  `AppScope` and drives it, started once from `initKoin`. `OngoingWorkout` uses epoch millis so Swift
+  reads it without Kotlin time types. Desktop binds a no-op.
+- **A rest that runs out is dropped on time by the publisher**, not when the app next clears
+  `restEndsAt`, so the notification/Live Activity flips back to elapsed time even with the app closed.
+- **Android:** a foreground service of type `specialUse` (none of the predefined types fits a
+  user-started workout timer; `health` needs body sensors) with a low-importance ongoing
+  notification: a system chronometer for elapsed time, a count-down chronometer while resting,
+  "n of m logged · Next: X", tap opens the app. Started only when a workout appears (the app is in
+  the foreground then); updates go straight to `NotificationManager`; a failure to start is logged.
+  The notification text is English for now (core/platform has no string resources).
+- **Rest alarms on time on Android:** `AndroidNotifier` posts "rest is over" from a main-thread timer
+  backed by a partial wake lock (released when it fires or is cancelled). The process is kept alive
+  by the foreground service. The AlarmManager alarm stays as the fallback for when the process is
+  gone; the timer cancels it after posting and the notification uses `setOnlyAlertOnce`, so there is
+  never a double alert. Still no `USE_EXACT_ALARM`.
+- **iOS:** ActivityKit is Swift-only, so `LiveActivityIndicator` (Swift) implements the Kotlin
+  protocol and is registered in `iOSApp.init` via `OngoingWorkoutIndicatorHolder` (Kotlin), which
+  replays the last state if the delegate arrives late. `core/platform` is exported from the
+  `ComposeApp` framework for this. Lock screen and Dynamic Island draw time with
+  `Text(timerInterval:)` / `.timer`, so they tick without app updates.
+- **Widget extension target** `LiftlyWidgets` (also for M18 widgets) was added with the Ruby
+  `xcodeproj` gem (`tools/ios/add_widget_target.rb`, idempotent). Its deployment target is 16.1
+  (first iOS with Live Activities); the app stays at 16.0 and guards the code with
+  `@available(iOS 16.1, *)`. `WorkoutActivityAttributes` is compiled into both targets. The
+  extension uses the same signing team as the app. `NSSupportsLiveActivities` is set.

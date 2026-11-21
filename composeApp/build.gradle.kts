@@ -10,6 +10,8 @@ kotlin {
         binaries.framework {
             baseName = "ComposeApp"
             isStatic = true
+            // Swift implements OngoingWorkoutIndicator (Live Activity) and registers it.
+            export(projects.core.platform)
         }
     }
 
@@ -19,7 +21,7 @@ kotlin {
             implementation(projects.core.domain)
             implementation(projects.core.data)
             implementation(projects.core.datastore)
-            implementation(projects.core.platform)
+            api(projects.core.platform) // exported to Swift
             implementation(projects.core.resources)
             implementation(projects.feature.home)
             implementation(projects.feature.workout)

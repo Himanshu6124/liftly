@@ -6,6 +6,10 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Exact alarm where the system grants it (auto-granted on Android 12); otherwise an inexact one is used. -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <!-- Ongoing workout notification (foreground service) and the on-time "rest is over" alert. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
         android:name=".LiftlyApplication"
@@ -26,5 +30,13 @@
         <receiver
             android:name="com.himanshu.liftly.core.platform.NotificationReceiver"
             android:exported="false" />
+        <service
+            android:name="com.himanshu.liftly.core.platform.OngoingWorkoutService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Shows the user's running strength workout (elapsed time, rest countdown, next exercise) while they train, started and stopped by the user, and posts the end-of-rest alert on time." />
+        </service>
     </application>
 </manifest>

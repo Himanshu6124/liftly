@@ -12,6 +12,7 @@ import com.himanshu.liftly.feature.home.di.homeModule
 import com.himanshu.liftly.feature.routines.di.routinesModule
 import com.himanshu.liftly.feature.settings.di.settingsModule
 import com.himanshu.liftly.feature.workout.di.workoutModule
+import com.himanshu.liftly.feature.workout.ongoing.OngoingWorkoutPublisher
 import org.koin.core.KoinApplication
 import org.koin.core.context.startKoin
 import org.koin.core.module.dsl.viewModelOf
@@ -41,4 +42,4 @@ val liftlyModules = listOf(
 fun initKoin(platformConfig: KoinAppDeclaration = {}): KoinApplication = startKoin {
     platformConfig()
     modules(liftlyModules)
-}
+}.also { it.koin.get<OngoingWorkoutPublisher>().start() }

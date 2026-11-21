@@ -29,6 +29,8 @@ open iosApp/iosApp.xcodeproj
 ```
 
 To sign for a physical iPhone, set `TEAM_ID` in `iosApp/Configuration/Config.xcconfig`.
+The app embeds the `LiftlyWidgets` extension (Live Activity); it was added to the Xcode project
+by `tools/ios/add_widget_target.rb` (Ruby `xcodeproj` gem), which is idempotent.
 
 ## Test and lint
 
@@ -67,12 +69,12 @@ Composable ──Intent──▶ ViewModel ──▶ UseCase ──▶ Repositor
 |---|---|
 | `androidApp` | Android `Application` + `MainActivity` (AGP 9 needs a separate app module) |
 | `composeApp` | `App()`, navigation shell, Koin start, iOS `MainViewController`, Desktop `main` |
-| `iosApp` | Xcode project hosting the Compose UI in SwiftUI |
+| `iosApp` | Xcode project hosting the Compose UI in SwiftUI, plus the `LiftlyWidgets` extension (Live Activity) |
 | `build-logic` | Convention plugins: `liftly.kmp.library`, `liftly.kmp.compose`, `liftly.kmp.feature`, `liftly.room` |
 | `core/domain` | Pure Kotlin models, repository interfaces, use cases |
 | `core/data` | Room database, DAOs, sync engine, repository implementations |
 | `core/datastore` | `SettingsRepository` on DataStore Preferences |
-| `core/platform` | `Haptics`, `Notifier`, `UrlLauncher`, `ShareService` per platform |
+| `core/platform` | `Haptics`, `Notifier`, `UrlLauncher`, `ShareService`, `OngoingWorkoutIndicator` per platform |
 | `core/designsystem` | "Calibrated plates" theme (light/dark/dynamic, plate colors), floating tab bar, cards, segmented tabs, chips, plate stack, charts, muscle diagram |
 | `core/resources` | Bundled exercise seed JSON + images (Compose resources) |
 | `feature/*` | One module per feature: screen, ViewModel, navigation entry, strings |
@@ -135,3 +137,4 @@ installs pick up the change. Favorites, notes and custom exercises are never ove
 8. ✅ MVP hardening (accessibility, adaptive list-detail, stability config, E2E UI test)
 9. ✅ Phase 2: exercise progress charts (est. 1RM, best weight, volume; 1M/3M/1Y/All); Home heatmap, weekly goal ring, weekly streak; weekly sets per muscle (bars + body heatmap); rest timer (presets, remembered per exercise, notification + haptic); plate calculator + warm-up generator; supersets; body measurements with charts
 10. Phase 3
+    - ✅ M16 ongoing workout: Android foreground-service notification (elapsed / rest countdown, on-time rest alert), iOS Live Activity (lock screen + Dynamic Island)

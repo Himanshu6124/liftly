@@ -55,4 +55,5 @@ actual val platformServicesModule: Module = module {
     single<Notifier> { AndroidNotifier(androidContext()) }
     single<UrlLauncher> { AndroidUrlLauncher(androidContext()) }
     single<ShareService> { AndroidShareService(androidContext()) }
+    single<OngoingWorkoutIndicator> { AndroidOngoingWorkoutIndicator(androidContext()) }
 }

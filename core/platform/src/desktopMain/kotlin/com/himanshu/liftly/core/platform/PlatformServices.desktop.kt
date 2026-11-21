@@ -32,4 +32,5 @@ actual val platformServicesModule: Module = module {
     single<Notifier> { LoggingNotifier() }
     single<UrlLauncher> { DesktopUrlLauncher() }
     single<ShareService> { DesktopShareService() }
+    single<OngoingWorkoutIndicator> { NoOngoingWorkoutIndicator }
 }
