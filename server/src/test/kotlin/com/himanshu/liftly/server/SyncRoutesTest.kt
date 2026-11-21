@@ -42,7 +42,7 @@ class SyncRoutesTest {
     )
 
     private fun serverTest(block: suspend ApplicationTestBuilder.(HttpClient) -> Unit) = testApplication {
-        application { liftlyModule(TestDatabase.dataSource, DevUserResolver(enabled = true)) }
+        application { liftlyModule(TestDatabase.dataSource, TestAuth.service(), devAuth = true) }
         block(createClient { install(ContentNegotiation) { json() } })
     }
 
@@ -144,7 +144,7 @@ class SyncRoutesTest {
 
     @Test
     fun requiresAUser() = testApplication {
-        application { liftlyModule(TestDatabase.dataSource, DevUserResolver(enabled = false)) }
+        application { liftlyModule(TestDatabase.dataSource, TestAuth.service(), devAuth = false) }
         val response = client.get("/sync/routines/pull") { header(DevUserResolver.HEADER, "alice") }
         assertEquals(HttpStatusCode.Unauthorized, response.status)
         assertTrue("unauthorized" in response.bodyAsText())

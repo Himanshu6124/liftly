@@ -3,12 +3,12 @@ package com.himanshu.liftly.server
 import com.himanshu.liftly.core.protocol.PullPage
 import com.himanshu.liftly.core.protocol.PushAck
 import com.himanshu.liftly.core.protocol.SyncRecord
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import io.ktor.http.HttpStatusCode
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import java.sql.Connection
 import java.sql.ResultSet
+import java.sql.SQLException
 import java.sql.Types
 import javax.sql.DataSource
 
@@ -20,14 +20,21 @@ import javax.sql.DataSource
  */
 class SyncStore(private val ds: DataSource) {
 
-    suspend fun push(userId: String, table: String, records: List<SyncRecord>): List<PushAck> = transaction { conn ->
-        // Serialize one user's pushes so their versions commit in order: otherwise a pull could
-        // advance its cursor past a lower version that commits later, and miss that row forever.
-        conn.prepareStatement("SELECT pg_advisory_xact_lock(hashtextextended(?, 0))").use {
-            it.setString(1, userId)
-            it.executeQuery().close()
+    suspend fun push(userId: String, table: String, records: List<SyncRecord>): List<PushAck> = try {
+        transaction { conn ->
+            // Serialize one user's pushes so their versions commit in order: otherwise a pull could
+            // advance its cursor past a lower version that commits later, and miss that row forever.
+            Sql.lockUser(conn, userId)
+            records.map { r -> PushAck(r.id, r.updatedAt, upsert(conn, userId, table, r) ?: currentVersion(conn, userId, table, r.id)) }
         }
-        records.map { r -> PushAck(r.id, r.updatedAt, upsert(conn, userId, table, r) ?: currentVersion(conn, userId, table, r.id)) }
+    } catch (e: SQLException) {
+        // The account was deleted while this access token was still valid.
+        if (e.sqlState ==
+            Sql.FOREIGN_KEY_VIOLATION
+        ) {
+            throw ApiException(HttpStatusCode.Unauthorized, "unauthorized", "Account no longer exists")
+        }
+        throw e
     }
 
     suspend fun pull(userId: String, table: String, afterVersion: Long, limit: Int): PullPage = transaction { conn ->
@@ -75,17 +82,7 @@ class SyncStore(private val ds: DataSource) {
         payload = json.decodeFromString(JsonObject.serializer(), getString("payload")),
     )
 
-    private suspend fun <T> transaction(block: (Connection) -> T): T = withContext(Dispatchers.IO) {
-        ds.connection.use { conn ->
-            conn.autoCommit = false
-            try {
-                block(conn).also { conn.commit() }
-            } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
-                conn.rollback()
-                throw e
-            }
-        }
-    }
+    private suspend fun <T> transaction(block: (Connection) -> T): T = Sql.transaction(ds, block)
 
     private companion object {
         val json = Json

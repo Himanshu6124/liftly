@@ -489,3 +489,37 @@ Clean modern); the owner picked **Calibrated plates** and asked for a floating i
 - **The Docker image contains only the built distribution** (`installDist`), built on the host,
   because any Gradle build in this repo needs the Android SDK. Runs as a non-root user;
   `eclipse-temurin:21-jre` is multi-arch for the Ampere (arm64) VM.
+
+## Milestone 21 (backend): sign-in on the server
+
+- **Sign in with a provider ID token**, not passwords: the app gets an OpenID Connect ID token
+  from Apple (iOS) or Google (Android) and posts it to `/auth/apple` or `/auth/google`. The server
+  checks the RS256 signature against the provider's published keys (JWKS, cached a day,
+  rate-limited fetches via `jwks-rsa`), issuer, audience (`APPLE_AUDIENCES` = bundle id,
+  `GOOGLE_AUDIENCES` = OAuth client ids), expiry (60 s leeway), and for Apple the nonce
+  (`sha256(rawNonce)` in the token, raw nonce in the request) so a captured token can't be replayed.
+  A provider with no audiences configured is off (404 `provider_disabled`).
+- **Accounts are keyed by the provider's `sub`.** Apple and Google sign-ins are separate accounts;
+  emails are never used to link them (Apple's are often private relays, and linking by email is an
+  account-takeover risk). Google emails are stored only when `email_verified`.
+- **Our tokens:** 15-minute HS256 access JWT (`JWT_SECRET`, `iss=liftly`, `aud=liftly-app`) and a
+  30-day opaque refresh token (32 random bytes), stored only as a SHA-256 hash. Refresh is
+  single-use rotation. **Reuse detection with a 2-minute grace:** re-presenting a rotated token
+  within 2 minutes gets a fresh token (a phone retrying after losing the response on bad gym
+  signal must not be signed out); after that it's treated as theft and every session of the
+  account is revoked. The app should still make refresh single-flight (Milestone 22).
+- **Account deletion** deletes the `users` row; `records` and `refresh_tokens` go with it via
+  `ON DELETE CASCADE`. It takes the same per-user advisory lock as push, and the `records → users`
+  foreign key turns a push with a still-valid access token for a deleted account into a 401
+  instead of orphaned data. V2 backfills owner rows for data written with dev auth.
+- **Apple token revocation on deletion is still to do:** App Store rules require revoking the
+  user's Apple tokens via Apple's REST API when they delete their account. That needs the
+  authorization code from the app and a Sign in with Apple private key, so it lands with the app's
+  sign-in (Milestone 22) and is checked again at release (Milestone 26).
+- **Rate limit:** `/auth/*` 20 requests/minute per client IP (Ktor `RateLimit`, 429 `rate_limited`).
+  Client IP comes from `X-Forwarded-For` (Caddy), so the server port must not be public.
+- **Dev auth** now creates a `users` row for the header id (needed by the foreign key) and is
+  tried after the Bearer token; it only exists when `LIFTLY_DEV_AUTH=true`.
+- **Tests play Apple and Google** with a local RSA key (`TestAuth`): nonce, audience, expiry,
+  forged-signature, unverified-email, rotation/grace/theft, logout, expiry and deletion cases run
+  against real PostgreSQL with a controllable clock. No network calls to Apple or Google in tests.

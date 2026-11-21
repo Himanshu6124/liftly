@@ -69,7 +69,7 @@ class EngineAgainstServerTest {
     }
 
     private fun twoDevices(pageSize: Int = SyncProtocol.MAX_BATCH, block: suspend (Device, Device) -> Unit) = testApplication {
-        application { liftlyModule(TestDatabase.dataSource, DevUserResolver(enabled = true)) }
+        application { liftlyModule(TestDatabase.dataSource, TestAuth.service(), devAuth = true) }
         val client = createClient { install(ContentNegotiation) { json() } }
         val a = Device(HttpRemote(client, "alice"), pageSize)
         val b = Device(HttpRemote(client, "alice"), pageSize)

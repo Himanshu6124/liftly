@@ -11,6 +11,6 @@ object TestDatabase {
 
     /** Empties every table; call before each test. */
     fun reset() {
-        dataSource.connection.use { it.createStatement().execute("TRUNCATE records") }
+        dataSource.connection.use { it.createStatement().execute("TRUNCATE records, refresh_tokens, users") }
     }
 }

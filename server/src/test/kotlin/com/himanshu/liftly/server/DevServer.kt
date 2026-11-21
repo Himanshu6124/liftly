@@ -15,7 +15,18 @@ fun main() {
         .start()
     val ds = postgres.postgresDatabase
     Database.migrate(ds)
-    start(ServerConfig(ServerConfig.DEFAULT_PORT, "", "", "", devAuth = true), ds, wait = true)
+    val config = ServerConfig(
+        port = ServerConfig.DEFAULT_PORT,
+        databaseUrl = "",
+        databaseUser = "",
+        databasePassword = "",
+        // Fixed so the app stays signed in across dev restarts. Production reads JWT_SECRET.
+        jwtSecret = "dev-only-secret-never-use-in-production",
+        appleAudiences = listOf(ServerConfig.IOS_BUNDLE_ID),
+        googleAudiences = System.getenv("GOOGLE_AUDIENCES")?.split(',').orEmpty(),
+        devAuth = true,
+    )
+    start(config, ds, wait = true)
 }
 
 private const val DEV_DB_PORT = 54329
