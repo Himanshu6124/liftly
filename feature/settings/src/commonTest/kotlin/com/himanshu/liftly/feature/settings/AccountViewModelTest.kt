@@ -6,6 +6,8 @@ import com.himanshu.liftly.core.domain.auth.AuthException
 import com.himanshu.liftly.core.domain.auth.AuthProvider
 import com.himanshu.liftly.core.domain.auth.AuthRepository
 import com.himanshu.liftly.core.domain.auth.AuthState
+import com.himanshu.liftly.core.domain.sync.SyncController
+import com.himanshu.liftly.core.domain.sync.SyncState
 import com.himanshu.liftly.core.domain.util.AppScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -43,6 +45,13 @@ class AccountViewModelTest {
     }
 
     private val auth = FakeAuth()
+    private val sync = object : SyncController {
+        override val state = MutableStateFlow<SyncState>(SyncState.LocalOnly)
+        var requests = 0
+        override fun requestSync() {
+            requests++
+        }
+    }
 
     @BeforeTest
     fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
@@ -52,9 +61,13 @@ class AccountViewModelTest {
 
     @Test
     fun signInSignOutAndDelete() = runTest(UnconfinedTestDispatcher()) {
-        val vm = AccountViewModel(auth, AppScope(this))
+        val vm = AccountViewModel(auth, sync, AppScope(this))
         vm.ui.test {
             assertEquals(AccountUi(AuthState.SignedOut(), listOf(AuthProvider.APPLE)), awaitItem())
+            sync.state.value = SyncState.Syncing
+            assertEquals(SyncState.Syncing, awaitItem().sync)
+            vm.syncNow()
+            assertEquals(1, sync.requests)
             vm.signIn(AuthProvider.APPLE)
             assertEquals(AuthState.SignedIn("u1", "a@b.c"), expectMostRecentItem().state)
             vm.deleteAccount()
@@ -66,7 +79,7 @@ class AccountViewModelTest {
 
     @Test
     fun errorsAreShownButCancellingIsNot() = runTest(UnconfinedTestDispatcher()) {
-        val vm = AccountViewModel(auth, AppScope(this))
+        val vm = AccountViewModel(auth, sync, AppScope(this))
         vm.ui.test {
             awaitItem()
             auth.failWith = AuthError.CANCELLED

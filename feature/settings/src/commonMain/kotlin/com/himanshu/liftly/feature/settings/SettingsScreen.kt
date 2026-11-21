@@ -110,6 +110,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = koinViewModel(), accountViewMo
             override fun signIn(provider: AuthProvider) = accountViewModel.signIn(provider)
             override fun signOut() = accountViewModel.signOut()
             override fun deleteAccount() = accountViewModel.deleteAccount()
+            override fun syncNow() = accountViewModel.syncNow()
         }
     }
     SettingsContent(settings, viewModel::update, account, actions)

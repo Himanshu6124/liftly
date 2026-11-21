@@ -46,4 +46,8 @@
     <string name="account_error_rejected">Sign-in couldn’t be verified. Try again.</string>
     <string name="account_error_unavailable">Sign-in isn’t available right now.</string>
     <string name="account_no_providers">Sign-in isn’t available on this device yet.</string>
+    <string name="account_syncing">Syncing…</string>
+    <string name="account_synced_at">Backed up · last synced %1$s</string>
+    <string name="account_sync_failed">Couldn’t sync. Liftly will try again.</string>
+    <string name="account_sync_now">Sync now</string>
 </resources>

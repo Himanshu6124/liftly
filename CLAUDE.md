@@ -50,8 +50,8 @@ ktlint file-name rule (file with one class must be named after it), JVM-only API
 - Convention plugins in `build-logic`: `liftly.kmp.library`, `liftly.kmp.compose`,
   `liftly.kmp.feature`, `liftly.room`. Compose stability config: `config/compose-stability.conf`.
 - **Offline-first sync:** UUID ids, `SyncMeta` (updatedAt, deletedAt tombstone, syncStatus,
-  serverVersion) on every table; new tables must be registered in `SyncTables` and `SyncProtocol.TABLES`. Backend =
-  implement `RemoteSyncDataSource` and swap in `BackgroundSyncController` (see README).
+  serverVersion) on every table; new tables must be registered in `SyncTables` and `SyncProtocol.TABLES`. Sync runs
+  while signed in: `AccountSyncController` + `HttpSyncDataSource` against `server/` (see README).
 - Room schema is at **v3** with exported schemas in `core/data/schemas`; add columns/tables via
   `AutoMigration` and verify on the simulator's existing database.
 - Weights stored in kg, lengths in cm, times as epoch millis; converted only for display.

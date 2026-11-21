@@ -72,6 +72,6 @@ class SyncEngine(
             val localWins = mine.sync.syncStatus == SyncStatus.PENDING && mine.sync.updatedAt > remote.updatedAt
             !localWins
         }
-        table.dao.upsertAll(winners.map(table::fromRecord))
+        table.dao.upsertAll(winners.map { table.merge(local[it.id], table.fromRecord(it)) })
     }
 }

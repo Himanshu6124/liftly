@@ -8,6 +8,7 @@ kotlin {
         commonMain.dependencies {
             api(projects.core.protocol)
             api(projects.core.domain)
+            implementation(projects.core.data) // RemoteSyncDataSource, SyncEngine
             api(projects.core.platform) // AuthSession takes SecureStore and NativeSignIn
             implementation(project.dependencies.platform(libs.ktor.bom))
             implementation(libs.ktor.client.core)

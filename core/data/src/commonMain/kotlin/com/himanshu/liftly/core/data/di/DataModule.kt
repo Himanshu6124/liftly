@@ -6,7 +6,6 @@ import com.himanshu.liftly.core.data.repository.RoomMeasurementRepository
 import com.himanshu.liftly.core.data.repository.RoomRoutineRepository
 import com.himanshu.liftly.core.data.repository.RoomWorkoutRepository
 import com.himanshu.liftly.core.data.seed.RoomExerciseSeeder
-import com.himanshu.liftly.core.data.sync.LocalOnlySyncController
 import com.himanshu.liftly.core.data.sync.SyncSql
 import com.himanshu.liftly.core.data.sync.SyncTables
 import com.himanshu.liftly.core.domain.repository.ExerciseRepository
@@ -14,7 +13,6 @@ import com.himanshu.liftly.core.domain.repository.ExerciseSeeder
 import com.himanshu.liftly.core.domain.repository.MeasurementRepository
 import com.himanshu.liftly.core.domain.repository.RoutineRepository
 import com.himanshu.liftly.core.domain.repository.WorkoutRepository
-import com.himanshu.liftly.core.domain.sync.SyncController
 import com.himanshu.liftly.core.domain.usecase.GetLogSheetPrefillUseCase
 import com.himanshu.liftly.core.domain.usecase.LogExerciseSetsUseCase
 import com.himanshu.liftly.core.domain.usecase.ParseRepInputUseCase
@@ -55,8 +53,5 @@ val dataModule = module {
     factory { ParseRepInputUseCase() }
     single<ExerciseSeeder> { RoomExerciseSeeder(get(), get(), get()) }
     single { SyncTables(get()) }
-
-    // Offline-only for now. To enable a backend: bind a RemoteSyncDataSource implementation and
-    // replace this with `BackgroundSyncController(SyncEngine(get(), get(), get(), get()), get(), appScope)`.
-    single<SyncController> { LocalOnlySyncController() }
+    // SyncController (and the sync transport) are bound by core/network's networkModule.
 }

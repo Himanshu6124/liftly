@@ -563,3 +563,37 @@ Clean modern); the owner picked **Calibrated plates** and asked for a floating i
   simulator and the capability above.
 - **Still to do for Apple account deletion:** revoking Apple tokens (App Store rule) needs the
   authorization code and an Apple private key on the server; tracked for Milestone 26.
+
+## Milestone 23 (backend): sync on
+
+- **Sync runs only while signed in.** `AccountSyncController` replaces `BackgroundSyncController`
+  (removed): signed out it reports `LocalOnly` and does nothing; signed in it runs the engine
+  through `HttpSyncDataSource` (`core/network`, access token via `AuthSession.authorized`), 2 s
+  after a write request, on sign-in / startup while signed in, when the app comes to the
+  foreground (`LifecycleResumeEffect` in `App`), and from "Sync now" in Settings. Runs are
+  sequential (one collector). Requests go through a conflated `Channel`, not a `SharedFlow`, so
+  the sign-in request at startup isn't dropped before the collector subscribes.
+- **Signing out keeps local data** (matches the account dialogs: "Workouts on this device stay").
+  The plan said to wipe it; keeping it is safer: nothing logged offline is ever lost, and the app
+  is fully usable signed out. Local changes keep collecting as `PENDING`.
+- **Sync state belongs to an account**, recorded as a `_account` row in `sync_cursors` (no schema
+  change). Before each run `SyncSql.bindAccount` checks it; if a *different* account (or none)
+  owned it, local data is treated as never uploaded: tombstones are dropped, every user-changed
+  row becomes `PENDING` with no server version, and cursors are cleared, so it goes to the new
+  account as new rows and no cursor from another account is reused. The same account signing back
+  in continues where it was. This also covers a deleted account (new user id on next sign-in) and
+  is crash-safe (nothing to do at sign-out time). Trade-off: on a shared device, the next person's
+  account receives this device's workouts; acceptable for a personal training log.
+- **Library exercises merge on pull** (`TableSync.merge`, `mergeExercise`): for seeded rows only
+  favorite, note, archived and rest time come from the server; the library text stays this
+  device's, which may be from a newer seed.
+- **Personal records need no recompute:** bests and the Records tab are computed from synced sets;
+  PR rows are "you hit a PR" events created once, by the device that logged the set, so they never
+  duplicate across devices.
+- **Status in Settings** under the account: "Syncing…", "Backed up · last synced 14:05" (or the
+  date), or "Couldn't sync. Liftly will try again." in the error color, plus "Sync now". Failures
+  retry on the next write or foreground; timed backoff and background runs are Milestone 24.
+- **Tests:** `AccountSyncControllerTest` (signed out → nothing; sign-in uploads offline changes;
+  sign-out keeps data; account switch re-uploads; same account doesn't; seeded-row merge) runs in
+  real time because Room does real I/O. `AppSessionAgainstServerTest` runs three phones through the
+  real server: two on one account share a routine, the third account sees nothing.

@@ -12,6 +12,10 @@ import com.himanshu.liftly.core.protocol.PushAck
  * (never user input), so interpolating them is safe.
  */
 class SyncSql(private val db: AppDatabase) {
+    companion object {
+        /** Row in `sync_cursors` holding the account the local sync state belongs to (not a table). */
+        const val ACCOUNT_KEY = "_account"
+    }
 
     /** Marks a pushed row as synced, unless it was edited again while the push was in flight. */
     suspend fun markSynced(table: String, acks: List<PushAck>) {
@@ -40,6 +44,37 @@ class SyncSql(private val db: AppDatabase) {
                 usePrepared("DELETE FROM $table WHERE deletedAt IS NOT NULL AND syncStatus = ?") { st ->
                     st.bindText(1, SyncStatus.SYNCED.name)
                     st.step()
+                }
+            }
+        }
+    }
+
+    /**
+     * Ties the local sync state to [userId] (no-op when it already is). When another account, or
+     * none, owned it: local data is kept and treated as never uploaded, so it goes to this account
+     * as new. Tombstones are dropped (no server to tell), every row the user changed is marked
+     * PENDING without a server version, and all pull cursors are cleared.
+     * [tables] in dependency order (parents first).
+     */
+    suspend fun bindAccount(userId: String, tables: List<String>) {
+        if (db.syncCursorDao().get(ACCOUNT_KEY) == userId) return
+        db.useWriterConnection { tx ->
+            tx.immediateTransaction {
+                // Children first, so a cascade never meets a row that's still needed.
+                tables.asReversed().forEach { table ->
+                    usePrepared("DELETE FROM $table WHERE deletedAt IS NOT NULL") { it.step() }
+                }
+                tables.forEach { table ->
+                    usePrepared("UPDATE $table SET serverVersion = NULL, syncStatus = CASE WHEN updatedAt > 0 THEN ? ELSE syncStatus END") {
+                        it.bindText(1, SyncStatus.PENDING.name)
+                        it.step()
+                    }
+                }
+                usePrepared("DELETE FROM sync_cursors") { it.step() }
+                usePrepared("INSERT INTO sync_cursors (tableName, cursor) VALUES (?, ?)") {
+                    it.bindText(1, ACCOUNT_KEY)
+                    it.bindText(2, userId)
+                    it.step()
                 }
             }
         }

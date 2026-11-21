@@ -114,15 +114,16 @@ is ready for a backend from version 1:
 with `./gradlew :server:runDev`; see [`server/README.md`](server/README.md)). It ships only its
 own code and `core/protocol`, never app modules.
 
-**To connect a backend:**
+**Sync is on while signed in** (Settings → Account, optional):
 
-1. Implement `RemoteSyncDataSource` (two methods: `push(table, records)` and
-   `pull(table, cursor, limit)`), for example with Ktor against a REST API, or Supabase.
-2. In `core/data/.../di/DataModule.kt`, bind it and replace `LocalOnlySyncController` with
-   `BackgroundSyncController`.
+- `AccountSyncController` (bound in `core/network`'s Koin module) runs the engine through
+  `HttpSyncDataSource` 2 s after each write, on sign-in, and when the app comes to the foreground.
+  Signed out it does nothing and the app is fully local; changes keep collecting as `PENDING`.
+- Signing out keeps this device's data. If a **different** account signs in later, the local data
+  is uploaded to it as new (`SyncSql.bindAccount`); the same account just continues.
+- Library exercises sync only the user's changes (favorite, note, archived, rest time).
 
-Nothing else changes: screens, use cases and repositories stay as they are. Details and
-trade-offs are in [`DECISIONS.md`](DECISIONS.md).
+Details and trade-offs are in [`DECISIONS.md`](DECISIONS.md).
 
 ## Exercise data
 

@@ -29,6 +29,8 @@ import com.himanshu.liftly.core.designsystem.theme.LiftlyTheme
 import com.himanshu.liftly.core.domain.auth.AuthError
 import com.himanshu.liftly.core.domain.auth.AuthProvider
 import com.himanshu.liftly.core.domain.auth.AuthState
+import com.himanshu.liftly.core.domain.sync.SyncState
+import com.himanshu.liftly.core.domain.util.DateLabels
 import com.himanshu.liftly.feature.settings.resources.Res
 import com.himanshu.liftly.feature.settings.resources.account_apple
 import com.himanshu.liftly.feature.settings.resources.account_cancel
@@ -46,14 +48,23 @@ import com.himanshu.liftly.feature.settings.resources.account_sign_out
 import com.himanshu.liftly.feature.settings.resources.account_signed_in
 import com.himanshu.liftly.feature.settings.resources.account_signed_in_as
 import com.himanshu.liftly.feature.settings.resources.account_signed_out_hint
+import com.himanshu.liftly.feature.settings.resources.account_sync_failed
+import com.himanshu.liftly.feature.settings.resources.account_sync_now
+import com.himanshu.liftly.feature.settings.resources.account_synced_at
+import com.himanshu.liftly.feature.settings.resources.account_syncing
 import com.himanshu.liftly.feature.settings.resources.settings_account
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.stringResource
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 /** Actions from [AccountSection]; the screen forwards them to [AccountViewModel]. */
 interface AccountActions {
     fun signIn(provider: AuthProvider)
     fun signOut()
     fun deleteAccount()
+    fun syncNow()
 }
 
 @Composable
@@ -62,7 +73,11 @@ fun AccountSection(ui: AccountUi, actions: AccountActions) {
     SectionHeader(stringResource(Res.string.settings_account))
     Column(Modifier.padding(horizontal = spacing.md), verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
         when (val state = ui.state) {
-            is AuthState.SignedIn -> SignedIn(state, ui.busy, actions)
+            is AuthState.SignedIn -> {
+                SignedIn(state, ui.busy, actions)
+                SyncStatus(ui.sync, actions)
+            }
+
             is AuthState.SignedOut -> SignedOut(state, ui, actions)
         }
         ui.error?.let { error ->
@@ -126,6 +141,38 @@ private fun SignedIn(state: AuthState.SignedIn, busy: Boolean, actions: AccountA
             },
             dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(Res.string.account_cancel)) } },
         )
+    }
+}
+
+@Composable
+private fun SyncStatus(sync: SyncState, actions: AccountActions) {
+    val text = when (sync) {
+        SyncState.Syncing, SyncState.Idle, SyncState.LocalOnly -> stringResource(Res.string.account_syncing)
+        is SyncState.Synced -> stringResource(Res.string.account_synced_at, syncTime(sync.at))
+        is SyncState.Failed -> stringResource(Res.string.account_sync_failed)
+    }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text,
+            style = MaterialTheme.typography.bodySmall,
+            color = if (sync is SyncState.Failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f).semantics { liveRegion = LiveRegionMode.Polite },
+        )
+        TextButton(onClick = actions::syncNow, enabled = sync !is SyncState.Syncing) {
+            Text(stringResource(Res.string.account_sync_now))
+        }
+    }
+}
+
+/** "14:05" today, otherwise the short date. */
+private fun syncTime(at: Instant): String {
+    val zone = TimeZone.currentSystemDefault()
+    val local = at.toLocalDateTime(zone)
+    val today = Clock.System.now().toLocalDateTime(zone).date
+    return if (local.date == today) {
+        "${local.hour.toString().padStart(2, '0')}:${local.minute.toString().padStart(2, '0')}"
+    } else {
+        DateLabels.short(at, zone)
     }
 }
 

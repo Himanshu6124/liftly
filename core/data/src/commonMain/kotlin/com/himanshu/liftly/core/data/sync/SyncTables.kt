@@ -25,6 +25,8 @@ class TableSync<E : SyncableEntity>(
     val name: String,
     val dao: SyncDao<E>,
     private val serializer: KSerializer<E>,
+    /** Combines the local row (if any) with the pulled winner; default: the winner as is. */
+    val merge: (local: E?, remote: E) -> E = { _, remote -> remote },
     private val withSync: (E, SyncMeta) -> E,
 ) {
     fun toRecord(entity: E): SyncRecord {
@@ -62,7 +64,7 @@ class TableSync<E : SyncableEntity>(
 /** Tables in [SyncProtocol.TABLES] order: parents are pushed and pulled before children (FK safety). */
 class SyncTables(db: AppDatabase) {
     val all: List<TableSync<*>> = listOf(
-        TableSync(SyncProtocol.EXERCISES, db.exerciseDao(), ExerciseEntity.serializer()) { e, m -> e.copy(sync = m) },
+        TableSync(SyncProtocol.EXERCISES, db.exerciseDao(), ExerciseEntity.serializer(), ::mergeExercise) { e, m -> e.copy(sync = m) },
         TableSync(SyncProtocol.ROUTINES, db.routineDao(), RoutineEntity.serializer()) { e, m -> e.copy(sync = m) },
         TableSync(SyncProtocol.ROUTINE_EXERCISES, db.routineExerciseDao(), RoutineExerciseEntity.serializer()) { e, m -> e.copy(sync = m) },
         TableSync(SyncProtocol.WORKOUTS, db.workoutDao(), WorkoutEntity.serializer()) { e, m -> e.copy(sync = m) },
@@ -72,3 +74,20 @@ class SyncTables(db: AppDatabase) {
         TableSync(SyncProtocol.BODY_MEASUREMENTS, db.bodyMeasurementDao(), BodyMeasurementEntity.serializer()) { e, m -> e.copy(sync = m) },
     )
 }
+
+/**
+ * Library (seeded) exercises sync only what the user changed: favorite, note, archived, rest time.
+ * The library text stays this device's, which may come from a newer seed than the other device's.
+ */
+internal fun mergeExercise(local: ExerciseEntity?, remote: ExerciseEntity): ExerciseEntity =
+    if (local?.seedKey == null) {
+        remote
+    } else {
+        local.copy(
+            userNote = remote.userNote,
+            isFavorite = remote.isFavorite,
+            isArchived = remote.isArchived,
+            restSeconds = remote.restSeconds,
+            sync = remote.sync,
+        )
+    }

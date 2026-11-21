@@ -23,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -37,6 +38,7 @@ import com.himanshu.liftly.core.designsystem.component.FloatingTabBarHeight
 import com.himanshu.liftly.core.designsystem.component.LocalFloatingBarInset
 import com.himanshu.liftly.core.designsystem.component.TabItem
 import com.himanshu.liftly.core.designsystem.theme.LiftlyTheme
+import com.himanshu.liftly.core.domain.sync.SyncController
 import com.himanshu.liftly.feature.exercises.navigation.ExerciseDetailRoute
 import com.himanshu.liftly.feature.exercises.navigation.exerciseDetailScreen
 import com.himanshu.liftly.feature.exercises.navigation.exercisesScreen
@@ -58,10 +60,16 @@ import com.himanshu.liftly.navigation.DeepLinks
 import com.himanshu.liftly.navigation.TopLevelDestination
 import kotlinx.coroutines.flow.filterNotNull
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-fun App(viewModel: AppViewModel = koinViewModel()) {
+fun App(viewModel: AppViewModel = koinViewModel(), sync: SyncController = koinInject()) {
+    // Coming back to the app picks up changes made on other devices (no-op while signed out).
+    LifecycleResumeEffect(sync) {
+        sync.requestSync()
+        onPauseOrDispose { }
+    }
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val loaded = settings ?: return // DataStore reads in a few ms; avoids a theme flash.
 
