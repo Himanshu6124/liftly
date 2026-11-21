@@ -298,3 +298,19 @@ backend later with minimal change.
   otherwise to the weight increment. Sets that collapse to the same weight are merged.
 - Only exercises with equipment = Barbell get the plate maths; EZ bar, Smith machine and trap bar
   have different bar weights and are left for later.
+
+## Milestone 14 (Phase 2): supersets
+
+- **One rule, in one place** (`core/domain/.../Supersets.kt`): a superset is a run of 2+ *adjacent*
+  exercises with the same group number. Everything else is "no superset", and groups are
+  renumbered 1, 2, … in order (shown as A, B, …).
+- **Each exercise is still logged on its own** (spec); supersets only group the cards: a
+  "Superset A" label and a coloured rail running down the grouped cards.
+- **Editing:** card menu → "Superset with next" (creates, extends or merges groups) and
+  "Remove from superset" (taking out a middle exercise splits the group in two).
+- **When the rule is applied:** on read, on reorder and on every superset edit, but *not* when an
+  exercise is removed. Removing one exercise of a pair leaves its partner's stored group as is
+  (it simply shows as ungrouped), so Undo brings the superset back intact.
+- **Routines:** starting a routine keeps its supersets; "Save as routine" keeps the workout's.
+  The routine editor doesn't edit supersets yet: it keeps them, and drops any that a reorder
+  splits apart. No schema change: the `supersetGroup` columns existed since v1.

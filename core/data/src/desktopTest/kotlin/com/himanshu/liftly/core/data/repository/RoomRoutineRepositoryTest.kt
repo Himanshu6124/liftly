@@ -123,4 +123,30 @@ class RoomRoutineRepositoryTest {
         assertEquals(3, copy.items[1].routineExercise.targetSets, "unlogged exercise gets default sets")
         assertTrue(copy.items[1].routineExercise.targetWeightKg == null)
     }
+
+    @Test
+    fun supersetsCarryFromWorkoutToRoutineAndBack() = runTest {
+        val (a, b, c) = listOf(ex("A"), ex("B"), ex("C"))
+        val w = workouts.createWorkout("", null, listOf(a, b, c), supersetGroups = listOf(null, 1, 1))
+        val routineId = routines.saveWorkoutAsRoutine(w, "Arms")
+        val routine = assertNotNull(routines.observeRoutine(routineId).first())
+        assertEquals(listOf(null, 1, 1), routine.items.map { it.routineExercise.supersetGroup })
+
+        workouts.discard(w)
+        StartRoutineUseCase(StartWorkoutUseCase(workouts))(routine)
+        val started = assertNotNull(workouts.observeActiveWorkout().first())
+        assertEquals(listOf(null, 1, 1), started.exercises.map { it.workoutExercise.supersetGroup })
+
+        // The editor doesn't edit supersets: saving keeps them, but re-validates after a reorder.
+        val lines = routine.items.map { it.routineExercise }
+        routines.saveRoutine(
+            routineId,
+            "Arms",
+            null,
+            listOf(lines[1], lines[0], lines[2]).map {
+                RoutineExerciseDraft(it.id, it.exerciseId, it.targetSets, it.targetReps, it.targetWeightKg)
+            },
+        )
+        assertEquals(listOf(null, null, null), routines.observeRoutine(routineId).first()!!.items.map { it.routineExercise.supersetGroup })
+    }
 }

@@ -210,21 +210,23 @@ fun ActiveWorkoutContent(
             ) {
                 items(cards, key = { it.workoutExerciseId }) { card ->
                     ReorderableItem(reorderState, key = card.workoutExerciseId) { isDragging ->
-                        SwipeableExerciseCard(
-                            card = card,
-                            isDragging = isDragging,
-                            highlighted = state.highlightedId == card.workoutExerciseId,
-                            onClick = { onIntent(ActiveWorkoutIntent.OpenLogSheet(card.workoutExerciseId)) },
-                            onFormGuide = { previewId = card.exerciseId },
-                            onIntent = onIntent,
-                            modifier = Modifier.longPressDraggableHandle(
-                                onDragStarted = { dragging = true },
-                                onDragStopped = {
-                                    dragging = false
-                                    onIntent(ActiveWorkoutIntent.CommitOrder(cards.map { it.workoutExerciseId }))
-                                },
-                            ),
-                        )
+                        SupersetFrame(card, spacing.sm) {
+                            SwipeableExerciseCard(
+                                card = card,
+                                isDragging = isDragging,
+                                highlighted = state.highlightedId == card.workoutExerciseId,
+                                onClick = { onIntent(ActiveWorkoutIntent.OpenLogSheet(card.workoutExerciseId)) },
+                                onFormGuide = { previewId = card.exerciseId },
+                                onIntent = onIntent,
+                                modifier = Modifier.longPressDraggableHandle(
+                                    onDragStarted = { dragging = true },
+                                    onDragStopped = {
+                                        dragging = false
+                                        onIntent(ActiveWorkoutIntent.CommitOrder(cards.map { it.workoutExerciseId }))
+                                    },
+                                ),
+                            )
+                        }
                     }
                 }
             }

@@ -8,6 +8,7 @@ import com.himanshu.liftly.core.domain.model.ExerciseStatus
 import com.himanshu.liftly.core.domain.model.Muscle
 import com.himanshu.liftly.core.domain.model.WeightUnit
 import com.himanshu.liftly.core.domain.util.SetFormatter
+import com.himanshu.liftly.core.domain.util.Supersets
 import com.himanshu.liftly.core.domain.util.toDraftSets
 import com.himanshu.liftly.feature.workout.rest.RestTimer
 import kotlinx.collections.immutable.ImmutableList
@@ -32,6 +33,13 @@ data class ExerciseCardUi(
     val hasPr: Boolean = false,
     /** Rest time remembered for this exercise (seconds), null = app default. */
     val restSeconds: Int? = null,
+    /** Superset this card belongs to (1 = "A"), null when it isn't in one. */
+    val supersetGroup: Int? = null,
+    /** First / last card of its superset (for the label and the rail's rounded ends). */
+    val supersetStart: Boolean = false,
+    val supersetEnd: Boolean = false,
+    /** Not the last card, so "Superset with next" makes sense. */
+    val canLinkNext: Boolean = false,
 )
 
 @Immutable
@@ -104,6 +112,8 @@ sealed interface ActiveWorkoutIntent {
     data class RestStart(val seconds: Int) : ActiveWorkoutIntent
     data class RestAdjust(val seconds: Int) : ActiveWorkoutIntent
     data object RestStop : ActiveWorkoutIntent
+    data class SupersetWithNext(val workoutExerciseId: String) : ActiveWorkoutIntent
+    data class LeaveSuperset(val workoutExerciseId: String) : ActiveWorkoutIntent
 }
 
 sealed interface ActiveWorkoutEffect {
@@ -126,6 +136,8 @@ internal fun ActiveWorkout.toUiState(
     previous: ActiveWorkoutUiState,
     unit: WeightUnit,
     lastSets: Map<String, List<DraftSet>>,
+    // Normalized when read: a partner removed (with Undo pending) simply shows as ungrouped.
+    supersets: List<Int?> = Supersets.normalize(exercises.map { it.workoutExercise.supersetGroup }),
 ) = previous.copy(
     isLoading = false,
     workoutId = workout.id,
@@ -133,7 +145,8 @@ internal fun ActiveWorkout.toUiState(
     startedAt = workout.startedAt,
     routineId = workout.routineId,
     restEndsAt = workout.restEndsAt,
-    cards = exercises.map { e ->
+    cards = exercises.mapIndexed { i, e ->
+        val group = supersets[i]
         ExerciseCardUi(
             workoutExerciseId = e.workoutExercise.id,
             exerciseId = e.exercise.id,
@@ -146,6 +159,10 @@ internal fun ActiveWorkout.toUiState(
             lastHint = lastSets[e.exercise.id]?.let { SetFormatter.hint(it, unit) },
             hasPr = e.personalRecords.isNotEmpty(),
             restSeconds = e.exercise.restSeconds,
+            supersetGroup = group,
+            supersetStart = group != null && supersets.getOrNull(i - 1) != group,
+            supersetEnd = group != null && supersets.getOrNull(i + 1) != group,
+            canLinkNext = i < exercises.lastIndex,
         )
     }.toImmutableList(),
 )

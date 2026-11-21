@@ -12,6 +12,7 @@ import com.himanshu.liftly.core.domain.repository.WorkoutRepository
 import com.himanshu.liftly.core.domain.usecase.GetLogSheetPrefillUseCase
 import com.himanshu.liftly.core.domain.usecase.LogExerciseSetsUseCase
 import com.himanshu.liftly.core.domain.util.AppScope
+import com.himanshu.liftly.core.domain.util.Supersets
 import com.himanshu.liftly.core.domain.util.TimeProvider
 import com.himanshu.liftly.core.domain.util.toDraftSets
 import com.himanshu.liftly.core.platform.Haptics
@@ -145,6 +146,12 @@ class ActiveWorkoutViewModel(
             is ActiveWorkoutIntent.RestStart, is ActiveWorkoutIntent.RestAdjust, ActiveWorkoutIntent.RestStop ->
                 workoutId?.let { onRestIntent(it, intent) }
 
+            is ActiveWorkoutIntent.SupersetWithNext -> workoutId?.let {
+                editSupersets(it, intent.workoutExerciseId, Supersets::linkWithNext)
+            }
+
+            is ActiveWorkoutIntent.LeaveSuperset -> workoutId?.let { editSupersets(it, intent.workoutExerciseId, Supersets::unlink) }
+
             ActiveWorkoutIntent.UpdateRoutineTargets -> {
                 val routineId = _state.value.routineId
                 if (workoutId != null && routineId != null) {
@@ -254,6 +261,15 @@ class ActiveWorkoutViewModel(
                 _effects.send(ActiveWorkoutEffect.Closed(finished = true, workoutId = id))
             }
         }
+    }
+
+    /** Applies a superset change to the card order and writes every card's resulting group. */
+    private fun editSupersets(workoutId: String, workoutExerciseId: String, change: (List<Int?>, Int) -> List<Int?>) {
+        val cards = _state.value.cards
+        val index = cards.indexOfFirst { it.workoutExerciseId == workoutExerciseId }
+        if (index < 0) return
+        val groups = change(cards.map { it.supersetGroup }, index)
+        write { workouts.setSupersets(workoutId, cards.mapIndexed { i, c -> c.workoutExerciseId to groups[i] }.toMap()) }
     }
 
     private fun onRestIntent(workoutId: String, intent: ActiveWorkoutIntent) {

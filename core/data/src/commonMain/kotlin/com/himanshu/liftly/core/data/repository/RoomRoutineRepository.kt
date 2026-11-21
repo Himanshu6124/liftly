@@ -19,6 +19,7 @@ import com.himanshu.liftly.core.domain.repository.RoutineRepository
 import com.himanshu.liftly.core.domain.sync.SyncController
 import com.himanshu.liftly.core.domain.usecase.TargetsFromSets
 import com.himanshu.liftly.core.domain.util.IdGenerator
+import com.himanshu.liftly.core.domain.util.Supersets
 import com.himanshu.liftly.core.domain.util.TimeProvider
 import com.himanshu.liftly.core.domain.util.toDraftSets
 import kotlinx.coroutines.flow.Flow
@@ -76,6 +77,7 @@ class RoomRoutineRepository(
         val current = routineExercises.getForRoutine(routineId).associateBy { it.id }
         val keep = exercises.mapNotNull { it.id }.toSet()
         sql.delete("routine_exercises", current.keys.filter { it !in keep }, now)
+        val groups = Supersets.normalize(exercises.map { d -> d.supersetGroup ?: d.id?.let { current[it] }?.supersetGroup })
         routineExercises.upsertAll(
             exercises.mapIndexed { i, d ->
                 val old = d.id?.let { current[it] }
@@ -84,7 +86,7 @@ class RoomRoutineRepository(
                     routineId = routineId,
                     exerciseId = d.exerciseId,
                     orderIndex = i,
-                    supersetGroup = old?.supersetGroup,
+                    supersetGroup = groups[i],
                     targetSets = d.targetSets.coerceIn(1, MAX_SETS),
                     targetReps = d.targetReps,
                     targetWeightKg = d.targetWeightKg,
@@ -150,8 +152,9 @@ class RoomRoutineRepository(
     }
 
     override suspend fun saveWorkoutAsRoutine(workoutId: EntityId, name: String): EntityId {
-        val drafts = workoutTargets(workoutId).map { (exerciseId, targets) ->
-            RoutineExerciseDraft(null, exerciseId, targets?.sets ?: DEFAULT_SETS, targets?.reps, targets?.weightKg)
+        val groups = db.workoutExerciseDao().getForWorkout(workoutId).map { it.supersetGroup }
+        val drafts = workoutTargets(workoutId).mapIndexed { i, (exerciseId, targets) ->
+            RoutineExerciseDraft(null, exerciseId, targets?.sets ?: DEFAULT_SETS, targets?.reps, targets?.weightKg, groups.getOrNull(i))
         }
         return saveRoutine(null, name, null, drafts)
     }

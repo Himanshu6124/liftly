@@ -16,9 +16,14 @@ class StartWorkoutUseCase(private val workouts: WorkoutRepository) {
         data class Resumed(override val workoutId: EntityId) : Result
     }
 
-    suspend operator fun invoke(name: String = "", routineId: EntityId? = null, exerciseIds: List<EntityId> = emptyList()): Result {
+    suspend operator fun invoke(
+        name: String = "",
+        routineId: EntityId? = null,
+        exerciseIds: List<EntityId> = emptyList(),
+        supersetGroups: List<Int?> = emptyList(),
+    ): Result {
         workouts.getInProgressWorkout()?.let { return Result.Resumed(it.id) }
-        return Result.Started(workouts.createWorkout(name.trim(), routineId, exerciseIds))
+        return Result.Started(workouts.createWorkout(name.trim(), routineId, exerciseIds, supersetGroups))
     }
 }
 

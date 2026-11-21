@@ -50,6 +50,8 @@ import com.himanshu.liftly.feature.workout.resources.card_status_logged
 import com.himanshu.liftly.feature.workout.resources.card_status_pending
 import com.himanshu.liftly.feature.workout.resources.card_status_skipped
 import com.himanshu.liftly.feature.workout.resources.card_subtitle
+import com.himanshu.liftly.feature.workout.resources.card_superset_leave
+import com.himanshu.liftly.feature.workout.resources.card_superset_next
 import com.himanshu.liftly.feature.workout.resources.card_unskip
 import org.jetbrains.compose.resources.stringResource
 
@@ -64,7 +66,6 @@ internal fun ExerciseCard(
     modifier: Modifier = Modifier,
 ) {
     val spacing = LiftlyTheme.spacing
-    var menuOpen by remember { mutableStateOf(false) }
     val statusLabel = stringResource(
         when (card.status) {
             ExerciseStatus.PENDING -> Res.string.card_status_pending
@@ -152,37 +153,44 @@ internal fun ExerciseCard(
             IconButton(onClick = onFormGuide) {
                 Icon(Icons.Filled.Info, contentDescription = stringResource(Res.string.card_form, card.name))
             }
-            Box {
-                IconButton(onClick = { menuOpen = true }) {
-                    Icon(Icons.Filled.MoreVert, contentDescription = stringResource(Res.string.card_options, card.name))
-                }
-                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                    DropdownMenuItem(text = { Text(skipLabel) }, onClick = {
-                        menuOpen = false
-                        skipAction()
-                    })
-                    DropdownMenuItem(
-                        text = { Text(stringResource(Res.string.card_move_up)) },
-                        onClick = {
-                            menuOpen = false
-                            onIntent(ActiveWorkoutIntent.Move(card.workoutExerciseId, -1))
-                        },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(Res.string.card_move_down)) },
-                        onClick = {
-                            menuOpen = false
-                            onIntent(ActiveWorkoutIntent.Move(card.workoutExerciseId, 1))
-                        },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(removeLabel) },
-                        onClick = {
-                            menuOpen = false
-                            onIntent(ActiveWorkoutIntent.Remove(card.workoutExerciseId))
-                        },
-                    )
-                }
+            CardMenu(card, skipLabel, removeLabel, skipAction, onIntent)
+        }
+    }
+}
+
+/** The card's ⋮ menu: every swipe/drag action as a plain menu item (also the accessible path). */
+@Composable
+private fun CardMenu(
+    card: ExerciseCardUi,
+    skipLabel: String,
+    removeLabel: String,
+    onSkip: () -> Unit,
+    onIntent: (ActiveWorkoutIntent) -> Unit,
+) {
+    var open by remember { mutableStateOf(false) }
+    val id = card.workoutExerciseId
+    val items = buildList {
+        add(skipLabel to onSkip)
+        add(stringResource(Res.string.card_move_up) to { onIntent(ActiveWorkoutIntent.Move(id, -1)) })
+        add(stringResource(Res.string.card_move_down) to { onIntent(ActiveWorkoutIntent.Move(id, 1)) })
+        if (card.canLinkNext) add(stringResource(Res.string.card_superset_next) to { onIntent(ActiveWorkoutIntent.SupersetWithNext(id)) })
+        if (card.supersetGroup !=
+            null
+        ) {
+            add(stringResource(Res.string.card_superset_leave) to { onIntent(ActiveWorkoutIntent.LeaveSuperset(id)) })
+        }
+        add(removeLabel to { onIntent(ActiveWorkoutIntent.Remove(id)) })
+    }
+    Box {
+        IconButton(onClick = { open = true }) {
+            Icon(Icons.Filled.MoreVert, contentDescription = stringResource(Res.string.card_options, card.name))
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            items.forEach { (label, action) ->
+                DropdownMenuItem(text = { Text(label) }, onClick = {
+                    open = false
+                    action()
+                })
             }
         }
     }

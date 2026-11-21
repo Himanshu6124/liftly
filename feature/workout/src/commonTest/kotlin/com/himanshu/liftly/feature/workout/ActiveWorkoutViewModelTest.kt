@@ -92,6 +92,23 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun supersetWithNextGroupsCardsAndLeaveDissolves() = runTest(dispatcher) {
+        val repo = FakeWorkoutRepository(listOf("A", "B", "C"))
+        val vm = vm(repo)
+        vm.onIntent(ActiveWorkoutIntent.SupersetWithNext("we0"))
+        with(vm.state.value.cards) {
+            assertEquals(listOf(1, 1, null), map { it.supersetGroup })
+            assertTrue(this[0].supersetStart && !this[0].supersetEnd)
+            assertTrue(this[1].supersetEnd)
+            assertFalse(this[2].canLinkNext, "last card can't link to a next one")
+        }
+        vm.onIntent(ActiveWorkoutIntent.SupersetWithNext("we1"))
+        assertEquals(listOf(1, 1, 1), vm.state.value.cards.map { it.supersetGroup })
+        vm.onIntent(ActiveWorkoutIntent.LeaveSuperset("we0"))
+        assertEquals(listOf(null, 1, 1), vm.state.value.cards.map { it.supersetGroup })
+    }
+
+    @Test
     fun moveDownReorders() = runTest(dispatcher) {
         val repo = FakeWorkoutRepository(listOf("A", "B", "C"))
         vm(repo).onIntent(ActiveWorkoutIntent.Move("we0", 1))

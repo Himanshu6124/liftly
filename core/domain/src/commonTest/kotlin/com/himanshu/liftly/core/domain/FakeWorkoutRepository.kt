@@ -13,7 +13,8 @@ class FakeWorkoutRepository : WorkoutRepository {
     val created = mutableListOf<Workout>()
     override fun observeActiveWorkout(): Flow<ActiveWorkout?> = flowOf(null)
     override suspend fun getInProgressWorkout(): Workout? = created.lastOrNull { it.endedAt == null }
-    override suspend fun createWorkout(name: String, routineId: String?, exerciseIds: List<String>): String {
+    override suspend fun setSupersets(workoutId: String, groups: Map<String, Int?>) = Unit
+    override suspend fun createWorkout(name: String, routineId: String?, exerciseIds: List<String>, supersetGroups: List<Int?>): String {
         val w = Workout("w${created.size + 1}", name, routineId, Instant.fromEpochMilliseconds(0), null, null)
         created += w
         return w.id

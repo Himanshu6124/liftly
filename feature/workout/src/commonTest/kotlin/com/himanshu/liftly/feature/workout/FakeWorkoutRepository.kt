@@ -54,7 +54,13 @@ class FakeWorkoutRepository(
 
     override fun observeActiveWorkout(): Flow<ActiveWorkout?> = active
     override suspend fun getInProgressWorkout() = active.value?.workout
-    override suspend fun createWorkout(name: String, routineId: String?, exerciseIds: List<String>) = "w1"
+    override suspend fun setSupersets(workoutId: String, groups: Map<String, Int?>) = edit { list ->
+        list.map { e ->
+            val id = e.workoutExercise.id
+            if (id in groups) e.copy(workoutExercise = e.workoutExercise.copy(supersetGroup = groups[id])) else e
+        }
+    }
+    override suspend fun createWorkout(name: String, routineId: String?, exerciseIds: List<String>, supersetGroups: List<Int?>) = "w1"
     override suspend fun addExercises(workoutId: String, exerciseIds: List<String>) =
         edit { list -> list + exerciseIds.mapIndexed { i, id -> item("new$i", id, list.size + i) } }
     override suspend fun rename(workoutId: String, name: String) = active.update { it?.copy(workout = it.workout.copy(name = name)) }

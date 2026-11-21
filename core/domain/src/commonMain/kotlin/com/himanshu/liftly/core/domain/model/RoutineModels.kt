@@ -11,6 +11,8 @@ data class RoutineExerciseDraft(
     val targetSets: Int,
     val targetReps: Int?,
     val targetWeightKg: Double?,
+    /** Superset group; null keeps the line's current group (the editor doesn't edit supersets yet). */
+    val supersetGroup: Int? = null,
 )
 
 /** Last finished workout, for the Home summary card. */

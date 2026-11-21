@@ -28,11 +28,19 @@ interface WorkoutRepository {
     suspend fun getInProgressWorkout(): Workout?
 
     /** Creates a workout with the given exercises (in order). Callers enforce the one-in-progress rule. */
-    suspend fun createWorkout(name: String, routineId: EntityId?, exerciseIds: List<EntityId>): EntityId
+    suspend fun createWorkout(
+        name: String,
+        routineId: EntityId?,
+        exerciseIds: List<EntityId>,
+        supersetGroups: List<Int?> = emptyList(),
+    ): EntityId
 
     suspend fun addExercises(workoutId: EntityId, exerciseIds: List<EntityId>)
 
     suspend fun rename(workoutId: EntityId, name: String)
+
+    /** Sets superset groups (workout exercise id → group, null = none); see `Supersets`. */
+    suspend fun setSupersets(workoutId: EntityId, groups: Map<EntityId, Int?>)
 
     /** Starts (or changes) the rest timer to end at [endsAt]; null stops it. */
     suspend fun setRestTimer(workoutId: EntityId, endsAt: Instant?)

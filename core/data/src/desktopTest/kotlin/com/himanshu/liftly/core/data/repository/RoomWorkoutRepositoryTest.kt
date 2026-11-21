@@ -67,6 +67,26 @@ class RoomWorkoutRepositoryTest {
     }
 
     @Test
+    fun supersetsAreCreatedSetAndDissolvedWhenReorderSplitsThem() = runTest {
+        val (a, b, c) = listOf(exercise("A"), exercise("B"), exercise("C"))
+        val w = repo.createWorkout("", null, listOf(a, b, c), supersetGroups = listOf(4, 4, null))
+        suspend fun groups() = repo.observeActiveWorkout().first()!!.exercises.map { it.exercise.name to it.workoutExercise.supersetGroup }
+        assertEquals(listOf("A" to 1, "B" to 1, "C" to null), groups(), "normalized to group 1")
+
+        val wes = repo.observeActiveWorkout().first()!!.exercises.map { it.workoutExercise.id }
+        repo.setSupersets(w, mapOf(wes[1] to 1, wes[2] to 1))
+        assertEquals(listOf("A" to 1, "B" to 1, "C" to 1), groups())
+
+        repo.reorder(w, listOf(wes[0], wes[2], wes[1]))
+        assertEquals(listOf("A" to 1, "C" to 1, "B" to 1), groups(), "reordered within the group: still one superset")
+
+        // Take C (now in the middle) out: A and B are no longer next to each other, so they're not a superset.
+        repo.setSupersets(w, mapOf(wes[2] to null))
+        repo.reorder(w, listOf(wes[0], wes[2], wes[1]))
+        assertEquals(listOf("A" to null, "C" to null, "B" to null), groups(), "A and B no longer adjacent → dissolved")
+    }
+
+    @Test
     fun removeThenUndoRestoresTheExercise() = runTest {
         val a = exercise("A")
         val b = exercise("B")

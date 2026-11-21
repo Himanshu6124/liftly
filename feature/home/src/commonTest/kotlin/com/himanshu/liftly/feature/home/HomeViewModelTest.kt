@@ -28,7 +28,13 @@ class HomeViewModelTest {
         var created = 0
         override fun observeActiveWorkout() = kotlinx.coroutines.flow.flowOf(null)
         override suspend fun getInProgressWorkout() = null
-        override suspend fun createWorkout(name: String, routineId: String?, exerciseIds: List<String>): String {
+        override suspend fun setSupersets(workoutId: String, groups: Map<String, Int?>) = Unit
+        override suspend fun createWorkout(
+            name: String,
+            routineId: String?,
+            exerciseIds: List<String>,
+            supersetGroups: List<Int?>,
+        ): String {
             created++
             return "w"
         }

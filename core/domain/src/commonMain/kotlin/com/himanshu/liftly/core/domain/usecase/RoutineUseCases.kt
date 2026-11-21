@@ -34,9 +34,13 @@ object TargetsFromSets {
 
 /** Starts a workout from a routine with its exercises in order (or resumes the active one). */
 class StartRoutineUseCase(private val startWorkout: StartWorkoutUseCase) {
-    suspend operator fun invoke(routine: RoutineWithExercises): StartWorkoutUseCase.Result = startWorkout(
-        name = routine.routine.name,
-        routineId = routine.routine.id,
-        exerciseIds = routine.items.sortedBy { it.routineExercise.orderIndex }.map { it.exercise.id },
-    )
+    suspend operator fun invoke(routine: RoutineWithExercises): StartWorkoutUseCase.Result {
+        val items = routine.items.sortedBy { it.routineExercise.orderIndex }
+        return startWorkout(
+            name = routine.routine.name,
+            routineId = routine.routine.id,
+            exerciseIds = items.map { it.exercise.id },
+            supersetGroups = items.map { it.routineExercise.supersetGroup }, // the routine's supersets carry over
+        )
+    }
 }

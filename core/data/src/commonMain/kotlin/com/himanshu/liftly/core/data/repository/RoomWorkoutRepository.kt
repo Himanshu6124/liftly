@@ -37,6 +37,7 @@ import com.himanshu.liftly.core.domain.sync.SyncController
 import com.himanshu.liftly.core.domain.usecase.PrHit
 import com.himanshu.liftly.core.domain.util.IdGenerator
 import com.himanshu.liftly.core.domain.util.Strength
+import com.himanshu.liftly.core.domain.util.Supersets
 import com.himanshu.liftly.core.domain.util.TimeProvider
 import com.himanshu.liftly.core.domain.util.toDraftSets
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -156,13 +157,28 @@ class RoomWorkoutRepository(
 
     override suspend fun getInProgressWorkout(): Workout? = workouts.getInProgress()?.toDomain()
 
-    override suspend fun createWorkout(name: String, routineId: EntityId?, exerciseIds: List<EntityId>): EntityId = write {
+    override suspend fun createWorkout(
+        name: String,
+        routineId: EntityId?,
+        exerciseIds: List<EntityId>,
+        supersetGroups: List<Int?>,
+    ): EntityId = write {
         val id = ids.newId()
         val now = now()
         workouts.upsertAll(
             listOf(WorkoutEntity(id, name, routineId, startedAt = now, endedAt = null, notes = null, sync = SyncMeta.dirty(now))),
         )
-        insertExercises(id, exerciseIds, startIndex = 0, now = now)
+        insertExercises(
+            id,
+            exerciseIds,
+            startIndex = 0,
+            now = now,
+            groups = Supersets.normalize(
+                exerciseIds.indices.map {
+                    supersetGroups.getOrNull(it)
+                },
+            ),
+        )
         id
     }
 
@@ -170,7 +186,13 @@ class RoomWorkoutRepository(
         insertExercises(workoutId, exerciseIds, startIndex = workoutExercises.maxOrderIndex(workoutId) + 1, now = now())
     }
 
-    private suspend fun insertExercises(workoutId: EntityId, exerciseIds: List<EntityId>, startIndex: Int, now: Long) {
+    private suspend fun insertExercises(
+        workoutId: EntityId,
+        exerciseIds: List<EntityId>,
+        startIndex: Int,
+        now: Long,
+        groups: List<Int?> = emptyList(),
+    ) {
         if (exerciseIds.isEmpty()) return
         workoutExercises.upsertAll(
             exerciseIds.mapIndexed { i, exerciseId ->
@@ -179,7 +201,7 @@ class RoomWorkoutRepository(
                     workoutId = workoutId,
                     exerciseId = exerciseId,
                     orderIndex = startIndex + i,
-                    supersetGroup = null,
+                    supersetGroup = groups.getOrNull(i),
                     status = ExerciseStatus.PENDING,
                     loggedAt = null,
                     inputMode = InputMode.UNIFORM,
@@ -205,9 +227,29 @@ class RoomWorkoutRepository(
     override suspend fun reorder(workoutId: EntityId, orderedWorkoutExerciseIds: List<EntityId>) = write {
         val now = now()
         val position = orderedWorkoutExerciseIds.withIndex().associate { (i, id) -> id to i }
+        val reordered = workoutExercises.getForWorkout(workoutId)
+            .map { we -> position[we.id]?.let { we.copy(orderIndex = it) } ?: we }
+            .sortedBy { it.orderIndex }
+        // A superset only survives as long as its exercises stay next to each other.
+        val groups = Supersets.normalize(reordered.map { it.supersetGroup })
+        val current = workoutExercises.getForWorkout(workoutId).associateBy { it.id }
+        val changed = reordered.mapIndexedNotNull { i, we ->
+            val updated = we.copy(supersetGroup = groups[i])
+            if (updated == current[we.id]) null else updated.copy(sync = we.sync.touch(now))
+        }
+        workoutExercises.upsertAll(changed)
+    }
+
+    override suspend fun setSupersets(workoutId: EntityId, groups: Map<EntityId, Int?>) = write {
+        val now = now()
         val changed = workoutExercises.getForWorkout(workoutId).mapNotNull { we ->
-            val index = position[we.id] ?: return@mapNotNull null
-            if (we.orderIndex == index) null else we.copy(orderIndex = index, sync = we.sync.touch(now))
+            if (we.id !in groups ||
+                groups[we.id] == we.supersetGroup
+            ) {
+                null
+            } else {
+                we.copy(supersetGroup = groups[we.id], sync = we.sync.touch(now))
+            }
         }
         workoutExercises.upsertAll(changed)
     }

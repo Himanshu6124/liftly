@@ -122,4 +122,7 @@
     <string name="log_plates_bar_only">Just the bar (%1$s)</string>
     <string name="log_plates_closest">Closest you can load: %1$s</string>
     <string name="log_generate_warmups">Warm-ups 40 · 60 · 80 %</string>
+    <string name="card_superset_next">Superset with next</string>
+    <string name="card_superset_leave">Remove from superset</string>
+    <string name="superset_label">Superset %1$s</string>
 </resources>
